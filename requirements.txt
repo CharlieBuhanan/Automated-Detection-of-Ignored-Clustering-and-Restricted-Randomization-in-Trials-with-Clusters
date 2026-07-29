@@ -1,0 +1,9 @@
+anthropic
+pymupdf
+pdfplumber
+pytesseract
+pydantic
+tenacity
+tqdm
+python-dotenv
+pandas

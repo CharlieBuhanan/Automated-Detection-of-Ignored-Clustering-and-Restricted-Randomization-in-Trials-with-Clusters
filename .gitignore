@@ -1,0 +1,8 @@
+.env
+venv/
+__pycache__/
+*.pyc
+data/raw_pdfs/
+data/extracted_text/
+*.sqlite
+*.db
