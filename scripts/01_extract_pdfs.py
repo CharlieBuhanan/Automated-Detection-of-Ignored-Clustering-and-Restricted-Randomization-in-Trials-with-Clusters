@@ -18,9 +18,13 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def main():
+    """Extract every PDF under data/raw_pdfs/<set>/, caching each result to
+    data/extracted_text/<paper_id>.json (skipping ones already cached unless
+    --overwrite is passed), then print any papers whose extraction looks
+    weak enough to warrant a manual check."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--set", choices=["validation", "full_set"], required=True)
-    parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument("--overwrite", action="store_true", help="Re-extract even if a cached JSON already exists")
     args = parser.parse_args()
 
     pdf_dir = ROOT / "data" / "raw_pdfs" / args.set
@@ -31,6 +35,8 @@ def main():
         print(f"No PDFs found in {pdf_dir}")
         return
 
+    # Papers that needed OCR (i.e. no text layer) or still came back thin
+    # after all fallbacks -- worth a human glance before trusting the text.
     flagged = []
     for pdf_path in tqdm(pdf_paths, desc=f"Extracting ({args.set})"):
         record = extract_and_cache(pdf_path, cache_dir, overwrite=args.overwrite)

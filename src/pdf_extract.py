@@ -22,18 +22,24 @@ MIN_CHARS_PER_PAGE = 200
 
 
 def _extract_with_pymupdf(pdf_path: Path) -> tuple[str, int]:
+    """Extract text page-by-page using PyMuPDF. Fast, and usually sufficient
+    for digital-native PDFs (e.g. PMC papers)."""
     with fitz.open(pdf_path) as doc:
         pages = [page.get_text() for page in doc]
     return "\n\n".join(pages), len(pages)
 
 
 def _extract_with_pdfplumber(pdf_path: Path) -> tuple[str, int]:
+    """Extract text page-by-page using pdfplumber. Slower than PyMuPDF but
+    often more accurate on multi-column layouts and tables."""
     with pdfplumber.open(pdf_path) as pdf:
         pages = [page.extract_text() or "" for page in pdf.pages]
     return "\n\n".join(pages), len(pages)
 
 
 def _extract_with_ocr(pdf_path: Path) -> tuple[str, int]:
+    """Rasterize each page to an image and run Tesseract OCR over it. Last
+    resort for scanned pages that have no extractable text layer at all."""
     import pytesseract
     from PIL import Image
 
@@ -47,14 +53,23 @@ def _extract_with_ocr(pdf_path: Path) -> tuple[str, int]:
 
 
 def _is_sparse(text: str, page_count: int) -> bool:
+    """True if the extracted text is too thin (per page) to trust, signaling
+    that the next fallback extractor should be tried instead."""
     if page_count == 0:
         return True
     return len(text.strip()) / page_count < MIN_CHARS_PER_PAGE
 
 
 def extract_pdf_text(pdf_path: Path) -> dict:
-    """Extract text from a single PDF, trying fallbacks in order until one
-    produces a non-sparse result. Returns a dict ready to cache to JSON."""
+    """Extract text from a single PDF, trying pymupdf -> pdfplumber -> ocr in
+    order and stopping at the first non-sparse result (falling through on
+    any extractor exception). paper_id is taken from the filename stem, so
+    e.g. data/raw_pdfs/validation/PMC1234567.pdf -> paper_id "PMC1234567".
+
+    Returns a dict ready to cache to JSON:
+        paper_id, source_path, method (which extractor won),
+        page_count, char_count, extracted_at, text.
+    """
     pdf_path = Path(pdf_path)
     attempts = [
         ("pymupdf", _extract_with_pymupdf),
@@ -84,7 +99,12 @@ def extract_pdf_text(pdf_path: Path) -> dict:
 
 
 def extract_and_cache(pdf_path: Path, cache_dir: Path, overwrite: bool = False) -> dict:
-    """Extract (or load from cache) the text for one PDF."""
+    """Extract (or load from cache) the text for one PDF.
+
+    Checks cache_dir/<paper_id>.json first and returns it as-is if present,
+    so a PDF is only ever parsed once. Pass overwrite=True to force
+    re-extraction (e.g. after changing the extraction logic).
+    """
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache_path = cache_dir / f"{Path(pdf_path).stem}.json"
