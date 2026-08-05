@@ -6,3 +6,5 @@ data/raw_pdfs/
 data/extracted_text/
 *.sqlite
 *.db
+.claude/
+PLAN.md
