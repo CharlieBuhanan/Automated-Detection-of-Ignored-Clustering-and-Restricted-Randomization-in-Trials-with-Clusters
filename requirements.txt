@@ -1,7 +1,9 @@
 anthropic
+pyzotero
 pymupdf
 pdfplumber
 pytesseract
+rapidfuzz
 pydantic
 tenacity
 tqdm
