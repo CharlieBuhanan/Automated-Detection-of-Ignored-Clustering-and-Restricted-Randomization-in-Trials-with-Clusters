@@ -1,4 +1,17 @@
-"""Extract text for every PDF in a raw_pdfs subfolder, caching results.
+"""NOT READY -- DO NOT RUN. This is not yet the next step after 00_fetch_zotero.py.
+
+Two things are stale:
+  1. --set still offers "full_set"; the fetch now writes "testing".
+  2. It does a single full extraction of every PDF. The plan (PLAN.md steps 1-2)
+     calls for two stages: a light 2-page pass for identity verification, then
+     full extraction only for papers that come back VERIFIED or resolved WEAK.
+
+Running it as-is would extract unverified PDFs, which is exactly what step 1
+exists to prevent. Rewrite it before use.
+
+---
+
+Extract text for every PDF in a raw_pdfs subfolder, caching results.
 
 Usage:
     python scripts/01_extract_pdfs.py --set validation
@@ -25,7 +38,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--set", choices=["validation", "full_set"], required=True)
     parser.add_argument("--overwrite", action="store_true", help="Re-extract even if a cached JSON already exists")
+    parser.add_argument("--run-anyway", action="store_true", help="Bypass the not-ready guard (see the module docstring)")
     args = parser.parse_args()
+
+    # A comment alone would not stop an accidental run; this does.
+    if not args.run_anyway:
+        sys.exit(
+            "01_extract_pdfs.py is NOT READY -- see the notes at the top of this file.\n"
+            "It predates two-stage extraction and would extract unverified PDFs.\n"
+            "Pass --run-anyway if you really mean to."
+        )
 
     pdf_dir = ROOT / "data" / "raw_pdfs" / args.set
     cache_dir = ROOT / "data" / "extracted_text"

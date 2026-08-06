@@ -1,8 +1,8 @@
 """Zotero group library -> local PDF corpus.
 
-Walks Glykos > "Boring Task" > <NIH institute> subcollections, pulls each
-record's PDF attachment, verifies it against the md5 Zotero stores for that
-attachment, and writes it to data/raw_pdfs/all/<paper_id>.pdf.
+Walks a Zotero collection and every collection nested beneath it, at any
+depth, pulls each record's PDF attachment, verifies it against the md5 Zotero
+stores for that attachment, and writes data/raw_pdfs/<set>/<paper_id>.pdf.
 
 paper_id is the Zotero item key (8 chars, e.g. "4XKQ7B2M"): always present,
 unique, and stable across edits. DOI/PMCID are kept as metadata only, since
@@ -10,8 +10,7 @@ they are missing or inconsistently formatted on some records.
 
 md5 verification here catches a truncated or corrupted transfer. It does NOT
 catch the wrong PDF filed under the right record -- that is identity
-verification, which runs later against extracted text (see zotero_fetch_draft.md
-section 4).
+verification, which runs later against extracted text (see PLAN.md step 1).
 """
 
 import hashlib
@@ -23,12 +22,23 @@ from pathlib import Path
 from pyzotero import zotero
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-ROOT_COLLECTION_NAME = "Boring Task"
+# Separator for a folder path, e.g. "Boring Task / NCI / 2019".
+PATH_SEP = " / "
+
+# Separator for the folders of a paper filed in more than one collection.
+MULTI_SEP = "; "
 
 # Attachments whose bytes live in Zotero's cloud storage, best first. A
 # linked_file exists only on the machine that added it, so it can never be
 # downloaded through the API.
 LINK_MODE_PRIORITY = ["imported_file", "imported_url", "linked_url"]
+
+# Which half of the corpus a paper belongs to. "testing" papers are the ones
+# being classified; "validation" papers carry human labels and are the
+# regression suite. Zotero knows nothing about this split -- it comes from
+# which collection was fetched.
+SET_TESTING = "testing"
+SET_VALIDATION = "validation"
 
 # Per-record outcomes recorded in the manifest.
 STATUS_OK = "OK"
@@ -37,17 +47,17 @@ STATUS_DOWNLOAD_CORRUPT = "DOWNLOAD_CORRUPT"
 STATUS_PDF_UNREADABLE = "PDF_UNREADABLE"
 
 MANIFEST_COLUMNS = [
-    "paper_id", "institute", "title", "first_author", "doi", "pmid", "pmcid",
-    "year", "journal", "attachment_key", "md5", "status", "detail", "warning",
-    "verdict", "title_score", "set", "fetched_at",
+    "paper_id", "folder", "folder_path", "title", "first_author", "doi",
+    "pmid", "pmcid", "year", "journal", "attachment_key", "md5",
+    "status", "detail", "warning", "verdict", "title_score", "set", "fetched_at",
 ]
 
 
 class CollectionNotFound(Exception):
-    """Raised when the root collection name is absent from the group library.
+    """Raised when the configured root collection is absent from the library.
 
-    Deliberately fatal: silently guessing at a differently-named collection
-    would pull the wrong corpus.
+    Deliberately fatal: silently guessing at a different collection would
+    pull the wrong corpus.
     """
 
 
@@ -57,23 +67,64 @@ def connect(library_id: str, api_key: str, library_type: str = "group") -> zoter
     return zotero.Zotero(library_id, library_type, api_key)
 
 
-def resolve_institutes(zot: zotero.Zotero, root_name: str = ROOT_COLLECTION_NAME) -> list[dict]:
-    """Find the root collection by name and return its immediate children --
-    one per NIH institute.
+def _collection_path(key: str, by_key: dict) -> list[str]:
+    """Names from the library root down to this collection.
 
-    Raises CollectionNotFound (listing what was available) rather than
-    falling back to a partial or empty tree.
+    Guards against a cycle in parentCollection -- malformed data would
+    otherwise loop forever.
+    """
+    names, seen = [], set()
+    while key and key in by_key and key not in seen:
+        seen.add(key)
+        names.append(by_key[key]["data"]["name"])
+        parent = by_key[key]["data"].get("parentCollection")
+        key = parent if parent else None
+    return list(reversed(names))
+
+
+def resolve_subtree(zot: zotero.Zotero, root: str) -> list[dict]:
+    """Return the root collection plus every collection nested under it.
+
+    `root` is a Zotero collection key, or a collection name as a fallback for
+    convenience. Each returned dict carries the Zotero collection plus:
+        name        -- the collection's own name
+        path        -- full path from the library root, e.g. "Boring Task / NCI"
+
+    Depth is unlimited: institutes today, institutes-by-year tomorrow, both
+    work without a code change.
     """
     collections = zot.all_collections()
+    by_key = {c["key"]: c for c in collections}
 
-    root = next((c for c in collections if c["data"]["name"] == root_name), None)
-    if root is None:
-        available = sorted(c["data"]["name"] for c in collections)
-        raise CollectionNotFound(
-            f"No collection named {root_name!r} in library. Available: {available}"
-        )
+    if root in by_key:
+        root_key = root
+    else:
+        match = next((c for c in collections if c["data"]["name"] == root), None)
+        if match is None:
+            available = sorted(
+                f"{c['data']['name']} ({c['key']})" for c in collections
+            )
+            raise CollectionNotFound(
+                f"No collection with key or name {root!r} in library. "
+                f"Available: {available}"
+            )
+        root_key = match["key"]
 
-    return [c for c in collections if c["data"].get("parentCollection") == root["key"]]
+    # A collection is in scope when root_key appears anywhere in its ancestry.
+    subtree = []
+    for c in collections:
+        path_keys, key, seen = [], c["key"], set()
+        while key and key in by_key and key not in seen:
+            seen.add(key)
+            path_keys.append(key)
+            parent = by_key[key]["data"].get("parentCollection")
+            key = parent if parent else None
+        if root_key in path_keys:
+            subtree.append(
+                {**c, "name": c["data"]["name"], "path": PATH_SEP.join(_collection_path(c["key"], by_key))}
+            )
+
+    return sorted(subtree, key=lambda c: c["path"])
 
 
 def normalize_doi(raw: str | None) -> str:
@@ -106,7 +157,7 @@ def parse_extra(extra: str | None) -> dict:
     }
 
 
-def build_metadata(item: dict, institute_name: str) -> dict:
+def build_metadata(item: dict) -> dict:
     """Flatten one Zotero item into the manifest's metadata fields."""
     data = item["data"]
     extra = parse_extra(data.get("extra"))
@@ -123,7 +174,6 @@ def build_metadata(item: dict, institute_name: str) -> dict:
     return {
         "paper_id": item["key"],
         "zotero_version": item["version"],
-        "institute": institute_name,
         "title": data.get("title", ""),
         "authors": [a.get("lastName") or a.get("name", "") for a in authors],
         "first_author": first_author,
@@ -160,7 +210,7 @@ def select_pdf_attachment(children: list[dict]) -> tuple[dict | None, str, str]:
 
     warning = ""
     if len(pdfs) > 1:
-        titles = "; ".join(
+        titles = MULTI_SEP.join(
             p["data"].get("title") or p["data"].get("filename") or p["key"]
             for p in pdfs
         )
@@ -220,49 +270,76 @@ def fetch_pdf(zot: zotero.Zotero, attachment: dict, dest: Path) -> tuple[str, st
     return STATUS_OK, "downloaded"
 
 
-def fetch_collection(
+def collect_items(zot: zotero.Zotero, subtree: list[dict]) -> dict:
+    """Gather every record in the subtree, deduplicated by paper_id.
+
+    A paper filed in two collections appears twice in the walk but must
+    produce one row -- paper_id is the key everything downstream joins on,
+    and a duplicate would double-count in accuracy math. The folders are
+    collected instead, so nothing is lost.
+
+    Returns {paper_id: {"item": item, "folders": [...], "paths": [...]}}.
+    """
+    records = {}
+
+    for collection in subtree:
+        for item in zot.everything(zot.collection_items_top(collection["key"])):
+            # collection_items_top should already exclude these; cheap to be sure.
+            if item["data"].get("itemType") in {"note", "attachment"}:
+                continue
+
+            record = records.setdefault(
+                item["key"], {"item": item, "folders": [], "paths": []}
+            )
+            if collection["name"] not in record["folders"]:
+                record["folders"].append(collection["name"])
+                record["paths"].append(collection["path"])
+
+    return records
+
+
+def fetch_records(
     zot: zotero.Zotero,
-    institute: dict,
+    records: dict,
     pdf_dir: Path,
+    set_name: str = SET_TESTING,
     progress=None,
 ) -> list[dict]:
-    """Fetch every top-level record in one institute subcollection.
+    """Download each record's PDF and build its manifest row.
 
-    Returns one manifest row per record, including the ones that failed --
-    a paper with no retrievable PDF has to stay visible, not vanish from the
-    corpus silently.
+    `set_name` tags every row as SET_TESTING (papers to classify) or
+    SET_VALIDATION (papers with human labels, used for scoring). It comes from
+    the caller because it is a property of which collection is being fetched,
+    not of anything Zotero records about the item.
+
+    Returns one row per record, including the ones that failed -- a paper with
+    no retrievable PDF has to stay visible, not vanish from the corpus
+    silently.
     """
-    institute_name = institute["data"]["name"]
-    items = zot.everything(zot.collection_items_top(institute["key"]))
     rows = []
 
-    for item in items:
-        # collection_items_top should already exclude these; cheap to be sure.
-        if item["data"].get("itemType") in {"note", "attachment"}:
-            continue
-
-        meta = build_metadata(item, institute_name)
+    for paper_id, record in records.items():
+        meta = build_metadata(record["item"])
         row = {
             **{k: meta.get(k, "") for k in MANIFEST_COLUMNS},
+            "folder": MULTI_SEP.join(record["folders"]),
+            "folder_path": MULTI_SEP.join(record["paths"]),
             "attachment_key": "",
             "md5": "",
             "warning": "",
             # Filled by identity verification at extraction time.
             "verdict": "",
             "title_score": "",
-            # "Boring Task" holds only the study corpus; the 500 labeled
-            # validation papers come from elsewhere.
-            "set": "full_set",
+            "set": set_name,
             "fetched_at": datetime.now(timezone.utc).isoformat(),
         }
 
-        attachment, problem, warning = select_pdf_attachment(zot.children(item["key"]))
+        attachment, problem, warning = select_pdf_attachment(zot.children(paper_id))
         row["warning"] = warning
         if attachment is None:
             row.update(status=STATUS_PDF_MISSING, detail=problem)
         else:
-            dest = pdf_dir / f"{meta['paper_id']}.pdf"
-            status, detail = fetch_pdf(zot, attachment, dest)
+            status, detail = fetch_pdf(zot, attachment, pdf_dir / f"{paper_id}.pdf")
             row.update(
                 attachment_key=attachment["key"],
                 md5=attachment["data"].get("md5", ""),

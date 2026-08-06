@@ -1,14 +1,22 @@
-"""Pull the corpus out of Zotero into data/raw_pdfs/all/.
+"""Pull the corpus out of Zotero into data/raw_pdfs/<set>/.
+
+Fetches every record in the configured collection and all of its
+subcollections, at any depth.
 
 Usage:
-    python scripts/00_fetch_zotero.py
-    python scripts/00_fetch_zotero.py --institute NCI     # one subcollection
-    python scripts/00_fetch_zotero.py --dry-run           # list records, download nothing
+    python scripts/00_fetch_zotero.py                                    # the testing corpus
+    python scripts/00_fetch_zotero.py --collection ABCD1234 --set validation
+    python scripts/00_fetch_zotero.py --dry-run                          # show the tree, download nothing
+
+--set tags the rows it writes: "testing" (papers to classify) or "validation"
+(papers with human labels). Zotero has no idea which is which, so it comes from
+whichever collection you point at.
 
 Requires in .env:
-    ZOTERO_API_KEY, ZOTERO_LIBRARY_ID
-    ZOTERO_LIBRARY_TYPE   (optional, default "group")
-    ZOTERO_ROOT_COLLECTION (optional, default "Boring Task")
+    ZOTERO_API_KEY          your Zotero API key
+    ZOTERO_LIBRARY_ID       the group's numeric ID
+    ZOTERO_COLLECTION_KEY   the collection to walk (8-char key; a name also works)
+    ZOTERO_LIBRARY_TYPE     optional, default "group"
 
 Idempotent: attachments already on disk with a matching md5 are skipped, so a
 re-run is cheap and repairs a partial pull.
@@ -27,12 +35,14 @@ from tqdm import tqdm
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from zotero_fetch import (
     MANIFEST_COLUMNS,
-    ROOT_COLLECTION_NAME,
+    SET_TESTING,
+    SET_VALIDATION,
     STATUS_OK,
     CollectionNotFound,
+    collect_items,
     connect,
-    fetch_collection,
-    resolve_institutes,
+    fetch_records,
+    resolve_subtree,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -66,50 +76,57 @@ def write_manifest(rows: list[dict], path: Path) -> None:
 
 
 def main():
-    """Resolve the institute subcollections, fetch every record's PDF with an
-    md5 check, and write data/zotero_manifest.csv."""
+    """Walk the configured collection subtree, fetch every record's PDF with
+    an md5 check, and merge the results into data/zotero_manifest.csv."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--institute", help="Only fetch this institute subcollection")
-    parser.add_argument("--dry-run", action="store_true", help="Resolve collections and count records without downloading")
+    parser.add_argument("--collection", help="Collection key or name to walk (overrides .env)")
+    parser.add_argument(
+        "--set",
+        choices=[SET_TESTING, SET_VALIDATION],
+        default=SET_TESTING,
+        help="Which half of the corpus this collection holds (default: testing)",
+    )
+    parser.add_argument("--dry-run", action="store_true", help="Show the collection tree and record count without downloading")
     args = parser.parse_args()
 
     load_dotenv(ROOT / ".env")
     api_key = os.getenv("ZOTERO_API_KEY")
     library_id = os.getenv("ZOTERO_LIBRARY_ID")
+    root = args.collection or os.getenv("ZOTERO_COLLECTION_KEY")
     if not api_key or not library_id:
         sys.exit("ZOTERO_API_KEY and ZOTERO_LIBRARY_ID must be set in .env")
+    if not root:
+        sys.exit("Set ZOTERO_COLLECTION_KEY in .env, or pass --collection")
 
     zot = connect(
         library_id,
         api_key,
         library_type=os.getenv("ZOTERO_LIBRARY_TYPE", "group"),
     )
-    root_name = os.getenv("ZOTERO_ROOT_COLLECTION", ROOT_COLLECTION_NAME)
 
     try:
-        institutes = resolve_institutes(zot, root_name)
+        subtree = resolve_subtree(zot, root)
     except CollectionNotFound as exc:
         sys.exit(str(exc))
 
-    if args.institute:
-        institutes = [c for c in institutes if c["data"]["name"] == args.institute]
-        if not institutes:
-            sys.exit(f"No institute subcollection named {args.institute!r} under {root_name!r}")
+    print(f"{len(subtree)} collection(s) in scope:")
+    for collection in subtree:
+        print(f"  {collection['path']}  ({collection['meta'].get('numItems', '?')} items)")
 
-    print(f"{root_name}: {len(institutes)} institute subcollection(s)")
-    for c in institutes:
-        print(f"  {c['data']['name']}: {c['meta'].get('numItems', '?')} items")
+    # Walked before downloading so the progress bar has a true total, and so
+    # a paper filed in two collections is fetched once rather than twice.
+    records = collect_items(zot, subtree)
+    print(f"\n{len(records)} unique record(s)")
 
     if args.dry_run:
         return
 
-    pdf_dir = ROOT / "data" / "raw_pdfs" / "all"
-    total = sum(c["meta"].get("numItems", 0) for c in institutes)
-
-    rows = []
-    with tqdm(total=total, desc="Fetching") as progress:
-        for institute in institutes:
-            rows.extend(fetch_collection(zot, institute, pdf_dir, progress=progress))
+    # One directory per set, so the split is visible in the file tree. The
+    # manifest's `set` column stays authoritative -- it is what tells later
+    # steps which directory to look in.
+    pdf_dir = ROOT / "data" / "raw_pdfs" / args.set
+    with tqdm(total=len(records), desc=f"Fetching ({args.set})") as progress:
+        rows = fetch_records(zot, records, pdf_dir, set_name=args.set, progress=progress)
 
     manifest_path = ROOT / "data" / "zotero_manifest.csv"
     write_manifest(rows, manifest_path)
@@ -125,7 +142,7 @@ def main():
     if warned:
         print(f"\nWARNING: {len(warned)} record(s) had multiple PDF attachments:")
         for row in warned:
-            print(f"  {row['paper_id']} [{row['institute']}] {row['warning']}")
+            print(f"  {row['paper_id']} [{row['folder']}] {row['warning']}")
 
     # Anything without a usable PDF needs a human before the corpus is
     # complete -- list it now rather than discovering the gap at classification.
@@ -133,7 +150,7 @@ def main():
     if failures:
         print(f"\n{len(failures)} record(s) need attention:")
         for row in failures:
-            print(f"  {row['paper_id']} [{row['institute']}] {row['status']}: {row['detail']}")
+            print(f"  {row['paper_id']} [{row['folder']}] {row['status']}: {row['detail']}")
             print(f"    {row['title'][:90]}")
 
 
