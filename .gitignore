@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 data/raw_pdfs/
 data/extracted_text/
+data/zotero_meta.jsonl
 *.sqlite
 *.db
 .claude/

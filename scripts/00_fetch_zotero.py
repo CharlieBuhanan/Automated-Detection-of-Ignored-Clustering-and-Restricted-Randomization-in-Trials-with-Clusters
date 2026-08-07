@@ -24,6 +24,7 @@ re-run is cheap and repairs a partial pull.
 
 import argparse
 import csv
+import json
 import os
 import sys
 from collections import Counter
@@ -39,13 +40,29 @@ from zotero_fetch import (
     SET_VALIDATION,
     STATUS_OK,
     CollectionNotFound,
+    build_meta_records,
     collect_items,
+    completed_ids,
     connect,
-    fetch_records,
+    iter_fetch_records,
     resolve_subtree,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
+
+# Rows written to the manifest between checkpoints. Rewriting a 1500-row CSV
+# is trivial next to one HTTP request per paper, so this is cheap insurance
+# against losing the whole run's bookkeeping to a crash at 95%.
+CHECKPOINT_EVERY = 50
+
+
+def load_manifest(path: Path) -> dict:
+    """Read the manifest CSV back as {paper_id: row}. Empty if absent."""
+    path = Path(path)
+    if not path.exists():
+        return {}
+    with path.open(newline="", encoding="utf-8") as handle:
+        return {row["paper_id"]: row for row in csv.DictReader(handle)}
 
 
 def write_manifest(rows: list[dict], path: Path) -> None:
@@ -75,11 +92,45 @@ def write_manifest(rows: list[dict], path: Path) -> None:
         writer.writerows(merged.values())
 
 
+def write_meta_jsonl(meta_records: list[dict], path: Path) -> None:
+    """Merge full Zotero metadata into data/zotero_meta.jsonl, keyed on paper_id.
+
+    Same merge rule as the manifest, for the same reason: a `--set validation`
+    run must not erase the rows a `--set testing` run wrote.
+
+    This is the complete record -- including every author and Zotero's raw
+    item -- where the manifest CSV is only the scannable summary.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    merged = {}
+    if path.exists():
+        with path.open(encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if line:
+                    existing = json.loads(line)
+                    merged[existing["paper_id"]] = existing
+    for record in meta_records:
+        merged[record["paper_id"]] = record
+
+    with path.open("w", encoding="utf-8") as handle:
+        for record in merged.values():
+            handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
 def main():
     """Walk the configured collection subtree, fetch every record's PDF with
-    an md5 check, and merge the results into data/zotero_manifest.csv."""
+    an md5 check, and merge the results into data/zotero_manifest.csv and
+    data/zotero_meta.jsonl."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--collection", help="Collection key or name to walk (overrides .env)")
+    parser.add_argument(
+        "--exclude",
+        action="append",
+        default=None,
+        help="Collection name or key to skip, with everything under it. Repeatable. Defaults to ZOTERO_EXCLUDE_COLLECTIONS in .env (comma-separated).",
+    )
     parser.add_argument(
         "--set",
         choices=[SET_TESTING, SET_VALIDATION],
@@ -87,6 +138,11 @@ def main():
         help="Which half of the corpus this collection holds (default: testing)",
     )
     parser.add_argument("--dry-run", action="store_true", help="Show the collection tree and record count without downloading")
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Re-check every paper against Zotero, including ones already fetched. Without this, a paper whose manifest row is OK and whose PDF matches its md5 is skipped -- so a PDF swapped in Zotero after the first fetch is not noticed until you pass this.",
+    )
     args = parser.parse_args()
 
     load_dotenv(ROOT / ".env")
@@ -104,19 +160,41 @@ def main():
         library_type=os.getenv("ZOTERO_LIBRARY_TYPE", "group"),
     )
 
+    excluded = args.exclude
+    if excluded is None:
+        raw = os.getenv("ZOTERO_EXCLUDE_COLLECTIONS", "")
+        excluded = [name.strip() for name in raw.split(",") if name.strip()]
+
     try:
-        subtree = resolve_subtree(zot, root)
+        subtree = resolve_subtree(zot, root, exclude=excluded)
     except CollectionNotFound as exc:
         sys.exit(str(exc))
 
+    if excluded:
+        print(f"excluding: {', '.join(excluded)}")
     print(f"{len(subtree)} collection(s) in scope:")
+    placements = 0
     for collection in subtree:
-        print(f"  {collection['path']}  ({collection['meta'].get('numItems', '?')} items)")
+        n = collection["meta"].get("numItems", 0)
+        placements += n
+        print(f"  {collection['path']}  ({n} items)")
 
     # Walked before downloading so the progress bar has a true total, and so
     # a paper filed in two collections is fetched once rather than twice.
-    records = collect_items(zot, subtree)
-    print(f"\n{len(records)} unique record(s)")
+    records, skipped = collect_items(zot, subtree)
+
+    # Placements minus unique records is the co-filing count. Printed because
+    # a paper under two institutes is one paper, and counting placements is an
+    # easy way to overstate the size of the corpus.
+    print(f"\n{len(records)} unique paper(s) from {placements} collection placement(s)")
+    multi = sum(1 for r in records.values() if len(r["folders"]) > 1)
+    if multi:
+        print(f"  {multi} paper(s) filed under more than one collection")
+
+    if skipped:
+        print(f"\nWARNING: {len(skipped)} non-paper item(s) skipped (not journalArticle):")
+        for paper_id, item_type, title, folder in skipped:
+            print(f"  {paper_id} [{folder}] {item_type}: {title[:70]}")
 
     if args.dry_run:
         return
@@ -125,14 +203,49 @@ def main():
     # manifest's `set` column stays authoritative -- it is what tells later
     # steps which directory to look in.
     pdf_dir = ROOT / "data" / "raw_pdfs" / args.set
-    with tqdm(total=len(records), desc=f"Fetching ({args.set})") as progress:
-        rows = fetch_records(zot, records, pdf_dir, set_name=args.set, progress=progress)
-
     manifest_path = ROOT / "data" / "zotero_manifest.csv"
-    write_manifest(rows, manifest_path)
+    meta_path = ROOT / "data" / "zotero_meta.jsonl"
+
+    # Metadata needs no network -- collect_items already has everything. Write
+    # it before the first download so no PDF ever sits on disk without a record
+    # of what it is.
+    write_meta_jsonl(build_meta_records(records, set_name=args.set), meta_path)
+    print(f"{len(records)} record(s) of full metadata -> {meta_path}")
+
+    existing = load_manifest(manifest_path)
+    skip_ids = set() if args.refresh else completed_ids(existing, pdf_dir)
+    if skip_ids:
+        print(f"{len(skip_ids)} already fetched, skipping (--refresh to re-check)")
+
+    # Checkpointed so an interrupt or a crash still leaves a usable manifest.
+    # write_manifest merges on paper_id, so a partial write is valid and the
+    # next one just updates those rows.
+    rows = []
+    try:
+        with tqdm(total=len(records), desc=f"Fetching ({args.set})") as progress:
+            for row in iter_fetch_records(
+                zot, records, pdf_dir,
+                set_name=args.set, skip_ids=skip_ids, progress=progress,
+            ):
+                rows.append(row)
+                if len(rows) % CHECKPOINT_EVERY == 0:
+                    write_manifest(rows, manifest_path)
+    finally:
+        write_manifest(rows, manifest_path)
+
+    # Skipped papers keep their existing rows, so report on the full manifest
+    # rather than only what this run touched.
+    rows = list(load_manifest(manifest_path).values())
 
     counts = Counter(r["status"] for r in rows)
     print(f"\n{len(rows)} record(s) -> {manifest_path}")
+
+    # Zotero has no PMID/PMCID field -- these are scraped out of Extra, the
+    # URL, or archiveID. Coverage is worth knowing now, because these are the
+    # identifiers that will join this corpus to the validation labels.
+    for field in ("doi", "pmid", "pmcid"):
+        have = sum(1 for r in rows if r[field])
+        print(f"  {field}: {have}/{len(rows)} ({have / len(rows):.0%})" if rows else f"  {field}: 0")
     for status, count in counts.most_common():
         print(f"  {status}: {count}")
 

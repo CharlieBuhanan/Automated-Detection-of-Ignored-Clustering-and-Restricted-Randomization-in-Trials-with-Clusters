@@ -1,0 +1,119 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{hyperref}
+
+\title{Unvalidated Set: Zotero Fetch Summary}
+\author{Cluster-Paper Review}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Overview}
+
+This document summarizes the corpus fetched from Zotero (Glykos \(\triangleright\) \emph{Boring Task}),
+labeled the \textbf{Unvalidated Set} to distinguish it from the 500 human-labeled validation papers,
+which arrive by a separate route and are not included here.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+Metric & Count \\
+\midrule
+Total papers fetched & 1494 \\
+Fetch status \texttt{OK} & 1494 (100\%) \\
+Filed under more than one NIH institute & 483 \\
+\bottomrule
+\end{tabular}
+\caption{Fetch outcome. All records downloaded successfully; none failed identity checksum
+verification against Zotero.}
+\end{table}
+
+\section{Identifier coverage}
+
+Zotero has no dedicated field for PMID/PMCID on older records, so these are recovered from a
+combination of a dedicated field (where present), the \texttt{Extra} field, \texttt{archiveID}, and the
+item URL, in that priority order. Coverage is reported below out of 1494 total papers.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrr}
+\toprule
+Identifier & Count & Coverage \\
+\midrule
+DOI   & 1490 & \SI{99.7}{\percent} \\
+PMID  & 1494 & \SI{100}{\percent} \\
+PMCID & 1431 & \SI{95.8}{\percent} \\
+\bottomrule
+\end{tabular}
+\caption{Identifier coverage across the Unvalidated Set. High coverage on all three identifiers
+supports joining this corpus to external metadata sources by DOI or PMCID if needed.}
+\end{table}
+
+\section{Multiple PDF attachments}
+
+172 of 1494 records (\SI{11.5}{\percent}) had more than one PDF attachment on the Zotero record. In
+each case the fetch script selected the highest-priority attachment (by link mode) and logged a
+warning rather than guessing silently.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+Category & Count \\
+\midrule
+Records with $>1$ PDF attachment & 172 \\
+\quad Duplicate attachment (same title twice) & 167 \\
+\quad Genuinely different attachments & 5 \\
+\bottomrule
+\end{tabular}
+\caption{Breakdown of multi-attachment records. The 5 records with genuinely different attachment
+titles warrant manual review, since one may be a preprint or supplement rather than the published
+version.}
+\end{table}
+
+\section{Distribution by NIH institute}
+
+Papers are filed under 23 institute subcollections beneath \emph{Boring Task} (excluding
+\texttt{sample NCI-new}, which was excluded from the corpus as a disjoint staging collection). A paper
+co-funded by multiple institutes is counted once per institute below, so the column sums to more than
+1494.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+Institute & Papers \\
+\midrule
+NIMH   & 315 \\
+NCATS  & 277 \\
+NICHD  & 239 \\
+NIAID  & 206 \\
+NIA    & 192 \\
+NIDDK  & 183 \\
+NIDA   & 155 \\
+FIC    & 107 \\
+NIMHD  & 87  \\
+NIAAA  & 69  \\
+NIGMS  & 66  \\
+NINR   & 55  \\
+NIEHS  & 42  \\
+NCCIH  & 34  \\
+NEI    & 22  \\
+NINDS  & 17  \\
+NIAMS  & 13  \\
+NIDCR  & 12  \\
+NLM    & 11  \\
+NIDCD  & 7   \\
+NIBIB  & 2   \\
+NHGRI  & 1   \\
+CC / CLC & 1 \\
+\bottomrule
+\end{tabular}
+\caption{Paper count per NIH institute subcollection.}
+\end{table}
+
+\end{document}

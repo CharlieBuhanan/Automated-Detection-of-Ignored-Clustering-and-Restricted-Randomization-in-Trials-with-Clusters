@@ -14,6 +14,7 @@ verification, which runs later against extracted text (see PLAN.md step 1).
 """
 
 import hashlib
+import json
 import re
 import unicodedata
 from datetime import datetime, timezone
@@ -39,6 +40,11 @@ LINK_MODE_PRIORITY = ["imported_file", "imported_url", "linked_url"]
 # which collection was fetched.
 SET_TESTING = "testing"
 SET_VALIDATION = "validation"
+
+# Only journal articles are papers. The library also holds the occasional
+# videoRecording, webpage, or report; those are skipped and reported rather
+# than quietly entering the corpus.
+PAPER_ITEM_TYPES = {"journalArticle"}
 
 # Per-record outcomes recorded in the manifest.
 STATUS_OK = "OK"
@@ -82,7 +88,7 @@ def _collection_path(key: str, by_key: dict) -> list[str]:
     return list(reversed(names))
 
 
-def resolve_subtree(zot: zotero.Zotero, root: str) -> list[dict]:
+def resolve_subtree(zot: zotero.Zotero, root: str, exclude: list[str] | None = None) -> list[dict]:
     """Return the root collection plus every collection nested under it.
 
     `root` is a Zotero collection key, or a collection name as a fallback for
@@ -90,9 +96,14 @@ def resolve_subtree(zot: zotero.Zotero, root: str) -> list[dict]:
         name        -- the collection's own name
         path        -- full path from the library root, e.g. "Boring Task / NCI"
 
+    `exclude` drops collections by name or key, along with everything nested
+    under them -- for staging or sample collections that sit in the tree but
+    are not part of the corpus.
+
     Depth is unlimited: institutes today, institutes-by-year tomorrow, both
     work without a code change.
     """
+    exclude = set(exclude or [])
     collections = zot.all_collections()
     by_key = {c["key"]: c for c in collections}
 
@@ -119,10 +130,15 @@ def resolve_subtree(zot: zotero.Zotero, root: str) -> list[dict]:
             path_keys.append(key)
             parent = by_key[key]["data"].get("parentCollection")
             key = parent if parent else None
-        if root_key in path_keys:
-            subtree.append(
-                {**c, "name": c["data"]["name"], "path": PATH_SEP.join(_collection_path(c["key"], by_key))}
-            )
+        if root_key not in path_keys:
+            continue
+        # Exclusion applies to the whole branch: naming a parent drops its
+        # children too, which is what "not part of the corpus" has to mean.
+        if any(k in exclude or by_key[k]["data"]["name"] in exclude for k in path_keys):
+            continue
+        subtree.append(
+            {**c, "name": c["data"]["name"], "path": PATH_SEP.join(_collection_path(c["key"], by_key))}
+        )
 
     return sorted(subtree, key=lambda c: c["path"])
 
@@ -142,17 +158,82 @@ def normalize_doi(raw: str | None) -> str:
     return match.group(0).rstrip(".,;").lower() if match else ""
 
 
-def parse_extra(extra: str | None) -> dict:
-    """Pull PMID / PMCID / DOI out of Zotero's free-text Extra field, where
-    the PubMed and Zotero connectors stash identifiers that have no dedicated
-    column on a journalArticle item."""
-    extra = extra or ""
-    pmid = re.search(r"PMID:\s*(\d+)", extra, re.I)
-    pmcid = re.search(r"(PMC\d+)", extra, re.I)
-    doi = re.search(r"DOI:\s*(\S+)", extra, re.I)
+# Recent Zotero added dedicated PMID/PMCID fields on journalArticle. Records
+# created before that -- and anything imported by an older connector -- still
+# carry them in free text, so both paths are needed and will be for a long
+# time. Field casing is checked defensively: Zotero uses uppercase for DOI and
+# ISSN, but the schema is not consistent about it.
+_PMID_FIELDS = ["PMID", "pmid"]
+_PMCID_FIELDS = ["PMCID", "pmcid"]
+
+# Fallbacks, in rough order of reliability: the Extra field, archiveID (used by
+# some PubMed importers), and the item URL.
+_PMID_PATTERNS = [
+    r"PMID\s*[:=]?\s*(\d{1,8})\b",
+    r"pubmed\.ncbi\.nlm\.nih\.gov/(\d{1,8})",
+    r"/pubmed/(\d{1,8})",
+]
+_PMCID_PATTERNS = [
+    r"PMCID\s*[:=]?\s*(?:PMC)?(\d+)\b",
+    r"\bPMC(\d+)\b",
+    r"/pmc/articles/PMC(\d+)",
+]
+
+
+def _first_match(patterns: list[str], sources: list[str]) -> str:
+    """First capture group any pattern finds, searching sources in order.
+
+    Source order is priority order: an explicit "PMID: 123" in Extra beats an
+    ID scraped out of a URL.
+    """
+    for source in sources:
+        if not source:
+            continue
+        for pattern in patterns:
+            match = re.search(pattern, source, re.I)
+            if match:
+                return match.group(1)
+    return ""
+
+
+def _field_value(data: dict, names: list[str]) -> str:
+    """First non-empty value among several possible field spellings."""
+    for name in names:
+        value = data.get(name)
+        if value:
+            return str(value).strip()
+    return ""
+
+
+def parse_identifiers(data: dict) -> dict:
+    """Pull PMID / PMCID / DOI off an item.
+
+    The dedicated field wins when present. Otherwise fall back to free text:
+    Extra is the usual home, but records imported from a PubMed link carry the
+    ID only in the URL, and some importers use archiveID instead.
+
+    Missing a PMCID is not fatal -- paper_id is the Zotero key -- but these are
+    the identifiers that will join this corpus to the validation labels, which
+    are almost certainly keyed by DOI or PMCID rather than a Zotero key.
+    """
+    extra = data.get("extra") or ""
+    url = data.get("url") or ""
+    archive_id = data.get("archiveID") or ""
+    sources = [extra, archive_id, url]
+
+    # A dedicated field can still hold "PMID: 123" or a bare number, so run the
+    # same patterns over it rather than trusting its shape.
+    pmid = _first_match(_PMID_PATTERNS + [r"^\s*(\d{1,8})\s*$"], [_field_value(data, _PMID_FIELDS)])
+    pmcid = _first_match(_PMCID_PATTERNS + [r"^\s*(\d+)\s*$"], [_field_value(data, _PMCID_FIELDS)])
+
+    pmid = pmid or _first_match(_PMID_PATTERNS, sources)
+    pmcid = pmcid or _first_match(_PMCID_PATTERNS, sources)
+    doi = re.search(r"DOI\s*[:=]?\s*(\S+)", extra, re.I)
+
     return {
-        "pmid": pmid.group(1) if pmid else "",
-        "pmcid": pmcid.group(1).upper() if pmcid else "",
+        "pmid": pmid,
+        # Stored with the prefix, the form PubMed and the labels file use.
+        "pmcid": f"PMC{pmcid}" if pmcid else "",
         "doi": normalize_doi(doi.group(1)) if doi else "",
     }
 
@@ -160,7 +241,7 @@ def parse_extra(extra: str | None) -> dict:
 def build_metadata(item: dict) -> dict:
     """Flatten one Zotero item into the manifest's metadata fields."""
     data = item["data"]
-    extra = parse_extra(data.get("extra"))
+    ids = parse_identifiers(data)
 
     authors = [
         c for c in data.get("creators", []) if c.get("creatorType") == "author"
@@ -179,12 +260,83 @@ def build_metadata(item: dict) -> dict:
         "first_author": first_author,
         # The DOI field is authoritative; Extra is the fallback for records
         # imported without one.
-        "doi": normalize_doi(data.get("DOI")) or extra["doi"],
-        "pmid": extra["pmid"],
-        "pmcid": extra["pmcid"],
+        "doi": normalize_doi(data.get("DOI")) or ids["doi"],
+        "pmid": ids["pmid"],
+        "pmcid": ids["pmcid"],
         "year": year.group(0) if year else "",
         "journal": data.get("publicationTitle", ""),
+        "abstract": data.get("abstractNote", ""),
     }
+
+
+def build_meta_records(records: dict, set_name: str = SET_TESTING) -> list[dict]:
+    """Build the full metadata record for each paper, for data/zotero_meta.jsonl.
+
+    The manifest CSV keeps one scannable row per paper; this keeps everything
+    else. `zotero_item` is Zotero's untouched JSON, so a field nobody thought
+    to promote to a column is still recoverable without re-pulling the library.
+
+    Takes the dict `collect_items` already returns, so no extra API calls.
+    """
+    meta_records = []
+
+    for paper_id, record in records.items():
+        meta = build_metadata(record["item"])
+        meta_records.append({
+            **meta,
+            "paper_id": paper_id,
+            "set": set_name,
+            "folders": record["folders"],
+            "folder_paths": record["paths"],
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+            "zotero_item": record["item"],
+        })
+
+    return meta_records
+
+
+def load_meta(path: Path) -> dict:
+    """Read data/zotero_meta.jsonl back as {paper_id: record}.
+
+    Identity verification reads author surnames from here -- `author_frac`
+    needs every author, and the manifest only carries `first_author`.
+    """
+    path = Path(path)
+    if not path.exists():
+        return {}
+
+    records = {}
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if line:
+                record = json.loads(line)
+                records[record["paper_id"]] = record
+    return records
+
+
+def completed_ids(manifest_rows: dict, pdf_dir: Path) -> set:
+    """Papers already fetched and still intact on disk, safe to skip.
+
+    All three conditions must hold: the manifest says the fetch succeeded, the
+    PDF is present, and its bytes still hash to the md5 Zotero reported. That
+    is the same check `fetch_pdf` makes before re-downloading, so skipping here
+    is exactly as trustworthy -- it just avoids the `zot.children()` call that
+    would otherwise be needed to learn the md5 again.
+
+    A row with no md5 is never skipped: without it there is nothing to verify.
+    """
+    pdf_dir = Path(pdf_dir)
+    done = set()
+
+    for paper_id, row in manifest_rows.items():
+        if row.get("status") != STATUS_OK or not row.get("md5"):
+            continue
+        pdf_path = pdf_dir / f"{paper_id}.pdf"
+        if pdf_path.exists() and _md5(pdf_path.read_bytes()) == row["md5"]:
+            done.add(paper_id)
+
+    return done
 
 
 def select_pdf_attachment(children: list[dict]) -> tuple[dict | None, str, str]:
@@ -278,14 +430,28 @@ def collect_items(zot: zotero.Zotero, subtree: list[dict]) -> dict:
     and a duplicate would double-count in accuracy math. The folders are
     collected instead, so nothing is lost.
 
-    Returns {paper_id: {"item": item, "folders": [...], "paths": [...]}}.
+    Returns (records, skipped) where records is
+    {paper_id: {"item": item, "folders": [...], "paths": [...]}} and skipped is
+    a list of (paper_id, item_type, title, folder) for non-paper items -- the
+    library holds the occasional videoRecording or report, and those should be
+    visible rather than silently dropped or silently classified.
     """
     records = {}
+    skipped = {}
 
     for collection in subtree:
         for item in zot.everything(zot.collection_items_top(collection["key"])):
+            item_type = item["data"].get("itemType")
+
             # collection_items_top should already exclude these; cheap to be sure.
-            if item["data"].get("itemType") in {"note", "attachment"}:
+            if item_type in {"note", "attachment"}:
+                continue
+
+            if item_type not in PAPER_ITEM_TYPES:
+                skipped.setdefault(
+                    item["key"],
+                    (item["key"], item_type, item["data"].get("title", ""), collection["name"]),
+                )
                 continue
 
             record = records.setdefault(
@@ -295,30 +461,45 @@ def collect_items(zot: zotero.Zotero, subtree: list[dict]) -> dict:
                 record["folders"].append(collection["name"])
                 record["paths"].append(collection["path"])
 
-    return records
+    return records, list(skipped.values())
 
 
-def fetch_records(
+def iter_fetch_records(
     zot: zotero.Zotero,
     records: dict,
     pdf_dir: Path,
     set_name: str = SET_TESTING,
+    skip_ids: set | None = None,
     progress=None,
-) -> list[dict]:
-    """Download each record's PDF and build its manifest row.
+):
+    """Download each record's PDF and yield its manifest row, one at a time.
+
+    A generator so the caller can checkpoint as rows arrive. Writing the
+    manifest only after the whole loop means an interrupted run leaves PDFs on
+    disk with nothing describing them -- and they are named by Zotero item key,
+    so without the manifest they are opaque.
 
     `set_name` tags every row as SET_TESTING (papers to classify) or
     SET_VALIDATION (papers with human labels, used for scoring). It comes from
     the caller because it is a property of which collection is being fetched,
     not of anything Zotero records about the item.
 
-    Returns one row per record, including the ones that failed -- a paper with
-    no retrievable PDF has to stay visible, not vanish from the corpus
-    silently.
+    `skip_ids` are papers already fetched and verified on disk. They are
+    skipped before the `zot.children()` call, which is the expensive part --
+    one HTTP round trip per paper, and the reason a no-op re-run used to cost
+    as much as the original.
+
+    Yields one row per record, including failures -- a paper with no
+    retrievable PDF has to stay visible, not vanish from the corpus silently.
     """
-    rows = []
+    skip_ids = skip_ids or set()
 
     for paper_id, record in records.items():
+        if paper_id in skip_ids:
+            if progress is not None:
+                progress.update(1)
+            continue
+
         meta = build_metadata(record["item"])
         row = {
             **{k: meta.get(k, "") for k in MANIFEST_COLUMNS},
@@ -347,8 +528,11 @@ def fetch_records(
                 detail=detail,
             )
 
-        rows.append(row)
         if progress is not None:
             progress.update(1)
+        yield row
 
-    return rows
+
+def fetch_records(zot: zotero.Zotero, records: dict, pdf_dir: Path, **kwargs) -> list[dict]:
+    """Eager wrapper around iter_fetch_records, for callers that want a list."""
+    return list(iter_fetch_records(zot, records, pdf_dir, **kwargs))
