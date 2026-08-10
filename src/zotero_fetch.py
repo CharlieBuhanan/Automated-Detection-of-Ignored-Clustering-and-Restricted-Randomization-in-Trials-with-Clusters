@@ -55,7 +55,8 @@ STATUS_PDF_UNREADABLE = "PDF_UNREADABLE"
 MANIFEST_COLUMNS = [
     "paper_id", "folder", "folder_path", "title", "first_author", "doi",
     "pmid", "pmcid", "year", "journal", "attachment_key", "md5",
-    "status", "detail", "warning", "verdict", "title_score", "set", "fetched_at",
+    "status", "detail", "warning", "verdict", "verdict_reason", "title_score",
+    "set", "fetched_at",
 ]
 
 

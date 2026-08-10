@@ -20,6 +20,10 @@ import pdfplumber
 # too sparse to trust and try the next method.
 MIN_CHARS_PER_PAGE = 200
 
+# Pages of front matter used for identity verification. Title, authors and DOI
+# live here; two pages covers papers whose author list runs long.
+HEAD_PAGES = 2
+
 
 def _extract_with_pymupdf(pdf_path: Path) -> tuple[str, int]:
     """Extract text page-by-page using PyMuPDF. Fast, and usually sufficient
@@ -58,6 +62,53 @@ def _is_sparse(text: str, page_count: int) -> bool:
     if page_count == 0:
         return True
     return len(text.strip()) / page_count < MIN_CHARS_PER_PAGE
+
+
+def extract_head_text(pdf_path: Path, pages: int = HEAD_PAGES) -> tuple[str, int, str]:
+    """Text of the first few pages only, for identity verification.
+
+    Deliberately separate from extract_pdf_text: identity is decided on front
+    matter (title, authors, DOI), and full extraction is expensive to run over
+    a corpus that has not been verified yet. PLAN.md step 1 runs this; step 2
+    runs the full pass, on verified papers only.
+
+    The last page is NOT included, though an earlier draft called for it to
+    catch footer DOIs. Measured on 60 PDFs: the last page contributed zero DOI
+    hits that pages 1-2 had not already found, while adding reference-list DOIs
+    that only muddy the check.
+
+    No OCR here -- a PDF with no text layer is reported as such (near-zero
+    characters) and triaged separately, rather than silently costing 30s/paper.
+
+    Returns (text, total_page_count, method).
+    """
+    pdf_path = Path(pdf_path)
+
+    for name, opener in (("pymupdf", _head_with_pymupdf), ("pdfplumber", _head_with_pdfplumber)):
+        try:
+            text, page_count = opener(pdf_path, pages)
+        except Exception:
+            continue
+        if text.strip():
+            return text, page_count, name
+
+    return "", 0, "none"
+
+
+def _head_with_pymupdf(pdf_path: Path, pages: int) -> tuple[str, int]:
+    with fitz.open(pdf_path) as doc:
+        total = len(doc)
+        head = "\n".join(doc[i].get_text() for i in range(min(pages, total)))
+    return head, total
+
+
+def _head_with_pdfplumber(pdf_path: Path, pages: int) -> tuple[str, int]:
+    with pdfplumber.open(pdf_path) as pdf:
+        total = len(pdf.pages)
+        head = "\n".join(
+            (pdf.pages[i].extract_text() or "") for i in range(min(pages, total))
+        )
+    return head, total
 
 
 def extract_pdf_text(pdf_path: Path) -> dict:

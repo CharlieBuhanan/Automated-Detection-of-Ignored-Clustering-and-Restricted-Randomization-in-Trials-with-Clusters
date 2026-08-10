@@ -7,10 +7,17 @@ Usage:
     python scripts/00_fetch_zotero.py                                    # the testing corpus
     python scripts/00_fetch_zotero.py --collection ABCD1234 --set validation
     python scripts/00_fetch_zotero.py --dry-run                          # show the tree, download nothing
+    python scripts/00_fetch_zotero.py --list-warnings                    # print every warning on file, fetch nothing
 
 --set tags the rows it writes: "testing" (papers to classify) or "validation"
 (papers with human labels). Zotero has no idea which is which, so it comes from
 whichever collection you point at.
+
+The end-of-run summary (status counts, identifier coverage, warnings, failures)
+covers only the records *this run* touched, not the whole manifest -- a
+`--set validation` run no longer re-prints the testing set's old warnings.
+`--list-warnings` is the way to see every warning ever recorded, across both
+sets, on demand.
 
 Requires in .env:
     ZOTERO_API_KEY          your Zotero API key
@@ -143,7 +150,24 @@ def main():
         action="store_true",
         help="Re-check every paper against Zotero, including ones already fetched. Without this, a paper whose manifest row is OK and whose PDF matches its md5 is skipped -- so a PDF swapped in Zotero after the first fetch is not noticed until you pass this.",
     )
+    parser.add_argument(
+        "--list-warnings",
+        action="store_true",
+        help="Print every warning recorded in the manifest (any set, any past run) and exit. No Zotero connection or .env needed.",
+    )
     args = parser.parse_args()
+
+    if args.list_warnings:
+        manifest_path = ROOT / "data" / "zotero_manifest.csv"
+        rows = list(load_manifest(manifest_path).values())
+        warned = [r for r in rows if r.get("warning")]
+        if not warned:
+            print(f"No warnings recorded in {manifest_path}")
+            return
+        print(f"{len(warned)} record(s) with a warning in {manifest_path}:")
+        for row in warned:
+            print(f"  {row['paper_id']} [{row.get('set', '?')}/{row['folder']}] {row['warning']}")
+        return
 
     load_dotenv(ROOT / ".env")
     api_key = os.getenv("ZOTERO_API_KEY")
@@ -213,9 +237,13 @@ def main():
     print(f"{len(records)} record(s) of full metadata -> {meta_path}")
 
     existing = load_manifest(manifest_path)
-    skip_ids = set() if args.refresh else completed_ids(existing, pdf_dir)
+    # Intersected with this run's records because the manifest and the PDF
+    # directory are shared: NCI and NHLBI both land in raw_pdfs/validation/, so
+    # an unintersected count reports the *other* group's papers as "skipping"
+    # even though none of them are in this collection.
+    skip_ids = set() if args.refresh else completed_ids(existing, pdf_dir) & set(records)
     if skip_ids:
-        print(f"{len(skip_ids)} already fetched, skipping (--refresh to re-check)")
+        print(f"{len(skip_ids)} of {len(records)} already fetched, skipping (--refresh to re-check)")
 
     # Checkpointed so an interrupt or a crash still leaves a usable manifest.
     # write_manifest merges on paper_id, so a partial write is valid and the
@@ -233,12 +261,21 @@ def main():
     finally:
         write_manifest(rows, manifest_path)
 
-    # Skipped papers keep their existing rows, so report on the full manifest
-    # rather than only what this run touched.
-    rows = list(load_manifest(manifest_path).values())
+    # `rows` here is only what this run actually processed -- iter_fetch_records
+    # never yields a row for a skip_ids paper, so a skipped, already-good record
+    # doesn't get re-reported. That's what keeps this summary scoped to the
+    # current --set/--collection instead of dredging up the other set's history.
+    total_in_manifest = len(load_manifest(manifest_path))
+
+    if not rows:
+        print(f"\nNo new or re-checked records this run (all already up to date). "
+              f"{total_in_manifest} record(s) total -> {manifest_path}")
+        print("(--list-warnings to see every warning on file, across all runs and sets)")
+        return
 
     counts = Counter(r["status"] for r in rows)
-    print(f"\n{len(rows)} record(s) -> {manifest_path}")
+    print(f"\n{len(rows)} record(s) fetched/re-checked this run "
+          f"({total_in_manifest} total in manifest) -> {manifest_path}")
 
     # Zotero has no PMID/PMCID field -- these are scraped out of Extra, the
     # URL, or archiveID. Coverage is worth knowing now, because these are the
