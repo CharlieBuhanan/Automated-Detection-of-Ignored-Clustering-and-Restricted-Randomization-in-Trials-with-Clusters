@@ -170,16 +170,45 @@ def title_similarity(title: str, text: str) -> float:
     )
 
 
+def title_position(title: str, text: str) -> float:
+    """Where the title turns up, as a fraction (0=top, 1=end). -1 if not found.
+
+    Informational, never part of the verdict -- but decisive when triaging by
+    hand. A paper prints its title at the top; a title found two-thirds of the
+    way down is usually sitting in a reference list, meaning the PDF is a
+    *different* article that merely cites the one Zotero names. Exactly that
+    was found in this corpus (AULRV66J: title at char 4012 of 6280, inside the
+    references of an unrelated Ophthalmology paper).
+    """
+    title_n = normalize(title)
+    text_n = normalize(text)
+    if not title_n or not text_n:
+        return -1.0
+    # A prefix long enough to be distinctive, short enough to survive the
+    # journal's retitling between accepted and published versions.
+    probe = title_n[:45]
+    index = text_n.find(probe)
+    if index < 0:
+        return -1.0
+    return round(index / len(text_n), 3)
+
+
 def surname_present(surname: str, text_n: str) -> bool:
     """True if a surname appears as a whole word in already-normalized text.
 
     Whole-word matching matters: short surnames like 'Li' or 'Ng' would
     otherwise match inside unrelated words and manufacture false agreement.
+
+    Only *letters* are allowed to block a match, not digits. Author lines carry
+    affiliation superscripts that extraction glues straight onto the surname --
+    "Ye Zhang1,2*, Jianjun Li3*" -- and a plain \\b boundary fails on every one
+    of them, because the digit counts as a word character. That silently
+    reported 0/13 authors on papers whose authors were all plainly present.
     """
     surname_n = normalize(surname)
     if len(surname_n) < 2:
         return False
-    return re.search(rf"\b{re.escape(surname_n)}\b", text_n) is not None
+    return re.search(rf"(?<![a-z]){re.escape(surname_n)}(?![a-z])", text_n) is not None
 
 
 def looks_administrative(head_text: str) -> bool:
@@ -209,6 +238,7 @@ def compute_signals(head_text: str, meta: dict) -> dict:
         "doi_hit": doi_in_text(doi, head_text),
         "other_dois": find_other_dois(doi, head_text),
         "title_score": round(title_similarity(meta.get("title", ""), head_text), 1),
+        "title_pos": title_position(meta.get("title", ""), head_text),
         "first_author_hit": bool(authors) and surname_present(authors[0], text_n),
         "author_hits": len(hits),
         "author_count": len(authors),

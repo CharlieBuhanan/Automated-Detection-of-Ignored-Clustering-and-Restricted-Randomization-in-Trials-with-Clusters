@@ -60,7 +60,7 @@ REPORT = ROOT / "results" / "identity_report.csv"
 
 REPORT_COLUMNS = [
     "paper_id", "set", "folder", "verdict", "verdict_reason", "explanation",
-    "title_score", "doi_hit", "admin_doc", "first_author_hit", "author_hits", "author_count",
+    "title_score", "title_pos", "doi_hit", "admin_doc", "first_author_hit", "author_hits", "author_count",
     "author_frac", "year_hit", "journal_hit", "head_chars", "page_count",
     "other_dois", "attachment_key", "repaired_from", "title",
 ]
