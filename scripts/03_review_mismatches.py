@@ -30,7 +30,9 @@ HOW TO USE
                                you can revisit and change an earlier choice.
 
 INPUT   results/review/01_papers_to_review.csv
-OUTPUT  results/review/04_papers_reviewed_results.csv   your decisions
+OUTPUT  results/review/04_papers_reviewed_results.csv   your decisions, appended
+            one row per click and never rewritten, so revisiting a paper leaves
+            both rows behind. The last row for a paper is its current decision.
         data/zotero_manifest.csv                        verdicts updated
         data/removed_pdfs/replaced/                     backups of replaced PDFs
 
@@ -101,6 +103,34 @@ def read_csv(path):
         return list(csv.DictReader(handle))
 
 
+def append_results(rows: list[dict]) -> None:
+    """Add decision rows to the results log, keeping everything already in it.
+
+    Append-only on purpose. The log is the record of every decision ever made,
+    including ones later revised, so it must never be rebuilt from what this
+    run happens to be holding: an in-memory rewrite can only contain the papers
+    in the current -- possibly scope-filtered -- view, and silently erases the
+    rest. That is exactly how 23 of 24 rows were lost once. Duplicate
+    paper_ids are expected and fine; load_decisions() takes the last one.
+    """
+    RESULTS.parent.mkdir(parents=True, exist_ok=True)
+    fresh = not RESULTS.exists() or RESULTS.stat().st_size == 0
+    with RESULTS.open("a", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=RESULT_COLUMNS, extrasaction="ignore")
+        if fresh:
+            writer.writeheader()
+        writer.writerows(rows)
+
+
+def load_decisions() -> dict:
+    """Current decision per paper: the last row wins.
+
+    The log is append-only and written in the order decisions were made, so a
+    later row for a paper supersedes any earlier one.
+    """
+    return {r["paper_id"]: r for r in read_csv(RESULTS)}
+
+
 def filter_by_scope(papers: list[dict], decisions: dict, scope: str) -> list[dict]:
     """Apply the startup chooser's answer. Pure function, no I/O -- kept
     separate from the dialog so the filtering logic can be tested without a
@@ -133,7 +163,7 @@ class ReviewApp:
             return
 
         self.meta = load_meta(META)
-        self.decisions = {r["paper_id"]: r for r in read_csv(RESULTS)}
+        self.decisions = load_decisions()
 
         scope = self._choose_scope()
         self.papers = filter_by_scope(self.all_papers, self.decisions, scope)
@@ -232,24 +262,28 @@ class ReviewApp:
                 skipped.append(p)
 
         if skipped:
-            existing = {r["paper_id"] for r in read_csv(RESULTS)}
-            new_rows = [r for r in read_csv(RESULTS)]
-            for p in skipped:
-                if p["paper_id"] in existing:
-                    continue
-                new_rows.append({
-                    "reviewed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                    "paper_id": p["paper_id"], "set": p["set"], "decision": "resolved_elsewhere",
-                    "old_verdict": p["verdict"], "new_verdict": "",
-                    "new_pdf_source": "",
-                    "notes": removed_reason.get(p["paper_id"], "no longer in data/zotero_manifest.csv"),
-                    "doi": p["doi"], "pmid": p["pmid"], "title": p["title"],
-                })
-            RESULTS.parent.mkdir(parents=True, exist_ok=True)
-            with RESULTS.open("w", newline="", encoding="utf-8") as handle:
-                writer = csv.DictWriter(handle, fieldnames=RESULT_COLUMNS, extrasaction="ignore")
-                writer.writeheader()
-                writer.writerows(new_rows)
+            already_logged = load_decisions()
+            try:
+                append_results([
+                    {
+                        "reviewed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                        "paper_id": p["paper_id"], "set": p["set"],
+                        "decision": "resolved_elsewhere",
+                        "old_verdict": p["verdict"], "new_verdict": "",
+                        "new_pdf_source": "",
+                        "notes": removed_reason.get(
+                            p["paper_id"], "no longer in data/zotero_manifest.csv"),
+                        "doi": p["doi"], "pmid": p["pmid"], "title": p["title"],
+                    }
+                    for p in skipped if p["paper_id"] not in already_logged
+                ])
+            except PermissionError:
+                # Not worth blocking the review over: these rows are a note to
+                # self, and the papers are already out of the corpus.
+                messagebox.showwarning(
+                    "Could not write the results log",
+                    f"{RESULTS}\n\nis locked by another program (Excel?). The papers below "
+                    "were still removed from the queue, but were not logged.")
 
             lines = "\n".join(
                 f"  - {p['paper_id']}: {removed_reason.get(p['paper_id'], 'no longer in the manifest')}"
@@ -480,14 +514,16 @@ class ReviewApp:
         elif decision == "dropped":
             new_verdict = "DROPPED"
 
-        self.decisions[p["paper_id"]] = {
+        row = {
             "reviewed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "paper_id": p["paper_id"], "set": p["set"], "decision": decision,
             "old_verdict": p["verdict"], "new_verdict": new_verdict,
             "new_pdf_source": source, "notes": self.notes.get().strip(),
             "doi": p["doi"], "pmid": p["pmid"], "title": p["title"],
         }
-        self._save_results()
+        if not self._save_result(row):
+            return
+        self.decisions[p["paper_id"]] = row
         if new_verdict and decision != "skipped":
             self._update_manifest(p["paper_id"], decision, new_verdict)
 
@@ -513,14 +549,20 @@ class ReviewApp:
         )
 
     # ---------------------------------------------------------------- writing
-    def _save_results(self):
-        RESULTS.parent.mkdir(parents=True, exist_ok=True)
-        ordered = [self.decisions[p["paper_id"]] for p in self.papers
-                   if p["paper_id"] in self.decisions]
-        with RESULTS.open("w", newline="", encoding="utf-8") as handle:
-            writer = csv.DictWriter(handle, fieldnames=RESULT_COLUMNS, extrasaction="ignore")
-            writer.writeheader()
-            writer.writerows(ordered)
+    def _save_result(self, row) -> bool:
+        """Log one decision. False means it did not reach disk, so the caller
+        must not go on to update the manifest -- a manifest verdict with no
+        matching log row is how the two records drift apart."""
+        try:
+            append_results([row])
+            return True
+        except PermissionError:
+            # Almost always the results file being open in Excel.
+            messagebox.showerror(
+                "Could not save your decision",
+                f"{RESULTS}\n\nis locked by another program (Excel?).\n\n"
+                "Nothing was recorded. Close the file and choose this paper again.")
+            return False
 
     def _update_manifest(self, paper_id, decision, new_verdict):
         """Push the decision into the manifest so later steps see it.
