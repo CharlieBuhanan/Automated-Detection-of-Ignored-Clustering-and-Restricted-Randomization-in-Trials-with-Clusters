@@ -155,6 +155,11 @@ def main():
         action="store_true",
         help="Print every warning recorded in the manifest (any set, any past run) and exit. No Zotero connection or .env needed.",
     )
+    parser.add_argument(
+        "--refetch-manual",
+        action="store_true",
+        help="Also re-fetch papers whose PDF a human replaced or cleared in scripts/03_review_mismatches.py. Off by default, because Zotero still holds the PDF the review rejected -- this would undo that work.",
+    )
     args = parser.parse_args()
 
     if args.list_warnings:
@@ -242,6 +247,20 @@ def main():
     # an unintersected count reports the *other* group's papers as "skipping"
     # even though none of them are in this collection.
     skip_ids = set() if args.refresh else completed_ids(existing, pdf_dir) & set(records)
+
+    # Papers a human adjudicated in scripts/03_review_mismatches.py are never
+    # re-fetched, even under --refresh. Zotero still holds the PDF that was
+    # rejected, so re-downloading would silently undo the review -- and that
+    # work is far more expensive to recreate than a skipped HTTP request.
+    manual = {
+        pid for pid, row in existing.items()
+        if row.get("verdict_reason", "").startswith("MANUAL_") and pid in records
+    }
+    if manual and not args.refetch_manual:
+        skip_ids |= manual
+        print(f"{len(manual)} manually reviewed paper(s) protected from re-fetch "
+              f"(--refetch-manual to override)")
+
     if skip_ids:
         print(f"{len(skip_ids)} of {len(records)} already fetched, skipping (--refresh to re-check)")
 
