@@ -118,8 +118,14 @@ def extract_pdf_text(pdf_path: Path) -> dict:
     e.g. data/raw_pdfs/validation/PMC1234567.pdf -> paper_id "PMC1234567".
 
     Returns a dict ready to cache to JSON:
-        paper_id, source_path, method (which extractor won),
-        page_count, char_count, extracted_at, text.
+        paper_id, source_path, method (which extractor won, "none" if all
+        failed), errors (why each failed extractor failed), page_count,
+        char_count, extracted_at, text.
+
+    `errors` matters most for the OCR rung: it imports pytesseract and Pillow
+    lazily and needs the Tesseract binary, so it fails with ImportError on a
+    machine that has none of them. Recording the reason is what separates "this
+    PDF is a scan we cannot read" from "OCR was never actually available".
     """
     pdf_path = Path(pdf_path)
     attempts = [
@@ -128,13 +134,18 @@ def extract_pdf_text(pdf_path: Path) -> dict:
         ("ocr", _extract_with_ocr),
     ]
 
-    text, page_count, method = "", 0, attempts[-1][0]
+    # "none", not attempts[-1][0]: a PDF that every extractor choked on used no
+    # method at all, and reporting it as OCR-extracted would hide the failure
+    # behind the one method whose output nobody expects to be clean anyway.
+    text, page_count, method = "", 0, "none"
+    errors = []
     for name, fn in attempts:
         try:
-            text, page_count = fn(pdf_path)
-        except Exception:
+            candidate, candidate_pages = fn(pdf_path)
+        except Exception as exc:
+            errors.append(f"{name}: {type(exc).__name__}: {exc}")
             continue
-        method = name
+        text, page_count, method = candidate, candidate_pages, name
         if not _is_sparse(text, page_count):
             break
 
@@ -142,6 +153,7 @@ def extract_pdf_text(pdf_path: Path) -> dict:
         "paper_id": pdf_path.stem,
         "source_path": str(pdf_path),
         "method": method,
+        "errors": errors,
         "page_count": page_count,
         "char_count": len(text),
         "extracted_at": datetime.now(timezone.utc).isoformat(),

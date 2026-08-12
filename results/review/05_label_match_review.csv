@@ -1,0 +1,3 @@
+source_file,citation_raw,first_author,year,problem,candidates,candidate_titles
+GroundTruthDataNCI01.xlsx,"168. (Patterson et al., 2022a)",Patterson,2022a,ambiguous citation suffix '2022a',JBUFJCLU; IT2B87LL,"Correction to: A cluster randomized controlled trial for a multi-level | A cluster randomized controlled trial for a multi-level, clinic-based "
+GroundTruthDataNCI01.xlsx,"169. (Patterson et al., 2022b)",Patterson,2022b,ambiguous citation suffix '2022b',JBUFJCLU; IT2B87LL,"Correction to: A cluster randomized controlled trial for a multi-level | A cluster randomized controlled trial for a multi-level, clinic-based "
