@@ -1,12 +1,47 @@
+# Order to run things
+
+Each script reads what the previous one wrote, but the sequence is not a straight line — steps 2 and 3
+loop until the review queue is empty.
+
+```
+00_fetch_zotero.py        once per corpus change      safe to re-run
+01_verify_identity.py     ONCE, already done          *** DO NOT RE-RUN ***
+        |
+        v
+02_extract_pdfs.py        anytime                     safe to re-run
+        |
+        |  flags anything thin / unreadable / a correction notice
+        |  into results/review/01_papers_to_review.csv
+        v
+03_review_mismatches.py   whenever that queue has undecided rows
+        |
+        |  Replace or Drop clears that paper's cached text
+        |
+        +---> back to 02, which re-extracts only what changed
+        v
+04_load_ground_truth.py   NOT READY - waiting on the NHLBI labels
+05_build_exclusions.py    anytime, regenerates from source    safe to re-run
+```
+
+**Why 01 must not be re-run.** It writes `verdict` and `verdict_reason` for every paper it checks. Those
+columns now hold hand-made decisions — 20 `MANUAL_REPLACED`, 4 `MANUAL_OK`, and every `DROPPED` paper —
+and a re-run would overwrite all of them with fresh automated verdicts, silently returning dropped papers
+to the corpus. If identity ever genuinely needs re-checking, restore the manifest from git first and
+replay `04_papers_reviewed_results.csv` on top.
+
+Everything else is safe to repeat: `00` skips papers whose PDF still matches its recorded md5, `02`
+re-parses only papers whose PDF md5 changed, and `05` rebuilds its output from scratch each time.
+
 # Scripts
 
-Run them in order. Each one reads what the previous wrote.
+Run them in the order above. Each one reads what the previous wrote.
 
 - **`scripts/00_fetch_zotero.py`** — pulls the corpus from Zotero into `data/raw_pdfs/<set>/`, writing `data/zotero_manifest.csv` (scannable summary, tracked in git) and `data/zotero_meta.jsonl` (full per-paper metadata — every author, abstract, raw Zotero item; gitignored). `--help` for flags; `--list-warnings` prints every multi-PDF-attachment warning on file (any set, any past run) without fetching anything — the normal end-of-run summary only covers the records that run touched. Status: complete — 1,287 `testing` papers (1,494 fetched, 207 removed as cross-set duplicates) and 569 `validation` (232 NCI + 337 NHLBI).
 - **`scripts/01_verify_identity.py`** — checks each PDF really is the paper Zotero claims (PLAN.md step 1). Reads the first 2 pages, compares to Zotero metadata, assigns `VERIFIED`/`WEAK`/`MISMATCH`/`PDF_UNREADABLE` into the manifest plus a full per-signal `results/identity_report.csv`. `--retry-attachments` additionally re-downloads a record's other PDFs and swaps in one that verifies. First pass over the corpus: 2041 VERIFIED (1989 via DOI, 52 via title+author), 3 WEAK, 18 MISMATCH, 1 unreadable — the 24 non-VERIFIED were then resolved by hand in `03`, so all 1,856 papers now stand VERIFIED.
 - **`scripts/02_extract_pdfs.py`** — full-text extraction (PLAN.md step 2), cached to `data/extracted_text/<paper_id>.json`. Driven off the manifest, so it only ever touches `VERIFIED` papers — a glob would happily extract the MISMATCH files still sitting on disk. Re-runs read the cache and re-parse nothing unless `--overwrite`. Status: all 1,856 extracted by PyMuPDF in 60s, no OCR needed, ~100M characters; per-paper detail in `results/extraction_report.csv`.
 - **`scripts/03_review_mismatches.py`** — desktop GUI (tkinter, no extra install) to triage the flagged PDFs one at a time: opens the PDF/DOI/PubMed/Zotero record, then **No Issue** / **Replace PDF…** / **Drop** / **Skip**. A replacement is re-verified on the spot. Appends decisions to `results/review/04_papers_reviewed_results.csv` (append-only, so a revisited paper leaves both rows) and updates the manifest. Saves every click and resumes where you left off. Status: all 24 flagged papers decided — 20 PDFs replaced, 4 marked fine.
-- **`scripts/04_load_ground_truth.py`** — loads the `GroundTruth*.xlsx` human labels into SQLite (PLAN.md step 4). The work is the join: the labels name papers as `83. (Hershman, Bansal, Barlow, et al., 2023)` with no DOI or key, so the citation is parsed back to (first author, year) and matched against the Zotero metadata, using the extra authors *positionally* to break ties. `--dry-run` reports the join without writing. Anything it cannot resolve goes to `results/review/05_label_match_review.csv` rather than being guessed. Status: NCI loaded (230 of 232 joined); NHLBI labels not yet received, so the build/holdout split is not yet assigned.
+- **`scripts/04_load_ground_truth.py`** — loads the `GroundTruth*.xlsx` human labels into SQLite (PLAN.md step 4). The work is the join: the labels name papers as `83. (Hershman, Bansal, Barlow, et al., 2023)` with no DOI or key, so the citation is parsed back to (first author, year) and matched against the Zotero metadata, using the extra authors *positionally* to break ties. `--dry-run` reports the join without writing. Anything it cannot resolve goes to `results/review/05_label_match_review.csv` rather than being guessed. Status: NCI loaded (230 of 232 joined); NHLBI labels not yet received, so the build/holdout split is not yet assigned. **Marked NOT READY at the top of the file — schema is provisional until the remaining label files arrive.**
+- **`scripts/05_build_exclusions.py`** — consolidates every paper that left the corpus into `results/exclusions.csv`, one row per departed paper with `stage`, `reason`, `evidence` and `decided_by` (rule / human / model). Rebuilt from source every run, never hand-edited. Prints a reconciliation from papers fetched down to the active corpus, and refuses to look tidy about it — it warns if the numbers do not balance. `--check` reports without writing. This is what the methods section is written from.
 
 # Library modules
 

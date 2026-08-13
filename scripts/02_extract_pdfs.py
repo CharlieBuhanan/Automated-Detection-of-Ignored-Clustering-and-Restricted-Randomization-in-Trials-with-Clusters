@@ -55,6 +55,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+from identity import looks_like_correction
 from pdf_extract import extract_and_cache
 from zotero_fetch import SET_TESTING, SET_VALIDATION
 
@@ -77,9 +78,18 @@ REVIEW_COLUMNS = [
 ]
 
 # 1 = the PDF is probably the wrong document, 3 = probably fine, so a paper
-# that is plainly readable but suspiciously thin sits between them.
+# that is plainly readable but does not belong in the study sits between them.
 REVIEW_PRIORITY = "2"
-REVIEW_CATEGORY = "THIN_TEXT"
+
+# What to do about each kind of flag, shown in the review GUI.
+RECOMMENDED_ACTION = {
+    "CORRECTION_NOTICE": "Almost certainly Drop: a correction/erratum is not a study. "
+                         "Open the PDF to confirm it is the notice and not the full article",
+    "THIN_TEXT": "Open the PDF. If it is only a corrigendum/erratum/correction notice, "
+                 "Drop it; if the full article exists in Zotero, Replace the PDF",
+    "EXTRACTION_FAILED": "Open the PDF. If it will not render, Replace it from Zotero; "
+                         "if no readable copy exists, Drop it",
+}
 
 REPORT_COLUMNS = [
     "paper_id", "set", "folder", "method", "page_count", "char_count",
@@ -110,15 +120,24 @@ def cache_path_for(paper_id: str) -> Path:
     return CACHE_DIR / f"{paper_id}.json"
 
 
-def flag_for(record: dict) -> str:
-    """Why this extraction deserves a human glance, or "" if it does not."""
+def flag_for(record: dict, title: str) -> tuple[str, str]:
+    """(category, reason) for a paper needing a human, or ("", "") if it is fine.
+
+    The title check is not about extraction quality -- a correction notice
+    extracts perfectly. It is here because this is the stage that owns the
+    review queue, and because it catches what size alone cannot: AT7F9XWR is a
+    correction notice running 5,513 characters, comfortably past any thinness
+    threshold that does not also flag real short reports.
+    """
     if record["method"] == "none":
-        return "every extractor failed"
+        return "EXTRACTION_FAILED", "every extractor failed"
+    if looks_like_correction(title):
+        return "CORRECTION_NOTICE", "title announces a correction/erratum/retraction, not a study"
     if record["method"] == "ocr":
-        return "no text layer; OCR used"
+        return "THIN_TEXT", "no text layer; OCR used"
     if record["char_count"] < MIN_CHARS:
-        return f"only {record['char_count']} characters"
-    return ""
+        return "THIN_TEXT", f"only {record['char_count']} characters"
+    return "", ""
 
 
 def extract_all(rows: list[dict], overwrite: bool) -> tuple[list[dict], list[dict]]:
@@ -143,6 +162,7 @@ def extract_all(rows: list[dict], overwrite: bool) -> tuple[list[dict], list[dic
         was_cached = before is not None and cache_path.stat().st_mtime == before
         pages = record.get("page_count") or 0
 
+        category, reason = flag_for(record, row["title"])
         report_rows.append({
             "paper_id": row["paper_id"],
             "set": row["set"],
@@ -151,8 +171,8 @@ def extract_all(rows: list[dict], overwrite: bool) -> tuple[list[dict], list[dic
             "page_count": pages,
             "char_count": record["char_count"],
             "chars_per_page": round(record["char_count"] / pages) if pages else 0,
-            "flagged": "yes" if flag_for(record) else "",
-            "flag_reason": flag_for(record),
+            "flagged": category,
+            "flag_reason": reason,
             # Older cache entries predate this field; treat them as clean.
             "errors": "; ".join(record.get("errors") or []),
             "title": row["title"],
@@ -183,15 +203,14 @@ def queue_for_review(flagged: list[dict], manifest_by_id: dict) -> list[dict]:
         manifest = manifest_by_id.get(row["paper_id"], {})
         additions.append({
             "priority": REVIEW_PRIORITY,
-            "category": REVIEW_CATEGORY,
+            "category": row["flagged"],
             "paper_id": row["paper_id"],
             "set": row["set"],
-            "finding": f"{row['flag_reason']} over {row['page_count']} page(s); "
-                       f"the corpus median is ~51,700. The PDF may be a correction "
-                       f"notice rather than the article, or an incomplete file",
-            "recommended_action": "Open the PDF. If it is only a corrigendum/erratum/"
-                                  "correction notice, Drop it; if the full article exists "
-                                  "in Zotero, Replace the PDF",
+            "finding": f"{row['flag_reason']} "
+                       f"({row['char_count']} chars over {row['page_count']} page(s); "
+                       f"the corpus median is ~51,700)",
+            "recommended_action": RECOMMENDED_ACTION.get(
+                row["flagged"], "Open the PDF and decide"),
             "verdict": manifest.get("verdict", ""),
             "verdict_reason": manifest.get("verdict_reason", ""),
             "title_score": manifest.get("title_score", ""),

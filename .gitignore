@@ -9,3 +9,4 @@ data/zotero_meta.jsonl
 *.db
 .claude/
 PLAN.md
+methods.md

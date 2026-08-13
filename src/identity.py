@@ -68,6 +68,49 @@ _ADMIN_MARKERS = [
     re.compile(r"resume\s+and\s+summar\w*\s+of\s+discussion"),
 ]
 
+# Journals publish corrections, errata and retractions as separate indexed
+# records with their own DOI, so Zotero holds them and identity verification
+# passes them -- the PDF really is the document the record names. They are
+# still not studies: no methods, no sample size, no analysis for any rubric to
+# judge. They have to leave the corpus before the gate, not inside it.
+CORRECTION_WORDS = (
+    "erratum",              # also matches errata below
+    "corrigendum",
+    "correction",
+    "retraction",           # also retracted
+    "withdrawn",
+    "addendum",
+    "expression of concern",
+)
+
+_CORRECTION_ALTERNATION = (
+    r"(?:erratum|errata|corrigend(?:um|a)|correction|retract(?:ion|ed)?"
+    r"|withdrawn|addendum|expression\s+of\s+concern)"
+)
+
+# Anchored to the START of the title, and required to be followed by the
+# separator a notice always uses ("Erratum to:", "Correction:", "[Retracted]").
+#
+# Matching the words anywhere in the title does not work, and the corpus shows
+# why: "Reentry from Corrections to Community Treatment" is a criminal-justice
+# trial and "Neonatal Opioid Withdrawal" is an NEJM trial -- both real studies
+# that an unanchored rule throws away. Measured over all 1856 titles, the
+# anchored form flags 4 documents and every one is a genuine notice.
+#
+# The tradeoff is a journal that marks a retraction only in the body or in a
+# trailing "(Retracted)". Those slip through; a false drop costs a real paper,
+# so the rule is deliberately tuned to miss rather than over-catch.
+_CORRECTION_TITLE = re.compile(
+    rf"^\s*[\[(]?\s*(?:author|publisher|editorial)?\s*{_CORRECTION_ALTERNATION}\b[^:]{{0,12}}[:\])]",
+    re.IGNORECASE,
+)
+
+
+def looks_like_correction(title: str) -> bool:
+    """True if this title announces a correction/erratum rather than a study."""
+    return bool(_CORRECTION_TITLE.search(title or ""))
+
+
 # Only the document's opening counts. A methods paper may legitimately discuss
 # summary statements in its body; grant paperwork announces itself in the
 # header. Every one of the 12 measured hits fell within the first 120
