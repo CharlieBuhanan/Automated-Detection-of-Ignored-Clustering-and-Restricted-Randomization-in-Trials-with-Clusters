@@ -21,11 +21,23 @@ WHAT IT DOES
     they are picked up here with no special case.
 
     Each PDF is parsed once, ever. A re-run reads the cache and re-parses
-    nothing unless --overwrite is passed.
+    nothing -- unless the PDF itself changed, which the cache detects by
+    storing the md5 of the file it read. That is what makes the review loop
+    work:
+
+        02 flags a paper whose text came out too thin
+          -> the paper is appended to results/review/01_papers_to_review.csv
+          -> 03 opens the PDF, you Replace or Drop it
+          -> 03 clears that paper's cached text
+          -> 02 again, and only that paper is re-extracted
+
+    Without the md5 check the last step would silently return text extracted
+    from the file you just replaced.
 
 OUTPUTS
     data/extracted_text/<paper_id>.json   full text + method/page/char counts
     results/extraction_report.csv         one row per paper, for diagnosis
+    results/review/01_papers_to_review.csv  thin extractions, appended
     Terminal                              method counts, then anything thin
 
 Text only. Tables linearize into label/value runs, which is what the
@@ -50,8 +62,24 @@ ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
 CACHE_DIR = ROOT / "data" / "extracted_text"
 REPORT = ROOT / "results" / "extraction_report.csv"
+REVIEW_LIST = ROOT / "results" / "review" / "01_papers_to_review.csv"
 
 VERIFIED = "VERIFIED"
+
+# Columns of the hand-review queue that scripts/03_review_mismatches.py reads.
+# Extraction adds rows to the same queue identity verification fills, so a
+# paper needing a human gets there by one route regardless of which stage
+# noticed -- and one GUI resolves both.
+REVIEW_COLUMNS = [
+    "priority", "category", "paper_id", "set", "finding", "recommended_action",
+    "verdict", "verdict_reason", "title_score", "doi", "pmid", "folder",
+    "attachment_key", "title",
+]
+
+# 1 = the PDF is probably the wrong document, 3 = probably fine, so a paper
+# that is plainly readable but suspiciously thin sits between them.
+REVIEW_PRIORITY = "2"
+REVIEW_CATEGORY = "THIN_TEXT"
 
 REPORT_COLUMNS = [
     "paper_id", "set", "folder", "method", "page_count", "char_count",
@@ -105,8 +133,14 @@ def extract_all(rows: list[dict], overwrite: bool) -> tuple[list[dict], list[dic
             missing.append(row)
             continue
 
-        was_cached = cache_path_for(row["paper_id"]).exists() and not overwrite
+        # Whether the cache was actually reused, which is not the same as
+        # whether a cache file existed: a stale entry exists and is still
+        # re-parsed. Comparing the file's mtime across the call is the only
+        # cheap way to ask extract_and_cache what it decided.
+        cache_path = cache_path_for(row["paper_id"])
+        before = cache_path.stat().st_mtime if cache_path.exists() else None
         record = extract_and_cache(pdf, CACHE_DIR, overwrite=overwrite)
+        was_cached = before is not None and cache_path.stat().st_mtime == before
         pages = record.get("page_count") or 0
 
         report_rows.append({
@@ -126,6 +160,66 @@ def extract_all(rows: list[dict], overwrite: bool) -> tuple[list[dict], list[dic
         })
 
     return report_rows, missing
+
+
+def queue_for_review(flagged: list[dict], manifest_by_id: dict) -> list[dict]:
+    """Add flagged papers to the hand-review queue. Returns the rows added.
+
+    Appends rather than rewrites, and skips any paper already queued, so a
+    paper that identity verification put there keeps its original finding and
+    a paper already decided is not resurrected on every run.
+
+    This is what closes the loop: a thin extraction is a question about the
+    PDF ("is this the whole article, or just a correction notice?"), and the
+    only tool that answers it is the review GUI. Leaving the flag in a report
+    nobody opens meant hand-editing a CSV to act on it.
+    """
+    existing = {r["paper_id"] for r in read_csv(REVIEW_LIST)}
+    additions = []
+
+    for row in flagged:
+        if row["paper_id"] in existing:
+            continue
+        manifest = manifest_by_id.get(row["paper_id"], {})
+        additions.append({
+            "priority": REVIEW_PRIORITY,
+            "category": REVIEW_CATEGORY,
+            "paper_id": row["paper_id"],
+            "set": row["set"],
+            "finding": f"{row['flag_reason']} over {row['page_count']} page(s); "
+                       f"the corpus median is ~51,700. The PDF may be a correction "
+                       f"notice rather than the article, or an incomplete file",
+            "recommended_action": "Open the PDF. If it is only a corrigendum/erratum/"
+                                  "correction notice, Drop it; if the full article exists "
+                                  "in Zotero, Replace the PDF",
+            "verdict": manifest.get("verdict", ""),
+            "verdict_reason": manifest.get("verdict_reason", ""),
+            "title_score": manifest.get("title_score", ""),
+            "doi": manifest.get("doi", ""),
+            "pmid": manifest.get("pmid", ""),
+            "folder": manifest.get("folder", ""),
+            "attachment_key": manifest.get("attachment_key", ""),
+            "title": row["title"],
+        })
+
+    if not additions:
+        return []
+
+    REVIEW_LIST.parent.mkdir(parents=True, exist_ok=True)
+    fresh = not REVIEW_LIST.exists() or REVIEW_LIST.stat().st_size == 0
+    with REVIEW_LIST.open("a", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=REVIEW_COLUMNS, extrasaction="ignore")
+        if fresh:
+            writer.writeheader()
+        writer.writerows(additions)
+    return additions
+
+
+def read_csv(path: Path) -> list[dict]:
+    if not Path(path).exists():
+        return []
+    with Path(path).open(newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
 
 
 def write_report(report_rows: list[dict]) -> None:
@@ -182,8 +276,19 @@ def main():
             print(f"  {r['paper_id']} [{r['set']}] {r['flag_reason']}")
             print(f"      {r['title'][:95]}")
 
+        added = queue_for_review(flagged, {r["paper_id"]: r for r in read_manifest()})
+        if added:
+            print(f"\n  {len(added)} added to the review queue "
+                  f"({len(flagged) - len(added)} already there).")
+            print(f"  Triage them with:  python scripts/03_review_mismatches.py")
+            print(f"  Replacing a PDF there clears its cached text; re-run this "
+                  f"script afterwards to extract the new file.")
+        else:
+            print(f"\n  All {len(flagged)} are already in the review queue.")
+
     print(f"\ncached text -> {CACHE_DIR}")
     print(f"report      -> {REPORT}")
+    print(f"queue       -> {REVIEW_LIST}")
 
 
 if __name__ == "__main__":

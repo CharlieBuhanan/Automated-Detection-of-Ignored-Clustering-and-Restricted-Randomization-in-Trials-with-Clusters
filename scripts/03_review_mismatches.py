@@ -526,6 +526,8 @@ class ReviewApp:
         self.decisions[p["paper_id"]] = row
         if new_verdict and decision != "skipped":
             self._update_manifest(p["paper_id"], decision, new_verdict)
+        if decision in ("replaced", "dropped"):
+            self._invalidate_cache(p["paper_id"], decision)
 
         if decision != "replaced":
             self.status.config(text=f"Recorded: {decision.upper()}"
@@ -563,6 +565,33 @@ class ReviewApp:
                 f"{RESULTS}\n\nis locked by another program (Excel?).\n\n"
                 "Nothing was recorded. Close the file and choose this paper again.")
             return False
+
+    def _invalidate_cache(self, paper_id, decision):
+        """Throw away text extracted from a PDF that is no longer the paper's.
+
+        `src/pdf_extract.py` also detects this on its own (it compares the
+        cached pdf_md5 against the file), so this is belt and braces -- but the
+        window between replacing a PDF here and re-running extraction is
+        exactly when someone might read the cache, and during that window the
+        cached text is another document entirely. Deleting it makes the text
+        missing instead of wrong, which is the failure that gets noticed.
+        """
+        cache_path = ROOT / "data" / "extracted_text" / f"{paper_id}.json"
+        if not cache_path.exists():
+            return
+        try:
+            cache_path.unlink()
+        except OSError as exc:
+            messagebox.showwarning(
+                "Could not clear the cached text",
+                f"{cache_path}\n\n{exc}\n\nRe-run scripts/02_extract_pdfs.py --overwrite "
+                f"before trusting this paper's text.")
+            return
+        self.status.config(
+            text=self.status.cget("text")
+                 + f"\nCleared cached text; re-run 02_extract_pdfs.py to "
+                   f"{'re-extract' if decision == 'replaced' else 'drop'} it.",
+            fg=self.status.cget("fg"))
 
     def _update_manifest(self, paper_id, decision, new_verdict):
         """Push the decision into the manifest so later steps see it.

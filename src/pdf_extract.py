@@ -9,6 +9,7 @@ Each PDF is parsed once; results are cached to data/extracted_text/<paper_id>.js
 keyed by the PDF's filename stem.
 """
 
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -54,6 +55,15 @@ def _extract_with_ocr(pdf_path: Path) -> tuple[str, int]:
             img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
             pages.append(pytesseract.image_to_string(img))
     return "\n\n".join(pages), len(pages)
+
+
+def file_md5(path: Path) -> str:
+    """md5 of a file's bytes, read in chunks so a large PDF is not slurped."""
+    digest = hashlib.md5()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _is_sparse(text: str, page_count: int) -> bool:
@@ -152,6 +162,10 @@ def extract_pdf_text(pdf_path: Path) -> dict:
     return {
         "paper_id": pdf_path.stem,
         "source_path": str(pdf_path),
+        # What this text was extracted FROM. Replacing a paper's PDF during
+        # review has to invalidate its cached text, and a filename cannot say
+        # that -- the replacement lands at the same path.
+        "pdf_md5": file_md5(pdf_path),
         "method": method,
         "errors": errors,
         "page_count": page_count,
@@ -161,18 +175,40 @@ def extract_pdf_text(pdf_path: Path) -> dict:
     }
 
 
+def is_cache_stale(cache_path: Path, pdf_path: Path) -> bool:
+    """True if the cached text no longer describes the PDF sitting on disk.
+
+    "The cache file exists" is not the same question. A paper whose PDF was
+    swapped during hand review -- the wrong article replaced with the right one
+    -- keeps its paper_id and therefore its cache path, so an existence check
+    would hand back text extracted from a file that is gone. That is the worst
+    kind of failure available here: silent, permanent, and invisible in every
+    downstream count.
+
+    Records written before pdf_md5 existed are treated as stale, so the first
+    run after this change re-extracts once and everything afterwards is
+    comparable.
+    """
+    try:
+        cached = json.loads(Path(cache_path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return True
+    return cached.get("pdf_md5") != file_md5(pdf_path)
+
+
 def extract_and_cache(pdf_path: Path, cache_dir: Path, overwrite: bool = False) -> dict:
     """Extract (or load from cache) the text for one PDF.
 
-    Checks cache_dir/<paper_id>.json first and returns it as-is if present,
-    so a PDF is only ever parsed once. Pass overwrite=True to force
-    re-extraction (e.g. after changing the extraction logic).
+    Returns the cached record when it still matches the PDF on disk, so a given
+    PDF is only ever parsed once. A PDF that has since been replaced is
+    re-extracted automatically -- see is_cache_stale. Pass overwrite=True to
+    force re-extraction regardless (e.g. after changing the extraction logic).
     """
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache_path = cache_dir / f"{Path(pdf_path).stem}.json"
 
-    if cache_path.exists() and not overwrite:
+    if cache_path.exists() and not overwrite and not is_cache_stale(cache_path, pdf_path):
         return json.loads(cache_path.read_text(encoding="utf-8"))
 
     record = extract_pdf_text(pdf_path)
