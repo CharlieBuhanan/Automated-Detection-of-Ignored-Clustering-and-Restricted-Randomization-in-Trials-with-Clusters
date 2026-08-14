@@ -8,5 +8,3 @@ data/zotero_meta.jsonl
 *.sqlite
 *.db
 .claude/
-PLAN.md
-methods.md
