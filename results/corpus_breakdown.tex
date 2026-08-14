@@ -1,0 +1,164 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.9in]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{hyperref}
+
+\title{Corpus Breakdown}
+\author{Cluster-Paper Review}
+\date{\today}
+
+\begin{document}
+\maketitle
+\vspace{-2em}
+
+\section{Corpus reconciliation}
+
+Every paper that left the corpus is recorded in \texttt{results/exclusions.csv} with its stage, reason,
+and who decided. The 2115 $\rightarrow$ 1494 reduction predates the manifest and is documented separately
+in \texttt{results/unvalidated\_set\_summary.tex}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrl}
+\toprule
+\textbf{Stage} & \textbf{Papers} & \textbf{Decided by} \\
+\midrule
+Fetched from Zotero (1494 testing + 569 validation) & 2063 & --- \\
+\quad $-$ Cross-set duplicates (already in validation) & $-$207 & rule \\
+\quad $-$ Validation internal duplicates (merged) & $-$15 & rule \\
+\midrule
+Rows in the manifest & 1841 & \\
+\quad $-$ Correction notices dropped & $-$4 & human \\
+\midrule
+\textbf{Active corpus} & \textbf{1837} & \\
+\quad Testing (to classify) & 1284 & \\
+\quad Validation (human-labeled) & 553 & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Duplicates}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llrl}
+\toprule
+\textbf{Type} & \textbf{Matched on} & \textbf{Count} & \textbf{Resolution} \\
+\midrule
+Testing $\leftrightarrow$ validation & DOI / PMID / PMCID & 207 & Removed from testing; kept in validation \\
+Within validation (NCI $\leftrightarrow$ NHLBI) & DOI / PMID & 15 pairs & Merged to one row, NCI key kept \\
+Within testing & --- & 0 & All 1494 md5 hashes distinct \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Cross-set duplicates were dropped from testing rather than validation because they already carry a human
+label. The 15 within-validation pairs arrived from two Zotero groups under different item keys, so
+\texttt{paper\_id} could not detect them; 9 of 15 had byte-identical PDFs, 6 differed. Merged rows are
+marked \texttt{folder = "Both NCI and NHLBI"} and \texttt{folder\_path = "Both Validation Institutes"}.
+
+\section{Identity verification and human review}
+
+Automated verification compared each PDF's first two pages against its Zotero metadata. Of 2063 papers,
+2041 verified automatically (1989 on DOI, 52 on title$+$author) and 24 were flagged for a human. A further
+4 were flagged later by title screening and thin-text detection.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Review outcome} & \textbf{Testing} & \textbf{Validation} \\
+\midrule
+PDF replaced (wrong document attached) & 16 & 4 \\
+Confirmed correct, no change & 2 & 2 \\
+Dropped from the corpus & 3 & 1 \\
+\midrule
+\textbf{Total reviewed by hand} & \textbf{21} & \textbf{7} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All 28 queued papers are decided; none remain outstanding. Replacements span 14 institute folders, the
+largest being NIMH (4), NCI validation (3), and NICHD (2). Twelve of the originally flagged documents were
+NIH grant summary statements or study-section review sheets filed where the article should be --- caught
+by a header-phrase rule, since a grant and the paper it funds share a title and first author.
+
+\section{Exclusions by reason}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llrl}
+\toprule
+\textbf{Reason} & \textbf{Stage} & \textbf{Count} & \textbf{Decided by} \\
+\midrule
+Cross-set duplicate & Post-fetch & 207 & rule \\
+Validation internal duplicate & Post-fetch & 15 & rule \\
+Correction / erratum notice & Hand review & 4 & human \\
+Unjoinable ground-truth label & Label load & 2 & rule \\
+\midrule
+\textbf{Total} & & \textbf{228} & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The 4 correction notices were 2 flagged by character count (a Corrigendum and an Erratum) and 2 by a
+title-anchored rule matching seven markers (\emph{erratum}, \emph{corrigendum}, \emph{correction},
+\emph{retraction}, \emph{withdrawn}, \emph{addendum}, \emph{expression of concern}). Anchoring to the
+title's start is required: unanchored matching would also have removed two genuine trials, one on
+``Reentry from Corrections to Community Treatment'' and one on ``Neonatal Opioid Withdrawal''. For 3 of
+the 4 notices the corrected article is independently present in the corpus; only the corrigendum to
+``Analysis of cluster-randomized test-negative designs'' has no underlying article on file.
+
+\section{Text extraction}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+Papers extracted & 1837 \\
+Extracted by PyMuPDF & 1837 (100\%) \\
+Requiring OCR & 0 \\
+Extraction failures & 0 \\
+Total pages & \num{24375} \\
+Total characters & \num{99459371} \\
+Median characters per paper & \num{51774} \\
+Range (min--max) & \num{3531}--\num{170753} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+No PDF in the corpus lacked a text layer, so OCR was never invoked. Extraction is text-only: tables
+linearize into label/value runs that preserve reading order and arm labels, while figure content survives
+only as embedded text. Cached text is invalidated by the source PDF's md5, so replacing a PDF during
+review forces re-extraction. \textbf{The extracted text has not yet been checked for encoding corruption,
+multi-article PDFs, or truncation.}
+
+\section{Ground truth (incomplete)}
+
+Only the NCI labels have been received; NHLBI's are outstanding, so the build/holdout split is not yet
+assigned.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+Citations in \texttt{GroundTruthDataNCI01.xlsx} & 232 \\
+\quad Joined on first author $+$ year & 216 \\
+\quad Joined by author position (tie-break) & 14 \\
+\quad Unresolved, sent to human review & 2 \\
+\midrule
+Labeled papers loaded & 230 \\
+\quad With an exclusion reason (gated out) & 134 \\
+\quad With power / stats / category labels & 96 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The 134 excluded papers carry reasons dominated by \emph{secondary analysis} (70), followed by
+\emph{implementation} (19), \emph{baseline} (14), \emph{random} (13), \emph{not group randomized} (9),
+\emph{methods} (5), \emph{qualitative} (2), and \emph{non-randomized} (2). The 96 gate survivors divide
+across review categories A (31), B (19), C (33), and D (13). Power and statistics labels exist only for
+these 96, confirming that the human process gated before scoring --- the same order the pipeline uses.
+
+\end{document}
