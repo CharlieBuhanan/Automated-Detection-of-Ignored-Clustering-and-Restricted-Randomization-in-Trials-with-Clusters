@@ -6,8 +6,13 @@ HOW TO RUN
     python scripts/02_extract_pdfs.py --overwrite        # re-parse everything
 
 WHAT IT DOES
-    Reads data/zotero_manifest.csv, takes every row whose verdict is VERIFIED,
-    and caches that PDF's full text to data/extracted_text/<paper_id>.json.
+    Reads data/zotero_manifest.csv, takes every row whose verdict is VERIFIED
+    or WEAK, and caches that PDF's full text to
+    data/extracted_text/<paper_id>.json.
+
+    WEAK is included because a WEAK paper enters the corpus flagged and has its
+    identity re-checked at classification time (PLAN.md step 1). Extracting
+    only VERIFIED would drop it from the study with no error and no trace.
 
     This is the second of two extraction stages. Step 1 read the first 2 pages
     of every fetched PDF to decide whether it is the paper Zotero claims; this
@@ -65,7 +70,12 @@ CACHE_DIR = ROOT / "data" / "extracted_text"
 REPORT = ROOT / "results" / "extraction_report.csv"
 REVIEW_LIST = ROOT / "results" / "review" / "01_papers_to_review.csv"
 
-VERIFIED = "VERIFIED"
+# Verdicts that enter the corpus. WEAK is included on purpose: PLAN.md step 1
+# says a WEAK paper enters flagged and has its identity re-checked at
+# classification time, so skipping it here would drop it from the study
+# silently -- no error, no review queue entry, just a paper that quietly stops
+# existing. Everything else (MISMATCH, DROPPED, PDF_UNREADABLE) stays out.
+EXTRACTABLE_VERDICTS = ("VERIFIED", "WEAK")
 
 # Columns of the hand-review queue that scripts/03_review_mismatches.py reads.
 # Extraction adds rows to the same queue identity verification fills, so a
@@ -257,14 +267,27 @@ def main():
                         help="Re-parse even papers already in the cache (e.g. after changing extraction logic)")
     args = parser.parse_args()
 
-    rows = [r for r in read_manifest() if r.get("verdict") == VERIFIED]
+    manifest = read_manifest()
+    rows = [r for r in manifest if r.get("verdict") in EXTRACTABLE_VERDICTS]
     if args.set:
         rows = [r for r in rows if r["set"] == args.set]
     if not rows:
-        sys.exit("No VERIFIED papers to extract. Run scripts/01_verify_identity.py first.")
+        sys.exit("No VERIFIED or WEAK papers to extract. "
+                 "Run scripts/01_verify_identity.py first.")
 
+    # A verdict this script has never heard of means step 1 grew a new outcome
+    # and nobody told step 2. Say so rather than silently extracting fewer
+    # papers than the corpus contains.
+    known = set(EXTRACTABLE_VERDICTS) | {"MISMATCH", "DROPPED", "PDF_UNREADABLE", "PDF_MISSING", ""}
+    unknown = sorted({r.get("verdict", "") for r in manifest} - known)
+    if unknown:
+        sys.exit(f"Unknown verdict(s) in the manifest: {', '.join(unknown)}. "
+                 f"Decide whether they should be extracted before running this.")
+
+    weak = sum(1 for r in rows if r.get("verdict") == "WEAK")
     scope = args.set or "both sets"
-    print(f"Extracting {len(rows)} VERIFIED paper(s) ({scope})"
+    print(f"Extracting {len(rows)} paper(s) ({scope})"
+          f"{f', {weak} of them WEAK' if weak else ''}"
           f"{' -- re-parsing all of them' if args.overwrite else ''}...\n")
 
     report_rows, missing = extract_all(rows, args.overwrite)
