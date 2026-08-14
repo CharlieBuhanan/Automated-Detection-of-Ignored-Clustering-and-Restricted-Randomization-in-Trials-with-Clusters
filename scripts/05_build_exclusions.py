@@ -81,6 +81,35 @@ def cross_set_duplicates(titles: dict) -> list[dict]:
     return rows
 
 
+def merged_validation_duplicates() -> list[dict]:
+    """Validation rows folded into their NCI twin.
+
+    Not an exclusion in the usual sense -- the paper is still in the study, it
+    just has one row instead of two. It belongs here anyway: without it the
+    reconciliation loses 15 papers between "fetched" and "in the manifest" with
+    nothing to explain where they went.
+    """
+    rows = []
+    for row in read_csv(REVIEW_DIR / "06_merged_validation_duplicates.csv"):
+        rows.append({
+            "paper_id": row["removed_paper_id"],
+            "set": "validation",
+            "stage": "validation_internal_duplicate",
+            "removed_from": "corpus",
+            "reason": f"same paper as {row['kept_paper_id']}, fetched from both the "
+                      f"{row['kept_group']} and {row['removed_group']} Zotero groups; "
+                      f"merged into one row",
+            "evidence": f"matched on {row['matched_on']}"
+                        + (", PDF bytes identical" if row.get("pdf_bytes_identical") == "True"
+                           else ", different PDF bytes"),
+            "decided_by": BY_RULE,
+            "decided_at": row.get("merged_at", ""),
+            "source_record": "results/review/06_merged_validation_duplicates.csv",
+            "title": row["title"],
+        })
+    return rows
+
+
 def manual_drops(manifest: list[dict]) -> list[dict]:
     """Papers a human dropped in the review GUI.
 
@@ -191,6 +220,7 @@ def main():
 
     ledger = (blocked_at_fetch(manifest)
               + cross_set_duplicates(titles)
+              + merged_validation_duplicates()
               + manual_drops(manifest)
               + unjoinable_labels(titles))
 

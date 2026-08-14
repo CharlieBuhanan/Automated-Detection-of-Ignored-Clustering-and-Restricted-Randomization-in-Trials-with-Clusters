@@ -8,6 +8,12 @@ build on -- expect to discard and reload once the remaining label files arrive.
 What could still change when they do:
   - SOURCE_FOLDERS needs an entry per new file, and the mapping is guessed
     from filename prefixes
+  - **SOURCE_FOLDERS no longer covers every validation paper.** The 15
+    NCI/NHLBI duplicate pairs were merged into single rows carrying
+    folder="Both NCI and NHLBI", which matches neither entry, so those 15
+    papers currently fall out of BOTH candidate pools and their labels would
+    fail to join. The folder filter has to accept the merged marker for both
+    files before this script is run again.
   - the "Combined" sheet name and the four column headers are NCI's; another
     institute may name or split them differently
   - the citation format is assumed to be APA author-year, which held for

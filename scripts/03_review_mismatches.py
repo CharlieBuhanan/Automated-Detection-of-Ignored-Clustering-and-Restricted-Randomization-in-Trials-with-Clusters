@@ -72,6 +72,9 @@ ZOTERO_GROUPS = {
     "testing": "6586218",
     "FinalCollectionFor Publication": "5573699",   # NCI
     "Locked_26_01_08_337": "6363893",              # NHLBI
+    # The 15 NCI/NHLBI duplicate pairs were merged into one row each, keeping
+    # the NCI item key -- so the NCI group is where "Open in Zotero" finds them.
+    "Both NCI and NHLBI": "5573699",
 }
 
 RESULT_COLUMNS = [
