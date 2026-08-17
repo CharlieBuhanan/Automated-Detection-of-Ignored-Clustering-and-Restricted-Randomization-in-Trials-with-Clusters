@@ -7,20 +7,20 @@ Standing rules live in [.claude/CLAUDE.md](.claude/CLAUDE.md).
 
 Corpus prep is **done**: 1837 active papers (1284 testing + 553 validation), all extracted and cached.
 
-- [ ] **Close the NHLBI label gap — 201 of 337 papers still have no human answer.** The NHLBI labels
-      arrived as `Ground Truth Raw/crt_review_table_112.tex`, but it holds only **159 entries against
-      337 PDFs**, and 23 of those are cited with every field blank (unreviewed, not "reviewed and
-      kept"). So 136 NHLBI papers carry labels; 178 have no row at all. Combined with NCI's complete
-      232, ground truth stands at **368 of 569 validation papers**.
-      The 159 are not a prefix — they run Abdullahi → Yuan across every year 2018–2025 at roughly 47%
-      each, unevenly by letter, which reads as a review in progress worked in batches. Ask Dr. Glueck
-      whether further `crt_review_table_NNN.tex` versions are coming, and on what timeline.
-      Step 4 stays frozen until then: the build/holdout split cannot be fixed on a partial label set,
-      and `assign_split()` only runs once. Full detail in [Ground Truth Raw/NOTES.md](Ground%20Truth%20Raw/NOTES.md).
+- [ ] **Close the NHLBI label gap — 23 of 337 papers still have no human answer.** Mostly resolved.
+      The NHLBI review turned out to live in **two** files: `crt_review_table_112.tex` (159 papers
+      taken to full extraction) and `NHLBI_exclusions_178.csv` (178 rejected before extraction).
+      They are disjoint and together cover all 337. What remains is the 23 tex entries cited with
+      every field blank — reviewed as extraction candidates but not yet extracted, and absent from
+      the exclusions file, so genuinely undecided rather than silently dropped. Ground truth now
+      stands at **544 of 569 validation papers** (NCI 230, NHLBI 314).
+      Ask Dr. Glueck when those 23 will be reviewed. Step 4 stays frozen until then: the
+      build/holdout split cannot be fixed on a partial label set, and `assign_split()` only runs
+      once. Full detail in [Ground Truth Raw/NOTES.md](Ground%20Truth%20Raw/NOTES.md).
 - [ ] **Request `Ignore03_NHLBI.bib` from the NHLBI team.** The extraction table cites it, but the
       bundle shipped `references.bib` instead — the manuscript's own bibliography, which contains none
       of the 159 cite keys. The right file carries DOIs and would make the NHLBI join exact instead of
-      fuzzy. Not blocking (all 159 NHLBI rows already resolve), but it would remove the fuzzy step.
+      fuzzy. Not blocking (all 337 NHLBI rows already resolve), but it would remove the fuzzy step.
 - [ ] **Get the definition of NCI's `Review Category` A/B/C/D.** `A` is provably "data analysis
       correct" (all 31 `A` rows have `Stats = YES`, no other category does), and B/C/D are three
       flavors of incorrect — but they are *not* the SAS `ignored_data_c` strata, which split the same
@@ -28,7 +28,7 @@ Corpus prep is **done**: 1837 active papers (1284 testing + 553 validation), all
       `db.expected_decision()` cannot map them: it currently returns the raw letter as the expected
       answer for `inclusion`, where the model returns yes/no, so the two can never agree.
 - [ ] **Decide the validation/build batching scheme.** Earlier drafts assumed round numbers
-      (350 / 150) that predate counting what is actually on disk. Settle, in this order: how the 368
+      (350 / 150) that predate counting what is actually on disk. Settle, in this order: how the 544
       labeled papers divide into build and holdout; whether the split is stratified on gate-survivor
       status (open question 2 — a flat 30% holdout leaves only ~29 survivors to score power and data
       analysis on, which is thin for a headline number); and what per-round sample size the rubric loop
@@ -94,17 +94,18 @@ every other collection) and one non-article item (a `videoRecording`). The last 
 cross-set duplicate check — papers already sitting in the validation set with a human label
 (1494 → 1287).
 
-**The validation set is 569 papers on disk; labels exist for 368.** `FinalCollectionFor Publication`
+**The validation set is 569 papers on disk; labels exist for 544.** `FinalCollectionFor Publication`
 (NCI) holds 232 and `Locked_26_01_08_337` (NHLBI) holds 337. NCI's ground truth is complete
-(`GroundTruthDataNCI01.xlsx`, 232 rows). NHLBI's is not: `crt_review_table_112.tex` carries 159 entries
-for 337 papers, 23 of them blank, so 136 are labeled and 201 are not. Every "500 / 350 / 150" figure in
-earlier drafts predates counting what is actually there; the real split is sized and fixed once the
-remaining NHLBI labels land.
+(`GroundTruthDataNCI01.xlsx`, 232 rows). NHLBI's arrived in two disjoint files that together cover all
+337: `crt_review_table_112.tex` (159 papers taken to full extraction, 23 of them still blank) and
+`NHLBI_exclusions_178.csv` (178 rejected before extraction). 23 papers remain unlabeled. Every
+"500 / 350 / 150" figure in earlier drafts predates counting what is actually there; the real split is
+sized and fixed once those 23 land.
 
-Both label files are merged into `data/ground_truth.csv` by `scripts/07_build_ground_truth.py` — a wide
-union of the two schemas (NCI recorded 5 fields, NHLBI 22), one row per labeled paper, 389 of 391 joined
-to a `paper_id`. Source strings are preserved in `*_raw` columns beside their normalized forms. The
-sources and every quirk found in them are documented in
+All three label files are merged into `data/ground_truth.csv` by `scripts/07_build_ground_truth.py` — a
+wide union of the three source schemas, one row per validation paper, 567 of 569 joined to a `paper_id`.
+Source strings are preserved in `*_raw` columns beside their normalized forms. The sources and every
+quirk found in them are documented in
 [Ground Truth Raw/NOTES.md](Ground%20Truth%20Raw/NOTES.md).
 
 The criteria have real nuance — many things, including rare events, can make a paper "incorrect power
@@ -488,7 +489,7 @@ then `power_analysis`, then `data_analysis`.
       whether `Correction to:` notices belong in the corpus at all (the same question the Corrigendum
       and Erratum found during extraction raise)
 - [x] Merge both label files into `data/ground_truth.csv` (`scripts/07_build_ground_truth.py`) —
-      391 rows, 389 joined to paper_ids; NCI 2×2 reproduces the published 20/11/5/60
+      569 rows, 567 joined to paper_ids; NCI 2×2 reproduces the published 20/11/5/60
 - [ ] **Chase the 201 unlabeled NHLBI papers**, then reload and `--assign-split` **once**
 - [ ] **Fix the batching scheme before `--assign-split`** — build/holdout sizes, whether to stratify on
       gate-survivor status, and the rubric-loop round size

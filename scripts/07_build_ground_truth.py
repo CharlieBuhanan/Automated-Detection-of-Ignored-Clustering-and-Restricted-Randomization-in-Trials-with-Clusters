@@ -93,18 +93,31 @@ EXCLUSION_VOCAB = {
     "secondary analysis": "secondary_analysis",
     "secondary data analysis": "secondary_analysis",
     "secondary outcomes": "secondary_analysis",
+    "secondary outcomes or sub-studies": "secondary_analysis",
     "baseline": "baseline_only",
+    "baseline analysis": "baseline_only",
     "implementation": "implementation_study",
     "methods": "methods_paper",
     "review": "review_article",
+    "systematic review or meta-analysis": "review_article",
     "qualitative": "qualitative_study",
     "pilot": "pilot_study",
+    "pilot study": "pilot_study",
     "not group randomized": "not_group_randomized",
     "not a group-randomized trial": "not_group_randomized",
     "non-randomized": "not_randomized",
     "random": "duplicate_group_random_drop",
     "second study by same group, excluded randomly": "duplicate_group_random_drop",
+    # The exclusions document words this without the "randomly" -- it records the
+    # same category (one trial kept per research group) but not the tie-break.
+    "multiple trials from the same research group": "duplicate_group_random_drop",
     "stepped wedge": "stepped_wedge_design",
+    # Categories only the NHLBI exclusions document uses; the tex table has no
+    # equivalent wording, so these have no prior spelling to reconcile against.
+    "protocol paper (with results in search)": "protocol_paper",
+    "cohort study": "cohort_study",
+    "comments": "comment_or_letter",
+    "preprints": "preprint",
 }
 
 YES_NO = {"yes": "yes", "y": "yes", "no": "no", "n": "no"}
@@ -267,6 +280,38 @@ def read_nhlbi(path: Path) -> list[dict]:
     return rows
 
 
+def read_nhlbi_exclusions(path: Path) -> list[dict]:
+    """NHLBI_exclusions_178.csv -> row dicts.
+
+    The NHLBI review recorded its exclusions in two places. Papers taken to full
+    extraction got a row in the LaTeX table; papers rejected earlier were listed
+    only in a separate exclusion document, which is what this file transcribes.
+    Together they account for all 337 NHLBI papers -- neither file alone does.
+
+    Unlike the other two sources this one carries DOI and PMID, so its rows join
+    by identifier rather than by fuzzy author matching. The bibliographic columns
+    (title, journal, volume, issue, pages, all_authors) are deliberately not
+    copied through: every one is already in data/zotero_meta.jsonl keyed by the
+    paper_id this join produces, and no other source in this file carries them.
+    """
+    frame = pd.read_csv(path, dtype=str, keep_default_na=False)
+    rows = []
+    for position, record in enumerate(frame.to_dict("records"), start=1):
+        author, year = _text(record.get("first_author")), _text(record.get("year"))
+        rows.append({
+            "source_institute": "NHLBI",
+            "source_file": path.name,
+            "source_row": str(position),
+            "citation_raw": f"{author} ({year})" if year else author,
+            "cite_key": _text(record.get("citation_key")),
+            "exclusion_reason_raw": _text(record.get("exclusion_reason")),
+            "source_doi": _text(record.get("doi")),
+            "source_pmid": _text(record.get("pmid")),
+            "reason_source": _text(record.get("reason_source")),
+        })
+    return rows
+
+
 def _text(value) -> str:
     if value is None or (isinstance(value, float) and pd.isna(value)):
         return ""
@@ -344,6 +389,40 @@ def split_cite_key(key: str) -> tuple[str, str, str]:
     author = lead.group(0) if lead else ""
     words = re.findall(r"[A-Z]?[a-z]+|[A-Z]+(?![a-z])", body[len(author):])
     return author.replace("-", ""), " ".join(w.lower() for w in words), year
+
+
+def normalize_doi(value: str) -> str:
+    return re.sub(r"^https?://(dx\.)?doi\.org/", "", str(value or "").strip().lower())
+
+
+def identifier_index(pool: dict) -> tuple[dict, dict]:
+    """(DOI -> [paper_id], PMID -> [paper_id]) for one collection."""
+    doi_idx: dict = {}
+    pmid_idx: dict = {}
+    for pid, rec in pool.items():
+        doi = normalize_doi(rec.get("doi"))
+        if doi:
+            doi_idx.setdefault(doi, []).append(pid)
+        pmid = re.sub(r"\D", "", str(rec.get("pmid") or ""))
+        if pmid:
+            pmid_idx.setdefault(pmid, []).append(pid)
+    return doi_idx, pmid_idx
+
+
+def join_by_identifier(row: dict, doi_idx: dict, pmid_idx: dict) -> tuple[str, str, str]:
+    """Match on DOI, then PMID. An identifier is only trusted when it is unique.
+
+    This is the join the other two sources cannot use -- they print author and
+    year and nothing else. A DOI that maps to two papers in one collection means
+    a duplicate record, not a match, so it is refused rather than resolved.
+    """
+    doi = normalize_doi(row.get("source_doi"))
+    if doi and len(doi_idx.get(doi, [])) == 1:
+        return doi_idx[doi][0], "doi", "100"
+    pmid = re.sub(r"\D", "", row.get("source_pmid", ""))
+    if pmid and len(pmid_idx.get(pmid, [])) == 1:
+        return pmid_idx[pmid][0], "pmid", "100"
+    return "", "", ""
 
 
 def candidate_pool(meta: dict, institute: str) -> dict:
@@ -485,10 +564,14 @@ def main() -> None:
 
     nci_path = RAW / "GroundTruthDataNCI01.xlsx"
     tex_path = newest_tex()
-    print(f"NCI   : {nci_path.name}")
-    print(f"NHLBI : {tex_path.name}")
+    excl_path = RAW / "NHLBI_exclusions_178.csv"
+    print(f"NCI            : {nci_path.name}")
+    print(f"NHLBI extracted: {tex_path.name}")
+    print(f"NHLBI excluded : {excl_path.name}")
 
-    rows = [derive(r) for r in read_nci(nci_path)] + [derive(r) for r in read_nhlbi(tex_path)]
+    rows = [derive(r) for r in read_nci(nci_path)]
+    rows += [derive(r) for r in read_nhlbi(tex_path)]
+    rows += [derive(r) for r in read_nhlbi_exclusions(excl_path)]
 
     meta = load_meta()
     pools = {inst: candidate_pool(meta, inst) for inst in SOURCE_FOLDERS}
@@ -496,13 +579,33 @@ def main() -> None:
     for pid, rec in pools["NCI"].items():
         nci_index.setdefault((surname(rec.get("first_author", "")),
                               str(rec.get("year", "")).strip()), []).append(pid)
+    nhlbi_doi, nhlbi_pmid = identifier_index(pools["NHLBI"])
 
     for row in rows:
         if row["source_institute"] == "NCI":
             pid, how, score = join_nci(row, pools["NCI"], nci_index)
+        elif row.get("source_doi") or row.get("source_pmid"):
+            pid, how, score = join_by_identifier(row, nhlbi_doi, nhlbi_pmid)
         else:
             pid, how, score = join_nhlbi(row, pools["NHLBI"])
         row["paper_id"], row["matched_by"], row["match_score"] = pid, how, score
+
+    # The two NHLBI files must describe disjoint sets of papers: one holds the
+    # papers taken to full extraction, the other the papers rejected before it.
+    # A paper in both would be counted twice and could carry contradictory
+    # labels, so this is checked rather than assumed.
+    seen: dict = {}
+    for row in rows:
+        pid = row["paper_id"]
+        if pid:
+            seen.setdefault(pid, []).append(row)
+    collisions = {p: rs for p, rs in seen.items() if len(rs) > 1}
+    if collisions:
+        print(f"\n*** {len(collisions)} paper_id(s) claimed by more than one source row ***")
+        for pid, rs in list(collisions.items())[:10]:
+            for r in rs:
+                print(f"    {pid}  {r['source_file']} row {r['source_row']}  "
+                      f"excluded={r['excluded']} reason={r['exclusion_reason_raw']!r}")
 
     columns = column_order(rows)
     for row in rows:
@@ -536,21 +639,36 @@ def main() -> None:
 
 def report(rows: list[dict], pools: dict) -> None:
     print()
-    print(f"{'':10s} {'rows':>6s} {'labeled':>8s} {'excluded':>9s} "
-          f"{'kept':>6s} {'joined':>7s} {'PDFs':>6s}")
-    for inst in ("NCI", "NHLBI"):
-        sub = [r for r in rows if r["source_institute"] == inst]
-        labeled = [r for r in sub if r["labeled"] == "1"]
-        print(f"{inst:10s} {len(sub):6d} {len(labeled):8d} "
+    header = (f"{'source file':32s} {'rows':>5s} {'labeled':>8s} {'excluded':>9s} "
+              f"{'kept':>5s} {'joined':>7s}")
+    print(header)
+    print("-" * len(header))
+    for source in dict.fromkeys(r["source_file"] for r in rows):
+        sub = [r for r in rows if r["source_file"] == source]
+        print(f"{source:32s} {len(sub):5d} "
+              f"{sum(r['labeled'] == '1' for r in sub):8d} "
               f"{sum(r['excluded'] == '1' for r in sub):9d} "
-              f"{sum(r['excluded'] == '0' and r['labeled'] == '1' for r in sub):6d} "
-              f"{sum(bool(r['paper_id']) for r in sub):7d} {len(pools[inst]):6d}")
-    labeled_all = [r for r in rows if r["labeled"] == "1"]
-    print(f"{'TOTAL':10s} {len(rows):6d} {len(labeled_all):8d} "
+              f"{sum(r['excluded'] == '0' and r['labeled'] == '1' for r in sub):5d} "
+              f"{sum(bool(r['paper_id']) for r in sub):7d}")
+    print("-" * len(header))
+    print(f"{'TOTAL':32s} {len(rows):5d} "
+          f"{sum(r['labeled'] == '1' for r in rows):8d} "
           f"{sum(r['excluded'] == '1' for r in rows):9d} "
-          f"{sum(r['excluded'] == '0' and r['labeled'] == '1' for r in rows):6d} "
-          f"{sum(bool(r['paper_id']) for r in rows):7d} "
-          f"{sum(len(p) for p in pools.values()):6d}")
+          f"{sum(r['excluded'] == '0' and r['labeled'] == '1' for r in rows):5d} "
+          f"{sum(bool(r['paper_id']) for r in rows):7d}")
+
+    # Coverage against the PDFs actually on disk -- the number that says whether
+    # a build/holdout split can be assigned yet.
+    print(f"\n{'collection':10s} {'PDFs':>6s} {'labeled':>8s} {'unlabeled':>10s}")
+    for inst in ("NCI", "NHLBI"):
+        pool = pools[inst]
+        done = {r["paper_id"] for r in rows
+                if r["source_institute"] == inst and r["labeled"] == "1" and r["paper_id"]}
+        print(f"{inst:10s} {len(pool):6d} {len(done):8d} {len(pool) - len(done):10d}")
+    all_pool = {p for pool in pools.values() for p in pool}
+    all_done = {r["paper_id"] for r in rows if r["labeled"] == "1" and r["paper_id"]}
+    print(f"{'TOTAL':10s} {len(all_pool):6d} {len(all_done):8d} "
+          f"{len(all_pool) - len(all_done):10d}")
 
     unreviewed = [r for r in rows if r["labeled"] == "0"]
     if unreviewed:

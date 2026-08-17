@@ -17,10 +17,10 @@ decision. Project rules are in [.claude/CLAUDE.md](.claude/CLAUDE.md).
 |---|---|
 | Study papers to classify | 1,287 |
 | Validation PDFs on disk | 569 (232 NCI + 337 NHLBI) |
-| Validation papers with human labels | 368 |
+| Validation papers with human labels | 544 |
 | Papers extracted to text | 1,856 |
 
-Corpus preparation is complete. **Rubric work is blocked** on the remaining 201 NHLBI labels —
+Corpus preparation is complete. **Rubric work is blocked** on the remaining 23 NHLBI labels —
 the build/holdout split cannot be fixed on a partial label set, and it may only be assigned once.
 
 ## Order to run things
@@ -95,7 +95,7 @@ NHLBI: a 22-column LaTeX table), so the output is a wide union — one row per l
 column per distinct source field, every source string preserved in a `*_raw` column beside its
 normalized form. Also resolves each row to a Zotero `paper_id`. `--report` prints the
 reconciliation without writing.
-*391 rows, 389 joined. The NCI 2×2 reproduces the published 20/11/5/60 exactly. Sources and
+*569 rows, 567 joined. The NCI 2×2 reproduces the published 20/11/5/60 exactly. Sources and
 their quirks are documented in [Ground Truth Raw/NOTES.md](Ground%20Truth%20Raw/NOTES.md).*
 
 **`04_load_ground_truth.py`** — loads the human labels into SQLite. The work is the join: labels

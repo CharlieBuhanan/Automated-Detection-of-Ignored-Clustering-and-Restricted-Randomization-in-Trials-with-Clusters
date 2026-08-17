@@ -27,9 +27,9 @@ bullets; the full rationale for every decision is in [PLAN.md](PLAN.md).
 - Title-anchored rule flags errata, corrigenda, retractions.
 - Four found; excluded before classification.
 
-**7. Ground truth loading** *(incomplete — 201 NHLBI labels pending)*
+**7. Ground truth loading** *(incomplete — 23 NHLBI labels pending)*
 - Merged NCI and NHLBI labels into one table.
-- Joined 389 of 391 rows to papers.
+- Joined 567 of 569 rows to papers.
 
 **8. Validation duplicate merge**
 - Merged 15 NCI/NHLBI pairs into one row.
