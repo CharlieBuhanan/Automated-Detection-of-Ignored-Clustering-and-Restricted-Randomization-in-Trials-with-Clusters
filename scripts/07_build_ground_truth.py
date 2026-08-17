@@ -5,28 +5,42 @@ HOW TO RUN
     python scripts/07_build_ground_truth.py --report   # print the summary, write nothing
 
 WHY THIS EXISTS
-    The two institutes delivered their labels in different file formats holding
-    different fields:
+    The institutes delivered their labels in three files holding different fields:
 
       NCI    Ground Truth Raw/GroundTruthDataNCI01.xlsx     232 rows,  5 columns
       NHLBI  Ground Truth Raw/crt_review_table_112.tex      159 rows, 22 columns
+             (papers taken to full extraction)
+      NHLBI  Ground Truth Raw/NHLBI_exclusions_178.csv      178 rows, 13 columns
+             (papers rejected before extraction; carries DOI/PMID)
 
-    NCI recorded only the four review outcomes. NHLBI recorded those plus the
-    full design extraction -- cluster counts, ICC, unit of randomization, what
-    each analysis did and what it should have done. Neither file is a subset of
-    the other, so this script unions them: one row per labeled paper, one column
-    per distinct source field, blank where an institute did not collect it.
+    NCI recorded only the four review outcomes. NHLBI's tex recorded those plus
+    the full design extraction -- cluster counts, ICC, unit of randomization,
+    what each analysis did and what it should have done. No file is a subset of
+    another, so this script unions them: one row per source citation, one column
+    per distinct source field, blank where a source did not collect it.
 
     Nothing is dropped and nothing is silently rewritten. Every source string is
     kept verbatim in a `*_raw` column; cleaned values sit beside them in a plain
-    column. Where the two institutes used different words for the same thing
+    column. Where institutes used different words for the same thing
     ("secondary" vs. "secondary data analysis"), the raw wording survives and
     the normalization is visible in EXCLUSION_VOCAB below rather than buried.
 
+    A PAPER CAN HAVE MORE THAN ONE ROW. 15 papers were fetched into both the NCI
+    and NHLBI Zotero groups and independently reviewed by both institutes --
+    `06_merge_validation_duplicates.py` already collapsed their *manifest* entries
+    to one paper_id (the NCI side), but each institute's citation still resolves
+    to its own row here, both correctly pointing at the surviving paper_id (see
+    `remap_merged_duplicates` below). 8 of the 15 pairs agree on every label; 7
+    disagree, sometimes completely (one pair has NCI calling both analyses
+    correct and NHLBI calling both incorrect, for the same paper). This script
+    does not decide between them -- collapsing to one row per paper_id, and
+    refusing to guess when sources conflict, is `04_load_ground_truth.py`'s job,
+    since only it writes the one-row-per-paper `validation_labels` table.
+
 OUTPUTS
-    data/ground_truth.csv                       one row per labeled paper
+    data/ground_truth.csv                       one row per source citation
     results/review/07_ground_truth_unjoined.csv rows whose paper_id is unresolved
-    Terminal                                    reconciliation against both sources
+    Terminal                                    reconciliation against every source
 
 RE-RUNNING
     Safe and idempotent; rebuilt from the source files every time. When a newer
@@ -51,6 +65,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 RAW = ROOT / "Ground Truth Raw"
 META = ROOT / "data" / "zotero_meta.jsonl"
+MANIFEST = ROOT / "data" / "zotero_manifest.csv"
 OUT = ROOT / "data" / "ground_truth.csv"
 UNJOINED = ROOT / "results" / "review" / "07_ground_truth_unjoined.csv"
 
@@ -63,9 +78,12 @@ SOURCE_FOLDERS = {
     "NCI": "FinalCollectionFor Publication",
     "NHLBI": "Locked_26_01_08_337",
 }
-# 06_merge_validation_duplicates.py collapses papers found in both collections
-# into one row carrying this marker, which matches neither name above.
-BOTH_FOLDERS = "Both Validation Institutes"
+# 06_merge_validation_duplicates.py rewrites a merged pair's folder to "Both NCI
+# and NHLBI" -- but only in data/zotero_manifest.csv. zotero_meta.jsonl, which
+# candidate_pool() below actually reads, is the fetch's untouched output: every
+# validation record there still carries exactly the one folder it was fetched
+# under, so both halves of a merged pair are found through their own institute's
+# entry and no "matches either name" fallback is needed here.
 
 # The 22 columns of the NHLBI LaTeX table, in order. Taken from the header
 # comment of NHLBI_Ignore03_v11_bundle/p0101_read_nhlbi.sas so that this script
@@ -425,11 +443,30 @@ def join_by_identifier(row: dict, doi_idx: dict, pmid_idx: dict) -> tuple[str, s
     return "", "", ""
 
 
+MERGED_DUPLICATES = ROOT / "results" / "review" / "06_merged_validation_duplicates.csv"
+
+
+def load_duplicate_remap() -> dict:
+    """removed_paper_id -> kept_paper_id, from 06_merge_validation_duplicates.py's log.
+
+    `zotero_meta.jsonl` is the fetch's raw output and was never pruned when 06
+    collapsed 15 NCI/NHLBI duplicate pairs down to one manifest row each -- it
+    still lists both paper_ids under their original institute folders. So the
+    join functions above, which only know about `zotero_meta.jsonl`, can and do
+    resolve an NHLBI citation to the *removed* half of a pair: a paper_id with
+    no PDF, no manifest row, and no extracted text once the merge has run.
+    This maps that stale id back to the one actually left in the corpus.
+    """
+    if not MERGED_DUPLICATES.exists():
+        return {}
+    frame = pd.read_csv(MERGED_DUPLICATES, dtype=str, keep_default_na=False)
+    return dict(zip(frame["removed_paper_id"], frame["kept_paper_id"]))
+
+
 def candidate_pool(meta: dict, institute: str) -> dict:
     folder = SOURCE_FOLDERS[institute]
     return {pid: rec for pid, rec in meta.items()
-            if rec.get("set") == "validation"
-            and (folder in rec.get("folders", []) or BOTH_FOLDERS in rec.get("folders", []))}
+            if rec.get("set") == "validation" and folder in rec.get("folders", [])}
 
 
 def join_nhlbi(row: dict, pool: dict) -> tuple[str, str, str]:
@@ -531,7 +568,7 @@ def newest_tex() -> Path:
 
 def column_order(rows: list[dict]) -> list[str]:
     """Identity, then the four review outcomes, then the design extraction."""
-    lead = ["paper_id", "source_institute", "source_file", "source_row",
+    lead = ["paper_id", "paper_id_note", "source_institute", "source_file", "source_row",
             "citation_raw", "cite_key", "matched_by", "match_score",
             "labeled", "excluded",
             "exclusion_reason", "exclusion_reason_raw",
@@ -589,30 +626,55 @@ def main() -> None:
         else:
             pid, how, score = join_nhlbi(row, pools["NHLBI"])
         row["paper_id"], row["matched_by"], row["match_score"] = pid, how, score
+        row["paper_id_note"] = ""
 
-    # The two NHLBI files must describe disjoint sets of papers: one holds the
-    # papers taken to full extraction, the other the papers rejected before it.
-    # A paper in both would be counted twice and could carry contradictory
-    # labels, so this is checked rather than assumed.
+    # 15 papers were fetched into both Zotero groups and reviewed by both
+    # institutes. 06_merge_validation_duplicates.py already retired the NHLBI
+    # half's manifest row, but zotero_meta.jsonl -- which the join above reads --
+    # was never pruned, so an NHLBI citation can resolve to that retired paper_id.
+    # Remap it to the survivor so every row points at a paper_id that actually
+    # has a PDF and extracted text.
+    remap = load_duplicate_remap()
+    for row in rows:
+        old = row["paper_id"]
+        if old in remap:
+            row["paper_id"] = remap[old]
+            row["paper_id_note"] = f"remapped from {old} (NCI/NHLBI duplicate merge)"
+
+    # Two kinds of collision are possible once rows point at their true paper_id.
+    # A cross-institute collision on a documented merge pair is expected -- both
+    # institutes really did review that paper -- and 04_load_ground_truth.py is
+    # where it gets resolved (dedupe if they agree, hold out for a human if they
+    # don't). Anything else -- two rows from the very same source file, or a
+    # collision on a paper_id the merge log never mentioned -- is not expected
+    # and would mean two different citations were mistakenly joined to one paper.
+    expected_pairs = set(remap.values())
     seen: dict = {}
     for row in rows:
         pid = row["paper_id"]
         if pid:
             seen.setdefault(pid, []).append(row)
     collisions = {p: rs for p, rs in seen.items() if len(rs) > 1}
-    if collisions:
-        print(f"\n*** {len(collisions)} paper_id(s) claimed by more than one source row ***")
-        for pid, rs in list(collisions.items())[:10]:
+    unexpected = {p: rs for p, rs in collisions.items()
+                  if p not in expected_pairs or len({r["source_file"] for r in rs}) < len(rs)}
+    if unexpected:
+        print(f"\n*** {len(unexpected)} paper_id(s) claimed by more than one source row, "
+              f"unexpectedly ***")
+        for pid, rs in list(unexpected.items())[:10]:
             for r in rs:
                 print(f"    {pid}  {r['source_file']} row {r['source_row']}  "
                       f"excluded={r['excluded']} reason={r['exclusion_reason_raw']!r}")
+    expected_collisions = len(collisions) - len(unexpected)
+    if expected_collisions:
+        print(f"\n{expected_collisions} paper_id(s) carry rows from both institutes "
+              f"(documented duplicate-pair reviews) -- see the merge log.")
 
     columns = column_order(rows)
     for row in rows:
         for column in columns:
             row.setdefault(column, "")
 
-    report(rows, pools)
+    report(rows)
 
     if args.report:
         print("\n--report: nothing written.")
@@ -637,7 +699,21 @@ def main() -> None:
     print(f"wrote {UNJOINED.relative_to(ROOT)}  ({len(unjoined)} rows for a human)")
 
 
-def report(rows: list[dict], pools: dict) -> None:
+def active_validation_paper_ids() -> set:
+    """paper_ids that actually need a label: the manifest's current validation
+    rows, minus anything dropped from the corpus.
+
+    Deliberately not the raw per-institute meta pools -- those still contain
+    both halves of every NCI/NHLBI duplicate pair, one of which no longer has a
+    PDF, a manifest row, or extracted text once 06_merge_validation_duplicates.py
+    has run. Diffing against that stale, larger set undercounts real coverage.
+    """
+    with open(MANIFEST, encoding="utf-8") as handle:
+        return {row["paper_id"] for row in csv.DictReader(handle)
+                if row["set"] == "validation" and row["verdict"] != "DROPPED"}
+
+
+def report(rows: list[dict]) -> None:
     print()
     header = (f"{'source file':32s} {'rows':>5s} {'labeled':>8s} {'excluded':>9s} "
               f"{'kept':>5s} {'joined':>7s}")
@@ -657,18 +733,20 @@ def report(rows: list[dict], pools: dict) -> None:
           f"{sum(r['excluded'] == '0' and r['labeled'] == '1' for r in rows):5d} "
           f"{sum(bool(r['paper_id']) for r in rows):7d}")
 
-    # Coverage against the PDFs actually on disk -- the number that says whether
-    # a build/holdout split can be assigned yet.
-    print(f"\n{'collection':10s} {'PDFs':>6s} {'labeled':>8s} {'unlabeled':>10s}")
-    for inst in ("NCI", "NHLBI"):
-        pool = pools[inst]
-        done = {r["paper_id"] for r in rows
-                if r["source_institute"] == inst and r["labeled"] == "1" and r["paper_id"]}
-        print(f"{inst:10s} {len(pool):6d} {len(done):8d} {len(pool) - len(done):10d}")
-    all_pool = {p for pool in pools.values() for p in pool}
-    all_done = {r["paper_id"] for r in rows if r["labeled"] == "1" and r["paper_id"]}
-    print(f"{'TOTAL':10s} {len(all_pool):6d} {len(all_done):8d} "
-          f"{len(all_pool) - len(all_done):10d}")
+    # Coverage against the corpus as it actually stands today -- the number
+    # that says whether a build/holdout split can be assigned yet. Real set
+    # arithmetic against the manifest's canonical (post-duplicate-merge)
+    # paper_ids, not a size subtraction against the raw per-institute pools,
+    # which still include ids the merge has already retired.
+    active = active_validation_paper_ids()
+    labeled = {r["paper_id"] for r in rows if r["labeled"] == "1" and r["paper_id"]}
+    covered, missing = active & labeled, active - labeled
+    print(f"\ncorpus coverage: {len(covered)} of {len(active)} active validation "
+          f"papers have a label ({len(missing)} missing)")
+    stray = labeled - active
+    if stray:
+        print(f"  !! {len(stray)} labeled paper_id(s) are not in the active manifest "
+              f"at all -- {sorted(stray)[:5]}")
 
     unreviewed = [r for r in rows if r["labeled"] == "0"]
     if unreviewed:

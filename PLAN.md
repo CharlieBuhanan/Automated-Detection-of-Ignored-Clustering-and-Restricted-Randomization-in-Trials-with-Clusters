@@ -3,20 +3,46 @@
 Reference doc. Not loaded into context automatically — read when starting a new phase.
 Standing rules live in [.claude/CLAUDE.md](.claude/CLAUDE.md).
 
+## TODO now — human review, before continuing
+
+**Start with `results/review/05_label_match_review.csv`** — 8 rows, covers items 2 and 3 below in
+one file: each institute's answer is already spelled out, no PDF-hunting needed to see the shape
+of the conflict (reading the actual paper is only needed to decide it).
+
+- [ ] **Find the original paper for `NBBD4EVE`.** Missing from the corpus entirely — not a review-queue
+      row. Detail under "Checklist — what's next" below.
+- [ ] **Decide the Patterson papers** (`IT2B87LL` / `JBUFJCLU`). Two rows in the review file, one real
+      paper — blocked on the correction-notice policy question (see the erratum item below). Deciding
+      that question resolves this and item 4's third bullet together.
+- [ ] **Adjudicate the 6 institutional disagreements** in the review file. NCI and NHLBI reviewed the
+      same paper and reached different answers — one pair is a complete flip (NCI: both analyses
+      correct; NHLBI: both incorrect). Read the paper, decide which institute's answer is right (or
+      neither), and update `data/ground_truth.csv` or `results/review/05_label_match_review.csv`
+      accordingly — there's no automated way to pick a side for these.
+- [ ] **Other data checks before moving on:**
+      - Read the 3 correction-notice pairs' PDFs for power/stats impact — same question as items 1–2.
+      - Re-run `python scripts/05_build_exclusions.py --check` after any of the above changes anything.
+      - Confirm the A/B/C/D definition is still with Dr. Glueck. (The 23 outstanding NHLBI reviews are
+        no longer waiting on anyone — dropped, see below.)
+
 ## Checklist — what's next
 
-Corpus prep is **done**: 1837 active papers (1284 testing + 553 validation), all extracted and cached.
+Corpus prep is **done**: 1814 active papers (1284 testing + 530 validation), all extracted and cached.
 
-- [ ] **Close the NHLBI label gap — 23 of 337 papers still have no human answer.** Mostly resolved.
-      The NHLBI review turned out to live in **two** files: `crt_review_table_112.tex` (159 papers
-      taken to full extraction) and `NHLBI_exclusions_178.csv` (178 rejected before extraction).
-      They are disjoint and together cover all 337. What remains is the 23 tex entries cited with
-      every field blank — reviewed as extraction candidates but not yet extracted, and absent from
-      the exclusions file, so genuinely undecided rather than silently dropped. Ground truth now
-      stands at **544 of 569 validation papers** (NCI 230, NHLBI 314).
-      Ask Dr. Glueck when those 23 will be reviewed. Step 4 stays frozen until then: the
-      build/holdout split cannot be fixed on a partial label set, and `assign_split()` only runs
-      once. Full detail in [Ground Truth Raw/NOTES.md](Ground%20Truth%20Raw/NOTES.md).
+- [x] **Close the NHLBI label gap.** Resolved by dropping rather than waiting. The NHLBI review lived
+      in **two** files: `crt_review_table_112.tex` (159 papers taken to full extraction) and
+      `NHLBI_exclusions_178.csv` (178 rejected before extraction) — disjoint, together covering all 337.
+      23 tex entries were cited with every field blank: candidates for full extraction that never got
+      it. That review will not resume, so `scripts/09_drop_unreviewed_nhlbi.py` dropped them —
+      manifest verdict `DROPPED` / `NHLBI_UNREVIEWED`, PDF and cached text both moved (never deleted)
+      to `data/removed_pdfs/nhlbi_unreviewed/`, logged in
+      `results/review/09_nhlbi_unreviewed_dropped.csv`. They still appear in `data/ground_truth.csv`
+      as `labeled=0` rows — the citation is a historical fact even though the paper left the corpus.
+      **523 of 530 active validation papers are loaded into `validation_labels`** — the other 7 are
+      1 real unresolved paper (Patterson, see below) and 6 papers where NCI and NHLBI reviewed the
+      same paper and disagreed (see the duplicate-pairs item further down). `--assign-split` now
+      refuses on its own while any active paper still lacks a label, so nothing here blocks it anymore.
+      Full detail in [Ground Truth Raw/NOTES.md](Ground%20Truth%20Raw/NOTES.md).
 - [ ] **Request `Ignore03_NHLBI.bib` from the NHLBI team.** The extraction table cites it, but the
       bundle shipped `references.bib` instead — the manuscript's own bibliography, which contains none
       of the 159 cite keys. The right file carries DOIs and would make the NHLBI join exact instead of
@@ -28,35 +54,32 @@ Corpus prep is **done**: 1837 active papers (1284 testing + 553 validation), all
       `db.expected_decision()` cannot map them: it currently returns the raw letter as the expected
       answer for `inclusion`, where the model returns yes/no, so the two can never agree.
 - [ ] **Decide the validation/build batching scheme.** Earlier drafts assumed round numbers
-      (350 / 150) that predate counting what is actually on disk. Settle, in this order: how the 544
+      (350 / 150) that predate counting what is actually on disk. Settle, in this order: how the 523
       labeled papers divide into build and holdout; whether the split is stratified on gate-survivor
       status (open question 2 — a flat 30% holdout leaves only ~29 survivors to score power and data
       analysis on, which is thin for a headline number); and what per-round sample size the rubric loop
       draws from the build split (CLAUDE.md currently says under 100). All three have to be fixed
       before `--assign-split`, because it only runs once.
-- [ ] **Resolve `(Patterson et al., 2022a)` / `(2022b)` — low risk, but drop one *label row*, not just
-      one paper.** The two citations point at `IT2B87LL` (the article, "A cluster randomized controlled
-      trial for a multi-level, clinic-based smoking cessation program") and `JBUFJCLU`
-      (`Correction to:` that same article). APA only appends `a`/`b` when two references share an author
-      and year, so the suffix is the labeller recording that *they* could not separate them either —
-      nothing in the citation decides it, and `07_build_ground_truth.py` leaves both in
-      `results/review/07_ground_truth_unjoined.csv` rather than guessing.
+- [ ] **Resolve `(Patterson et al., 2022a)` / `(2022b)` — low risk, and now precisely scoped: only
+      one real corpus paper is affected, not two.** The two citations point at `IT2B87LL` (the article,
+      "A cluster randomized controlled trial for a multi-level, clinic-based smoking cessation program")
+      and `JBUFJCLU` (`Correction to:` that same article) — and `JBUFJCLU` is already `DROPPED` from the
+      manifest. APA only appends `a`/`b` when two references share an author and year, so the suffix is
+      the labeller recording that *they* could not separate them either — nothing in the citation
+      decides it, and `07_build_ground_truth.py` leaves both in
+      `results/review/07_ground_truth_unjoined.csv` rather than guessing. The reason it still can't be
+      resolved automatically is that the join reads `zotero_meta.jsonl`, which still lists `JBUFJCLU` as
+      a live candidate — `06_merge_validation_duplicates.py`'s DROPPED verdict lives only in the
+      manifest and was never propagated back to the metadata the join actually searches.
 
-      **This is safer than it looks.** Both rows carry *identical* labels: `excluded`, reason `random`
-      ("second study by same group, excluded randomly"), and no `Power`, `Stats`, or `Review Category`.
-      So whichever row maps to whichever document, the expected exclusion decision is the same, and no
-      accuracy number can move. It is a counting problem, not a correctness one — do not let it block
-      `--assign-split`.
+      **Both label rows carry identical labels** — `excluded`, reason `random` ("second study by same
+      group, excluded randomly"), no Power/Stats/Category — so this is a counting problem, not a
+      correctness one, and does not block `--assign-split`.
 
-      **What still has to be done right:** the reviewers wrote a row for the article *and* a row for its
-      correction notice. When `JBUFJCLU` is dropped as a correction notice, join the surviving row to
-      `IT2B87LL` and **discard** the other, rather than pointing both at the survivor — that would enter
-      one paper into the denominator twice. Because the two rows are identical, either one may be kept.
-      Same question as the erratum item below, and it should get the same answer.
-- [ ] **Fix `04_load_ground_truth.py`'s folder filter before running it again.** The 15 merged rows carry
-      `folder = "Both NCI and NHLBI"`, which matches neither entry in `SOURCE_FOLDERS`, so those papers
-      currently fall out of *both* label pools. Then `--dry-run` to confirm the merged rows join and that
-      dropping `JBUFJCLU` resolved the `(Patterson et al., 2022a/2022b)` ambiguity.
+      **The fix, once decided:** teach the join to skip any candidate whose manifest `verdict` is
+      `DROPPED`, so only `IT2B87LL` remains and the ambiguity resolves on its own. Held until the same
+      policy question as the erratum item below is answered: whether `Correction to:` notices belong in
+      the corpus at all.
 - [ ] **Write `rubrics/exclusion.md` v0.** Nothing blocks this — start with "exclude if secondary
       analysis". Only the scoring loop needs step 4.
 - [ ] **Decide on the extracted-text integrity scan.** 100M characters have never been checked for
@@ -94,13 +117,15 @@ every other collection) and one non-article item (a `videoRecording`). The last 
 cross-set duplicate check — papers already sitting in the validation set with a human label
 (1494 → 1287).
 
-**The validation set is 569 papers on disk; labels exist for 544.** `FinalCollectionFor Publication`
-(NCI) holds 232 and `Locked_26_01_08_337` (NHLBI) holds 337. NCI's ground truth is complete
-(`GroundTruthDataNCI01.xlsx`, 232 rows). NHLBI's arrived in two disjoint files that together cover all
-337: `crt_review_table_112.tex` (159 papers taken to full extraction, 23 of them still blank) and
-`NHLBI_exclusions_178.csv` (178 rejected before extraction). 23 papers remain unlabeled. Every
-"500 / 350 / 150" figure in earlier drafts predates counting what is actually there; the real split is
-sized and fixed once those 23 land.
+**569 validation PDFs were fetched; 530 are active in the corpus and 523 carry one clean label.**
+`FinalCollectionFor Publication` (NCI) held 232 and `Locked_26_01_08_337` (NHLBI) held 337. NCI's
+ground truth is complete (`GroundTruthDataNCI01.xlsx`, 232 rows). NHLBI's arrived in two disjoint
+files that together covered all 337: `crt_review_table_112.tex` (159 papers taken to full
+extraction) and `NHLBI_exclusions_178.csv` (178 rejected before extraction). The remaining 23 tex
+entries were cited but never judged and will not be — dropped by
+`scripts/09_drop_unreviewed_nhlbi.py`, not waited on. Of the 530 active papers, 7 are held for a
+human rather than loaded blind: 6 institutional disagreements and 1 unresolved citation. Every
+"500 / 350 / 150" figure in earlier drafts predates counting what is actually there.
 
 All three label files are merged into `data/ground_truth.csv` by `scripts/07_build_ground_truth.py` — a
 wide union of the three source schemas, one row per validation paper, 567 of 569 joined to a `paper_id`.
@@ -476,30 +501,39 @@ then `power_analysis`, then `data_analysis`.
 - [x] Identity verification (`01_verify_identity.py`) — thresholds calibrated, verdicts in the manifest
 - [x] Cross-set duplicate check — 207 testing papers also in validation; removed from testing
       (1494 → 1287), logged in `results/review/02_removed_testing_duplicates.csv`
-- [ ] **Decide the 15 NCI↔NHLBI duplicate pairs inside validation** — same paper twice would be
-      double-counted, and could split across the holdout. See
-      `results/review/03_validation_internal_duplicates.csv`
+- [x] **Decide the 15 NCI↔NHLBI duplicate pairs inside validation.** Resolved by
+      `scripts/04_load_ground_truth.py`, not by a manual decision: 9 pairs agree on every label and are
+      collapsed to one `validation_labels` row automatically; 6 disagree — sometimes completely (one
+      pair has NCI calling both analyses correct and NHLBI calling both incorrect, for the same
+      paper) — and both sides are held out, listed in `results/review/05_label_match_review.csv` for a
+      human to adjudicate by reading the paper. Neither side is silently preferred.
 - [x] Triage the 24 flagged papers with `scripts/03_review_mismatches.py` — 20 PDFs replaced, 4 marked
       fine, none dropped. Audit trail in `results/review/04_papers_reviewed_results.csv`
 - [x] Rewrite `scripts/02_extract_pdfs.py` for two-stage extraction; extract `VERIFIED` (1856 papers,
       all by PyMuPDF, no OCR)
 - [x] `src/db.py` — labels + append-only judgments schema, with the split guard
-- [x] Load the NCI labels into SQLite (230 of 232 joined; 2 in the review queue)
-- [ ] **Resolve the 2 Patterson citations** in `results/review/05_label_match_review.csv`, and decide
-      whether `Correction to:` notices belong in the corpus at all (the same question the Corrigendum
-      and Erratum found during extraction raise)
-- [x] Merge both label files into `data/ground_truth.csv` (`scripts/07_build_ground_truth.py`) —
-      569 rows, 567 joined to paper_ids; NCI 2×2 reproduces the published 20/11/5/60
-- [ ] **Chase the 201 unlabeled NHLBI papers**, then reload and `--assign-split` **once**
+- [x] Load the ground truth into SQLite (`scripts/04_load_ground_truth.py`, rewritten to read
+      `data/ground_truth.csv` rather than parse a spreadsheet itself) — 523 papers in
+      `validation_labels`; `--assign-split` now hard-refuses while any active validation paper still
+      lacks a label (`--allow-incomplete` overrides deliberately)
+- [ ] **Resolve `(Patterson et al., 2022a)` / `(2022b)`** — only **one** real corpus paper is actually
+      affected, not two: the two citations resolve to `IT2B87LL` (the article) and `JBUFJCLU`
+      (`Correction to:` the same article, already `DROPPED` from the manifest). The join still can't
+      choose between them because it reads `zotero_meta.jsonl`, which was never pruned when `JBUFJCLU`
+      was dropped — not because there is a genuine second paper waiting on a label. Still blocked on
+      the same policy question below: whether `Correction to:` notices belong in the corpus at all.
+- [x] Merge every label file into `data/ground_truth.csv` (`scripts/07_build_ground_truth.py`) —
+      569 rows, 567 joined to paper_ids; NCI 2×2 reproduces the published 20/11/5/60. Also fixed here:
+      15 NHLBI citations were resolving to a paper_id `06_merge_validation_duplicates.py` had already
+      retired (the join reads `zotero_meta.jsonl`, which the merge script never prunes) — now remapped
+      to the surviving paper_id, logged in the `paper_id_note` column.
+- [x] **The 23 unlabeled NHLBI papers are dropped, not chased.** `scripts/09_drop_unreviewed_nhlbi.py` —
+      manifest verdict `DROPPED`, files moved to `data/removed_pdfs/nhlbi_unreviewed/`, logged in
+      `results/review/09_nhlbi_unreviewed_dropped.csv`. Active validation corpus: 553 → 530.
 - [ ] **Fix the batching scheme before `--assign-split`** — build/holdout sizes, whether to stratify on
       gate-survivor status, and the rubric-loop round size
-- [ ] **When step 4 resumes: make the label loader skip `DROPPED` papers.** It currently builds its
-      candidate pool from `set == validation` and `folder`, ignoring `verdict`. `JBUFJCLU` is a
-      `Correction to:` notice queued for review; if it is dropped, the loader must stop offering it as
-      a match — which on its own resolves the `(Patterson et al., 2022a/2022b)` ambiguity, since only
-      `IT2B87LL` would remain. Not coded yet: step 4 is frozen until the remaining labels arrive.
 - [x] Exclusion ledger (`scripts/05_build_exclusions.py`) — every departed paper with its reason and
-      who decided; reconciles 2063 fetched → 1854 active
+      who decided; reconciles 2063 fetched → 1814 active
 - [ ] `rubrics/exclusion.md` v0 — literally just "exclude if secondary analysis"
 - [ ] Rubric loop on exclusion against the build split until plateau; Sonnet check
 - [ ] Same for inclusion, then power_analysis, then data_analysis

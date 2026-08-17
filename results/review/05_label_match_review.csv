@@ -1,3 +1,9 @@
-source_file,citation_raw,first_author,year,problem,candidates,candidate_titles
-GroundTruthDataNCI01.xlsx,"168. (Patterson et al., 2022a)",Patterson,2022a,ambiguous citation suffix '2022a',JBUFJCLU; IT2B87LL,"Correction to: A cluster randomized controlled trial for a multi-level | A cluster randomized controlled trial for a multi-level, clinic-based "
-GroundTruthDataNCI01.xlsx,"169. (Patterson et al., 2022b)",Patterson,2022b,ambiguous citation suffix '2022b',JBUFJCLU; IT2B87LL,"Correction to: A cluster randomized controlled trial for a multi-level | A cluster randomized controlled trial for a multi-level, clinic-based "
+problem,paper_id,source_file,citation_raw,cite_key,match_score,nci_answer,nhlbi_answer
+institutional disagreement -- NCI and NHLBI reviewed this paper independently and reached different answers,VGG3KIMT,GroundTruthDataNCI01.xlsx; crt_review_table_112.tex,"11. (Bartels et al., 2024); Bartels et al.",,,excluded (baseline_only),"kept, power=no data=no"
+institutional disagreement -- NCI and NHLBI reviewed this paper independently and reached different answers,RJD9XX6D,GroundTruthDataNCI01.xlsx; crt_review_table_112.tex,"14. (Beck et al., 2019); Beck et al.",,,"kept, power=yes data=yes category=A","kept, power=no data=no"
+institutional disagreement -- NCI and NHLBI reviewed this paper independently and reached different answers,Z7NF2G6Q,GroundTruthDataNCI01.xlsx; NHLBI_exclusions_178.csv,"68. (Gilbert et al., 2022); Gilbert, Amanda (2022)",,,excluded (baseline_only),excluded (implementation_study)
+institutional disagreement -- NCI and NHLBI reviewed this paper independently and reached different answers,DPPC94XT,GroundTruthDataNCI01.xlsx; crt_review_table_112.tex,"105. (King et al., 2021); King et al.",,,excluded (duplicate_group_random_drop),"kept, power=no data=no"
+institutional disagreement -- NCI and NHLBI reviewed this paper independently and reached different answers,HLQA5RI6,GroundTruthDataNCI01.xlsx; crt_review_table_112.tex,"149. (Ockene et al., 2021); Ockene et al.",,,excluded (secondary_analysis),"kept, power=no data=no"
+institutional disagreement -- NCI and NHLBI reviewed this paper independently and reached different answers,E92KWK4B,GroundTruthDataNCI01.xlsx; NHLBI_exclusions_178.csv,"201. (Smith et al., 2023); Smith, Justin D (2023)",,,excluded (implementation_study),excluded (methods_paper)
+citation did not resolve to a paper_id,,GroundTruthDataNCI01.xlsx,"168. (Patterson et al., 2022a)",,,,
+citation did not resolve to a paper_id,,GroundTruthDataNCI01.xlsx,"169. (Patterson et al., 2022b)",,,,

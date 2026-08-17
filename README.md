@@ -16,12 +16,15 @@ decision. Project rules are in [.claude/CLAUDE.md](.claude/CLAUDE.md).
 | | Count |
 |---|---|
 | Study papers to classify | 1,287 |
-| Validation PDFs on disk | 569 (232 NCI + 337 NHLBI) |
-| Validation papers with human labels | 544 |
-| Papers extracted to text | 1,856 |
+| Validation PDFs fetched | 569 (232 NCI + 337 NHLBI) |
+| Validation papers active | 530 — 23 NHLBI papers dropped, cited but never reviewed |
+| Validation papers with one clean label | 523 |
+| Papers extracted to text | 1,814 |
 
-Corpus preparation is complete. **Rubric work is blocked** on the remaining 23 NHLBI labels —
-the build/holdout split cannot be fixed on a partial label set, and it may only be assigned once.
+Corpus preparation is complete. **Rubric work is blocked** on 7 held-out papers — 6 where NCI and
+NHLBI disagreed, 1 unresolved citation — read `results/review/05_label_match_review.csv`. The
+build/holdout split cannot be fixed on a partial label set, and it may only be assigned once;
+`--assign-split` now enforces this on its own.
 
 ## Order to run things
 
@@ -44,9 +47,19 @@ Steps 2 and 3 loop until the review queue is empty; everything else is a straigh
         +---> back to 02, which re-extracts only what changed
         v
 07_build_ground_truth.py  anytime, regenerates from source    safe to re-run
-04_load_ground_truth.py   NOT READY - waiting on the remaining NHLBI labels
+        |
+        |  09 reads this to know which citations are permanently unreviewed
+        v
+09_drop_unreviewed_nhlbi.py  as needed, when a source drops a citation   idempotent
+        |
+        +---> back to 07, so its coverage numbers reflect the smaller active corpus
+        v
+04_load_ground_truth.py   anytime, regenerates from source    safe to re-run
 05_build_exclusions.py    anytime, regenerates from source    safe to re-run
 ```
+
+`08_tex_to_xlsx.py` is a standalone convenience (tex → readable spreadsheet) and doesn't sit in
+this chain.
 
 **Why `01` must not be re-run.** It writes `verdict` and `verdict_reason` for every paper it
 checks, and those columns now hold hand-made decisions — 20 `MANUAL_REPLACED`, 4 `MANUAL_OK`,
@@ -89,23 +102,47 @@ Decisions are appended to `results/review/04_papers_reviewed_results.csv` and wr
 the manifest. Saves on every click and resumes where you left off.
 *Complete: all 24 flagged papers decided — 20 PDFs replaced, 4 confirmed correct.*
 
-**`07_build_ground_truth.py`** — merges the institutes' label files into `data/ground_truth.csv`.
-The two arrived in different formats holding different fields (NCI: a 5-column spreadsheet;
-NHLBI: a 22-column LaTeX table), so the output is a wide union — one row per labeled paper, one
-column per distinct source field, every source string preserved in a `*_raw` column beside its
-normalized form. Also resolves each row to a Zotero `paper_id`. `--report` prints the
-reconciliation without writing.
+**`07_build_ground_truth.py`** — merges every institute's label file into `data/ground_truth.csv`.
+The sources arrived in different formats holding different fields (NCI: a 5-column spreadsheet;
+NHLBI: a 22-column LaTeX table plus a 13-column exclusions CSV with DOI/PMID), so the output is a
+wide union — one row per source citation, one column per distinct source field, every source
+string preserved in a `*_raw` column beside its normalized form. Also resolves each row to a
+Zotero `paper_id`, remapping the 15 NCI/NHLBI duplicate-pair papers to whichever paper_id
+`06_merge_validation_duplicates.py` kept active. `--report` prints the reconciliation without
+writing.
 *569 rows, 567 joined. The NCI 2×2 reproduces the published 20/11/5/60 exactly. Sources and
 their quirks are documented in [Ground Truth Raw/NOTES.md](Ground%20Truth%20Raw/NOTES.md).*
 
-**`04_load_ground_truth.py`** — loads the human labels into SQLite. The work is the join: labels
-name papers the way a reference list does — `83. (Hershman, Bansal, Barlow, et al., 2023)` —
-with no DOI or key, so each citation is parsed back to first author and year and matched against
-the Zotero metadata, using the extra authors *positionally* to break ties. Anything unresolved
-goes to `results/review/05_label_match_review.csv` rather than being guessed. `--dry-run`
-reports the join without writing.
-*Marked NOT READY at the top of the file — the schema is provisional until the remaining NHLBI
-labels arrive, and the build/holdout split is deliberately not yet assigned.*
+**`09_drop_unreviewed_nhlbi.py`** — drops NHLBI papers cited in the review table but never judged,
+and confirmed to stay that way. Source is `data/ground_truth.csv`, filtered to
+`source_institute == "NHLBI" and labeled == "0"`, so a future `crt_review_table_NNN.tex` with the
+same pattern is picked up without editing this script. Nothing is deleted: the PDF and its cached
+extracted text both move to `data/removed_pdfs/nhlbi_unreviewed/`, and the manifest verdict
+becomes `DROPPED` / `NHLBI_UNREVIEWED` — a code distinct from `03`'s `MANUAL_DROPPED` so
+`05_build_exclusions.py` can describe the two reasons separately rather than call this "dropped
+during hand review", which it was not. `--dry-run` reports without writing. Re-run `07` afterward
+so its coverage numbers reflect the smaller active corpus.
+*23 papers dropped; active validation corpus 553 → 530.*
+
+**`04_load_ground_truth.py`** — loads `data/ground_truth.csv` into SQLite's `validation_labels`
+table (one row per paper; `07` already did the harder job of joining citations to paper_ids).
+Its own job is collapsing multiple source rows down to one: 15 papers were reviewed by both NCI
+and NHLBI independently, and where the two agree they're merged automatically, but where they
+disagree — 6 pairs, including one where NCI calls a paper's analyses correct and NHLBI calls the
+same paper's analyses incorrect — both sides are held out and written to
+`results/review/05_label_match_review.csv` for a human, never resolved by picking one. The
+exclusion gate is enforced explicitly here too: any excluded row has power/stats/category forced
+blank regardless of what the source data says. `--assign-split` now refuses to run while any
+active validation paper still lacks a label (`--allow-incomplete` overrides deliberately, since
+the split may only be fixed once). `--dry-run` reports without writing.
+*523 of 530 active validation papers loaded; 7 held out (6 institutional disagreements, 1 real
+unresolved citation).*
+
+**`08_tex_to_xlsx.py`** — direct, unnormalized translation of the newest
+`crt_review_table_NNN.tex` into a readable `.xlsx` for visual review, reusing `07`'s own tex
+parser so the two cannot drift apart. Adds two columns the source lacks: `reviewed` (blank rows
+are unmistakably flagged, not silently misread as "reviewed, nothing to report") and `note`.
+*Output: `Ground Truth Raw/crt_review_table_112.xlsx`.*
 
 **`05_build_exclusions.py`** — consolidates every paper that left the corpus into
 `results/exclusions.csv`, one row per departed paper with `stage`, `reason`, `evidence`, and

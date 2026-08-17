@@ -8,3 +8,8 @@ data/zotero_meta.jsonl
 *.sqlite
 *.db
 .claude/
+
+~$*
+*.xlsx
+*.xls
+*.xlsm

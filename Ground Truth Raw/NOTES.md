@@ -33,22 +33,29 @@ reproduces exactly — the check that the NCI parse is faithful.
 
 ## Coverage
 
-| Set | PDFs on disk | Rows in sources | Actually labeled | Unlabeled |
-|---|---|---|---|---|
-| NCI | 232 | 232 | **230** | 2 |
-| NHLBI | 337 | 337 (159 tex + 178 CSV) | **314** | 23 |
-| Total | 569 | 569 | **544** | 25 |
+569 validation PDFs were fetched in total. 530 are active in the corpus today; the rest left for
+one of two reasons, both logged rather than silently removed:
 
-Every one of the 569 validation papers now has a row. What remains unlabeled is small and
-specific:
+| Left the corpus | Papers | Where |
+|---|---|---|
+| NHLBI, cited but never reviewed — will not be reviewed | 23 | `data/removed_pdfs/nhlbi_unreviewed/` |
+| Correction notice (`JBUFJCLU`) | 1 | `data/removed_pdfs/replaced/` (via `03_review_mismatches.py`) |
+| Folded into a duplicate-pair survivor | 15 | still active, just counted once (see below) |
 
-- **23 NHLBI papers** cited in the tex with every field blank — reviewed as candidates for full
-  extraction but not yet extracted. They are *not* in the exclusions CSV, so they are genuinely
-  undecided, not silently dropped. Several look like protocol papers that may end up excluded.
-- **2 NCI rows** — the `(Patterson et al., 2022a/2022b)` pair, unjoinable rather than unlabeled
-  (see *Joining to the corpus* below).
+Of the 530 active papers, **523 carry one clean label**. The other 7 are held for a human, not
+silently dropped: 6 papers where NCI and NHLBI reviewed the same paper and disagreed, and 1 real
+unresolved citation (`(Patterson et al., 2022a/2022b)`, discussed below). Both are logged in
+`results/review/05_label_match_review.csv`.
 
-**Open question for the data owner:** when will the 23 outstanding NHLBI papers be reviewed?
+**The 23 unreviewed NHLBI papers are dropped, not pending.** They were cited in the tex with
+every field blank — candidates for full extraction that never got it. That review will not
+resume, so `scripts/09_drop_unreviewed_nhlbi.py` moved them out: manifest verdict `DROPPED`
+(`verdict_reason = NHLBI_UNREVIEWED`), PDF and cached extracted text both moved — never
+deleted — to `data/removed_pdfs/nhlbi_unreviewed/` (extracted text nested one level further, in
+`extracted_text/`). The full list, with the reason and timestamp, is
+`results/review/09_nhlbi_unreviewed_dropped.csv`. They still appear in `data/ground_truth.csv`
+as `labeled=0` rows — dropping is a corpus-membership decision, transcribing the source citation
+is a separate one, and the row is the historical record that the citation existed.
 
 ## NCI columns (5)
 
@@ -163,15 +170,32 @@ Kennedy Shriver National Institute of Child Health` — no surname for the usual
 title carries the match alone. It only fires on a near-exact title (≥90) with no rival above 70;
 entry 69 scores 93 against a runner-up of 59.
 
-The two left over are a real ambiguity, not a parser failure. `(Patterson et al., 2022a)` and
-`(2022b)` point at `IT2B87LL` (the article) and `JBUFJCLU` (`Correction to:` the same article).
-APA only adds the `a`/`b` suffix when two references share an author and year, so the suffix is
-the labeller recording that *they* couldn't separate them either. Low risk either way: **both
-rows hold identical labels** — excluded, reason `random`, no Power/Stats/Category — so the
-expected decision doesn't depend on which is which. It does mean the reviewers scored the
-article and its correction notice separately, though. When `JBUFJCLU` is dropped as a correction
-notice (queued in PLAN.md), the surviving label row should join to `IT2B87LL` and the other
-should be **discarded**, not re-pointed at the survivor — that would double-count one paper.
+The two left over are a real ambiguity, not a parser failure — though only one real paper is at
+stake. `(Patterson et al., 2022a)` and `(2022b)` point at `IT2B87LL` (the article) and `JBUFJCLU`
+(`Correction to:` the same article) — and `JBUFJCLU` is already `DROPPED` from the manifest. APA
+only adds the `a`/`b` suffix when two references share an author and year, so the suffix is the
+labeller recording that *they* couldn't separate them either. The join still can't resolve it
+automatically because it searches `zotero_meta.jsonl`, which still lists `JBUFJCLU` as a live
+candidate — the manifest's `DROPPED` verdict was never propagated back to it. Low risk either
+way: both label rows hold identical values (excluded, reason `random`, no Power/Stats/Category),
+so no accuracy number depends on which is which.
 
 Getting `Ignore03_NHLBI.bib` would make the NHLBI join exact rather than fuzzy: it carries DOIs.
 Worth asking for.
+
+## Fifteen papers, two reviews each
+
+15 papers were fetched into both Zotero groups and independently reviewed by both institutes —
+`06_merge_validation_duplicates.py` already collapsed their *manifest* rows to one paper_id
+apiece (the NCI side), but the fetch's raw metadata (`zotero_meta.jsonl`) was never pruned to
+match, so an NHLBI citation could still resolve to the retired paper_id. `07_build_ground_truth.py`
+now remaps those 15 rows to the surviving paper_id (visible in the `paper_id_note` column), so
+every row in `ground_truth.csv` points at a paper that actually has a PDF and extracted text.
+
+That remap is what surfaces the real finding: **9 of the 15 pairs agree on every label; 6 do
+not.** One disagreement is a complete flip — NCI calls both power and data analysis correct for
+a paper NHLBI calls both incorrect for. `04_load_ground_truth.py` collapses the 9 agreeing pairs
+to one `validation_labels` row automatically and holds out both sides of the 6 disagreements,
+writing them to `results/review/05_label_match_review.csv` with each institute's answer spelled
+out. Neither side is guessed at — a paper held out this way gets no label at all until a human
+reads it and decides, the same treatment as an unresolved citation.

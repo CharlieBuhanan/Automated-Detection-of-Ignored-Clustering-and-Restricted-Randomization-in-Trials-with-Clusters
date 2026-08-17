@@ -125,7 +125,12 @@ def manual_drops(manifest: list[dict]) -> list[dict]:
 
     rows = []
     for row in manifest:
-        if row.get("verdict") != "DROPPED":
+        # NHLBI_UNREVIEWED papers are DROPPED too, but nhlbi_unreviewed_drops()
+        # below reads their own dedicated log and writes a specific reason --
+        # counting them here as well would double them in the ledger, and the
+        # generic "dropped during hand review" fallback would misdescribe them
+        # (nobody reviewed a mismatched PDF; the paper was simply never judged).
+        if row.get("verdict") != "DROPPED" or row.get("verdict_reason") not in ("", "MANUAL_DROPPED"):
             continue
         paper_id = row["paper_id"]
         decision = decisions.get(paper_id, {})
@@ -182,28 +187,64 @@ def blocked_at_fetch(manifest: list[dict]) -> list[dict]:
     return rows
 
 
+def nhlbi_unreviewed_drops(titles: dict) -> list[dict]:
+    """Papers cited in the NHLBI extraction table but dropped before review.
+
+    scripts/09_drop_unreviewed_nhlbi.py's own log, not the generic
+    04_papers_reviewed_results.csv trail manual_drops() reads -- these papers
+    never went through the mismatch-review GUI, so joining against that log
+    would find nothing and fall back to a description that does not apply.
+    """
+    rows = []
+    for row in read_csv(REVIEW_DIR / "09_nhlbi_unreviewed_dropped.csv"):
+        paper_id = row["paper_id"]
+        rows.append({
+            "paper_id": paper_id,
+            "set": "validation",
+            "stage": "nhlbi_unreviewed",
+            "removed_from": "corpus",
+            "reason": row["reason"],
+            "evidence": f"cited as entry {row['source_row']} ({row['citation_raw']!r}) "
+                        f"in crt_review_table_112.tex with every field blank",
+            "decided_by": BY_HUMAN,
+            "decided_at": row.get("dropped_at", ""),
+            "source_record": "results/review/09_nhlbi_unreviewed_dropped.csv",
+            "title": titles.get(paper_id, ""),
+        })
+    return rows
+
+
 def unjoinable_labels(titles: dict) -> list[dict]:
-    """Human labels that could not be tied to a paper.
+    """Human labels that could not be turned into one trustworthy answer.
 
     These do not remove a paper from the corpus -- the paper is still there and
     still gets classified. What is lost is the ground truth for it, which
     shrinks the validation denominator, so it belongs in the ledger with
     `removed_from` saying exactly what was lost.
+
+    scripts/04_load_ground_truth.py writes two different problems to this file,
+    and they read differently here: an institutional disagreement already knows
+    its paper_id (NCI and NHLBI both reviewed it, they just disagreed), while an
+    unresolved citation genuinely does not (the citation itself never resolved).
     """
     rows = []
     for row in read_csv(REVIEW_DIR / "05_label_match_review.csv"):
+        is_disagreement = row["problem"].startswith("institutional")
         rows.append({
-            "paper_id": "",   # by definition unknown -- that is the problem
+            "paper_id": row.get("paper_id", ""),
             "set": "validation",
-            "stage": "label_unjoinable",
+            "stage": "institutional_disagreement" if is_disagreement else "label_unjoinable",
             "removed_from": "validation_labels",
             "reason": row["problem"],
-            "evidence": f"citation {row['citation_raw']!r}; "
-                        f"candidates: {row.get('candidates') or 'none'}",
+            "evidence": (f"NCI: {row.get('nci_answer', '')}; NHLBI: {row.get('nhlbi_answer', '')}"
+                        if is_disagreement else
+                        f"citation {row['citation_raw']!r}"
+                        + (f"; cite_key {row['cite_key']!r}" if row.get("cite_key") else "")
+                        + (f"; best match score {row['match_score']}" if row.get("match_score") else "")),
             "decided_by": BY_RULE,
             "decided_at": "",
             "source_record": "results/review/05_label_match_review.csv",
-            "title": row.get("candidate_titles", ""),
+            "title": titles.get(row.get("paper_id", ""), ""),
         })
     return rows
 
@@ -222,6 +263,7 @@ def main():
               + cross_set_duplicates(titles)
               + merged_validation_duplicates()
               + manual_drops(manifest)
+              + nhlbi_unreviewed_drops(titles)
               + unjoinable_labels(titles))
 
     # Two different kinds of removal, and conflating them makes the arithmetic

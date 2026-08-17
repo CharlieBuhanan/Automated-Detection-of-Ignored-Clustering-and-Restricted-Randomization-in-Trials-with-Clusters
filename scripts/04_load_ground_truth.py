@@ -1,58 +1,55 @@
-"""NOT READY -- waiting on the rest of the ground truth. Do not build on this.
-
-Only GroundTruthDataNCI01.xlsx exists so far, covering 232 of the 569
-validation papers. This script works on that file, and the 230 rows it loaded
-into data/review.db are a provisional load meant for inspection, not a base to
-build on -- expect to discard and reload once the remaining label files arrive.
-
-What could still change when they do:
-  - SOURCE_FOLDERS needs an entry per new file, and the mapping is guessed
-    from filename prefixes
-  - **SOURCE_FOLDERS no longer covers every validation paper.** The 15
-    NCI/NHLBI duplicate pairs were merged into single rows carrying
-    folder="Both NCI and NHLBI", which matches neither entry, so those 15
-    papers currently fall out of BOTH candidate pools and their labels would
-    fail to join. The folder filter has to accept the merged marker for both
-    files before this script is run again.
-  - the "Combined" sheet name and the four column headers are NCI's; another
-    institute may name or split them differently
-  - the citation format is assumed to be APA author-year, which held for
-    232/232 NCI rows but is not guaranteed elsewhere
-  - the build/holdout split is deliberately NOT assigned yet
-
-Read the rest of this docstring as a description of intent, not of finished work.
-
----
-
-Load the human labels into SQLite and join them to paper_ids (PLAN.md step 4).
+"""Load the merged ground truth into SQLite and fix the build/holdout split (PLAN.md step 4).
 
 HOW TO RUN
-    python scripts/04_load_ground_truth.py --dry-run      # report, write nothing
-    python scripts/04_load_ground_truth.py                # load into data/review.db
-    python scripts/04_load_ground_truth.py --assign-split # fix build/holdout, once
+    python scripts/04_load_ground_truth.py --dry-run          # report, write nothing
+    python scripts/04_load_ground_truth.py                    # load into data/review.db
+    python scripts/04_load_ground_truth.py --assign-split     # fix build/holdout, once
+
+WHAT CHANGED
+    This used to parse GroundTruthDataNCI01.xlsx itself -- citation parsing,
+    author-position tie-breaking, the works. That join now lives in
+    scripts/07_build_ground_truth.py, which reads every label source (currently
+    three) and writes one merged, paper_id-resolved table to
+    data/ground_truth.csv. This script's job shrank to what only it can do:
+    collapsing that table into the one-row-per-paper `validation_labels` SQLite
+    table, which is a real decision when two institutes reviewed the same
+    paper, not a mechanical copy.
+
+    Run `python scripts/07_build_ground_truth.py` first (or after any label file
+    changes) to refresh data/ground_truth.csv before loading it here.
 
 WHAT IT DOES
-    Reads every GroundTruth*.xlsx it can find, parses each row's citation, and
-    works out which corpus paper it refers to.
+    Reads data/ground_truth.csv and, for each paper_id, decides what goes into
+    validation_labels:
 
-    The join is the hard part. The labels identify papers the way a reference
-    list does -- "83. (Hershman, Bansal, Barlow, et al., 2023)" -- with no DOI,
-    no PMID, and no Zotero key. So the citation is parsed back into (first
-    author surname, year) and matched against the Zotero metadata:
+      one row for that paper_id           -> load it
+      several rows, all agreeing          -> collapse to one, load it
+      several rows that disagree          -> hold out BOTH, flag for a human
+      no paper_id (citation never joined) -> hold out, flag for a human
+      cited but never reviewed, still active  -> skip; not a label, not a problem
+      cited but never reviewed, now dropped   -> skip; reported separately (see 09)
 
-      1. first author + year unique in the folder      -> matched
-      2. two papers share both, but the citation lists
-         extra authors (APA adds them until the cite is
-         unique) -> compare them by author *position*  -> matched
-      3. anything left, including "2022a"/"2022b"      -> review queue
+    The "several rows" case is real, not a corner case: 15 papers were fetched
+    into both the NCI and NHLBI Zotero groups and independently reviewed by
+    both institutes. 8 of the 15 pairs agree on every field. 7 do not --
+    sometimes completely (one pair has NCI calling both analyses correct and
+    NHLBI calling both incorrect, for the identical paper). Nothing is ever
+    guessed here: a disagreement is not resolved by picking a side, because a
+    wrong label silently corrupts every accuracy number computed after it. Both
+    sides go to the review queue with each institute's answer spelled out, for
+    a human to adjudicate by reading the paper.
 
-    Measured on GroundTruthDataNCI01.xlsx: 216 by rule 1, 14 by rule 2, 2 to
-    review. Nothing is ever guessed -- a wrong label is worse than a missing
-    one, because it silently corrupts every accuracy number computed after it.
+    The exclusion gate is enforced here too, explicitly, rather than trusted
+    from the source: any row with excluded=1 has power/stats/review_category
+    forced to NULL regardless of what the source data says. This defends
+    against exactly one known case -- tex entry 13 is marked "EXCLUDED but data
+    preserved" and carries a full extraction despite being excluded -- and the
+    project's hard rule is that an excluded paper gets no power/data row at
+    all, not a stray one that happens to still be sitting in the source file.
 
 OUTPUTS
     data/review.db                              validation_labels rows
-    results/review/05_label_match_review.csv    citations needing a human
+    results/review/05_label_match_review.csv    rows needing a human, and why
     Terminal                                    reconciliation against the source
 """
 
@@ -60,182 +57,147 @@ import argparse
 import collections
 import csv
 import io
-import re
 import sys
 from pathlib import Path
 
-import pandas as pd
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 import db
-from identity import normalize
-from zotero_fetch import load_meta
 
 ROOT = Path(__file__).resolve().parent.parent
+GROUND_TRUTH = ROOT / "data" / "ground_truth.csv"
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
-META = ROOT / "data" / "zotero_meta.jsonl"
 REVIEW = ROOT / "results" / "review" / "05_label_match_review.csv"
 
-# Where a label file's papers live in the corpus. The spreadsheets are named
-# per institute and each covers one Zotero collection, so the folder is what
-# scopes the search -- matching "Lee 2022" against all 1,856 papers instead of
-# the 232 in its own collection would invent ambiguity that does not exist.
-SOURCE_FOLDERS = {
-    "GroundTruthDataNCI": "FinalCollectionFor Publication",
-    "GroundTruthDataNHLBI": "Locked_26_01_08_337",
-}
+# The four fields that decide whether two institutes' reviews of the same
+# paper actually agree. Design-extraction columns (cluster counts, ICC, ...)
+# are NHLBI-only and never compared -- NCI has no opinion on them to disagree
+# with.
+LABEL_FIELDS = ("excluded", "exclusion_reason", "power_correct", "data_correct")
 
-REVIEW_COLUMNS = [
-    "source_file", "citation_raw", "first_author", "year", "problem",
-    "candidates", "candidate_titles",
-]
-
-# "83. (Hershman, Bansal, Barlow, et al., 2023)" and "(Smith & Jones, 2019)"
-CITE = re.compile(r"^\s*(?:\d+\.)?\s*\((.+?),\s*(\d{4})([a-z]?)\)\s*$")
-# "R. E. Lee" -> "Lee". Initials appear only when two first authors share a
-# surname, which is precisely when the surname alone is not enough.
-INITIALS = re.compile(r"^(?:[A-Z]\.\s*)+")
+REVIEW_COLUMNS = ["problem", "paper_id", "source_file", "citation_raw",
+                  "cite_key", "match_score", "nci_answer", "nhlbi_answer"]
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 
-def parse_citation(raw: str) -> tuple[str, list[str], str, str] | None:
-    """"12. (Harry, Asche, et al., 2022)" -> ("Harry", ["Asche"], "2022", "").
+def read_ground_truth(path: Path) -> list[dict]:
+    with open(path, newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
 
-    The trailing letter of "2022a" is returned separately: it means the labeller
-    had two papers this citation could not tell apart, so it is a signal to stop
-    rather than a part of the year.
+
+def describe(row: dict) -> str:
+    """One-line human-readable summary of a row's label, for the review queue."""
+    if row["excluded"] == "1":
+        return f"excluded ({row['exclusion_reason'] or 'no reason recorded'})"
+    bits = [f"power={row['power_correct'] or '?'}", f"data={row['data_correct'] or '?'}"]
+    if row.get("review_category"):
+        bits.append(f"category={row['review_category']}")
+    return "kept, " + " ".join(bits)
+
+
+def agrees(rows: list[dict]) -> bool:
+    return len({tuple(r[f] for f in LABEL_FIELDS) for r in rows}) == 1
+
+
+def collapse(rows: list[dict]) -> dict:
+    """Multiple agreeing source rows for one paper -> one validation_labels row.
+
+    Institute order is fixed (NCI first) purely for a deterministic
+    source_file/matched_by string across re-runs -- the label values themselves
+    are identical by construction, since this is only called after agrees().
     """
-    match = CITE.match(str(raw))
-    if not match:
-        return None
-    names = re.sub(r"\bet\s+al\.?", "", match.group(1))
-    parts = [INITIALS.sub("", p.strip()).strip() for p in re.split(r"[,&]", names) if p.strip()]
-    if not parts:
-        return None
-    return parts[0], parts[1:], match.group(2), match.group(3)
+    rows = sorted(rows, key=lambda r: r["source_institute"] != "NCI")
+    primary = rows[0]
+    return {
+        **primary,
+        "source_file": "; ".join(dict.fromkeys(r["source_file"] for r in rows)),
+        "citation_raw": " | ".join(dict.fromkeys(r["citation_raw"] for r in rows)),
+        "matched_by": primary["matched_by"] + " (confirmed by both institutes)",
+    }
 
 
-def author_index(paper_ids: list[str], meta: dict) -> dict:
-    """(normalized first-author surname, year) -> [paper_id, ...]"""
-    index = collections.defaultdict(list)
-    for paper_id in paper_ids:
-        record = meta.get(paper_id, {})
-        authors = record.get("authors") or [""]
-        index[(normalize(authors[0]), str(record.get("year") or ""))].append(paper_id)
-    return index
+def to_label_row(row: dict) -> dict:
+    """ground_truth.csv row -> validation_labels insert dict.
 
-
-def positional_score(paper_id: str, extra: list[str], meta: dict) -> int:
-    """How many disambiguating surnames sit at the author position APA implies.
-
-    APA extends a citation one author at a time until it is unique, so the
-    names after the first are the 2nd, 3rd, ... authors in order. Checking
-    position rather than mere membership is what separates two papers by the
-    same research group, where every name appears on both.
+    The gate is enforced here rather than trusted: power/stats/review_category
+    are forced blank for any excluded paper, even if the source data carried a
+    stray value (see tex entry 13 in the module docstring).
     """
-    authors = [normalize(a) for a in (meta.get(paper_id, {}).get("authors") or [])]
-    return sum(1 for i, name in enumerate(extra)
-               if i + 1 < len(authors) and authors[i + 1] == normalize(name))
+    excluded = row["excluded"] == "1"
+    score = row.get("match_score") or ""
+    return {
+        "paper_id": row["paper_id"],
+        "source_file": row["source_file"],
+        "citation_raw": row["citation_raw"],
+        "exclusion_reason": row["exclusion_reason"] if excluded else None,
+        "power": None if excluded else (row["power_correct"] or None),
+        "stats": None if excluded else (row["data_correct"] or None),
+        "review_category": None if excluded else (row.get("review_category") or None),
+        "matched_by": row["matched_by"],
+        "match_score": float(score) / 100 if score else None,
+    }
 
 
-def match_one(parsed, index, meta) -> tuple[str | None, str, str]:
-    """Resolve one citation. Returns (paper_id or None, matched_by, problem)."""
-    first, extra, year, suffix = parsed
-    candidates = index.get((normalize(first), year), [])
+def active_validation_paper_ids() -> set:
+    """paper_ids the corpus currently expects a label for.
 
-    if suffix:
-        # "2022a" means the labeller themselves could not distinguish two
-        # papers by author and year. Neither can we.
-        return None, "", f"ambiguous citation suffix '{year}{suffix}'"
-    if not candidates:
-        return None, "", "no paper with this first author and year"
-    if len(candidates) == 1:
-        return candidates[0], "first_author_year", ""
-
-    scored = sorted(((positional_score(p, extra, meta), p) for p in candidates), reverse=True)
-    if len(scored) > 1 and scored[0][0] > scored[1][0]:
-        return scored[0][1], "author_position", ""
-    return None, "", f"{len(candidates)} papers share this first author and year"
+    The manifest's validation rows minus anything DROPPED -- not the raw label
+    counts, which would double count the 15 NCI/NHLBI duplicate-pair papers
+    that collapse to a single manifest row apiece.
+    """
+    with open(MANIFEST, encoding="utf-8") as handle:
+        return {row["paper_id"] for row in csv.DictReader(handle)
+                if row["set"] == "validation" and row["verdict"] != "DROPPED"}
 
 
-def folder_for(path: Path) -> str | None:
-    for prefix, folder in SOURCE_FOLDERS.items():
-        if path.stem.startswith(prefix):
-            return folder
-    return None
+def build(rows: list[dict], active: set) -> tuple[list[dict], list[dict], int, int]:
+    """ground_truth.csv rows -> (label_rows, review_rows, pending, dropped).
 
+    A `labeled == "0"` row (cited, never judged) means one of two different
+    things depending on whether its paper is still in `active`: most are
+    genuinely pending a future review, but scripts/09_drop_unreviewed_nhlbi.py
+    formally drops some of them from the corpus, at which point they are not
+    "not yet loaded" so much as "never going to be loaded" -- worth reporting
+    separately so a shrinking `active` denominator doesn't read as a still-growing
+    backlog.
+    """
+    unjoined = [r for r in rows if not r["paper_id"] and r["labeled"] == "1"]
+    joined = [r for r in rows if r["paper_id"] and r["labeled"] == "1"]
+    unreviewed = [r for r in rows if r["labeled"] == "0"]
+    pending = sum(1 for r in unreviewed if not r["paper_id"] or r["paper_id"] in active)
+    dropped = len(unreviewed) - pending
 
-def load_file(path: Path, manifest_rows: list[dict], meta: dict):
-    """Parse and join one label file. Returns (label_rows, review_rows)."""
-    folder = folder_for(path)
-    if folder is None:
-        raise SystemExit(
-            f"{path.name}: no folder mapping. Add its prefix to SOURCE_FOLDERS "
-            f"(known: {', '.join(SOURCE_FOLDERS)}).")
-
-    paper_ids = [r["paper_id"] for r in manifest_rows
-                 if r["set"] == "validation" and r["folder"] == folder]
-    if not paper_ids:
-        raise SystemExit(f"{path.name}: no validation papers in folder {folder!r}.")
-
-    frame = pd.read_excel(path, sheet_name="Combined")
-    index = author_index(paper_ids, meta)
+    by_paper = collections.defaultdict(list)
+    for row in joined:
+        by_paper[row["paper_id"]].append(row)
 
     labels, review = [], []
-    for _, row in frame.iterrows():
-        raw = str(row["Citation"]).strip()
-        if not raw or raw.lower() == "nan":
+    for paper_id, group in by_paper.items():
+        if len(group) == 1 or agrees(group):
+            labels.append(to_label_row(collapse(group) if len(group) > 1 else group[0]))
             continue
-
-        parsed = parse_citation(raw)
-        if parsed is None:
-            review.append({"source_file": path.name, "citation_raw": raw,
-                           "first_author": "", "year": "",
-                           "problem": "could not parse the citation",
-                           "candidates": "", "candidate_titles": ""})
-            continue
-
-        paper_id, matched_by, problem = match_one(parsed, index, meta)
-        first, _extra, year, suffix = parsed
-
-        if paper_id is None:
-            candidates = index.get((normalize(first), year), [])
-            review.append({
-                "source_file": path.name, "citation_raw": raw,
-                "first_author": first, "year": f"{year}{suffix}", "problem": problem,
-                "candidates": "; ".join(candidates),
-                "candidate_titles": " | ".join(
-                    (meta.get(c, {}).get("title") or "")[:70] for c in candidates),
-            })
-            continue
-
-        labels.append({
+        by_inst = {r["source_institute"]: r for r in group}
+        review.append({
+            "problem": "institutional disagreement -- NCI and NHLBI reviewed this "
+                       "paper independently and reached different answers",
             "paper_id": paper_id,
-            "source_file": path.name,
-            "citation_raw": raw,
-            "exclusion_reason": clean(row.get("Reason excluded")),
-            "power": clean(row.get("Power")),
-            "stats": clean(row.get("Stats")),
-            "review_category": clean(row.get("Review Category")),
-            "matched_by": matched_by,
-            "match_score": 1.0 if matched_by == "first_author_year" else 0.9,
+            "source_file": "; ".join(r["source_file"] for r in group),
+            "citation_raw": "; ".join(r["citation_raw"] for r in group),
+            "cite_key": "", "match_score": "",
+            "nci_answer": describe(by_inst["NCI"]) if "NCI" in by_inst else "",
+            "nhlbi_answer": describe(by_inst["NHLBI"]) if "NHLBI" in by_inst else "",
         })
 
-    return labels, review
+    for row in unjoined:
+        review.append({
+            "problem": "citation did not resolve to a paper_id",
+            "paper_id": "", "source_file": row["source_file"],
+            "citation_raw": row["citation_raw"], "cite_key": row.get("cite_key", ""),
+            "match_score": row.get("match_score", ""),
+            "nci_answer": "", "nhlbi_answer": "",
+        })
 
-
-def clean(value) -> str | None:
-    """Spreadsheet cell -> stripped string, or None for blank/NaN.
-
-    A blank matters here: no exclusion reason means the paper was kept, and no
-    Power/Stats value means it never reached that task. Storing "" and NULL
-    interchangeably would erase that distinction.
-    """
-    if value is None or (isinstance(value, float) and pd.isna(value)):
-        return None
-    text = str(value).strip()
-    return text or None
+    return labels, review, pending, dropped
 
 
 def write_review(rows: list[dict]) -> None:
@@ -246,89 +208,94 @@ def write_review(rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
-def find_label_files(explicit: list[str] | None) -> list[Path]:
-    if explicit:
-        return [Path(p) for p in explicit]
-    found = sorted(ROOT.glob("GroundTruth*.xlsx")) + sorted((ROOT / "data" / "labels").glob("GroundTruth*.xlsx"))
-    if not found:
-        raise SystemExit("No GroundTruth*.xlsx found in the repo root or data/labels/.")
-    return found
-
-
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--labels", nargs="*", help="Label .xlsx files (default: GroundTruth*.xlsx)")
-    parser.add_argument("--dry-run", action="store_true", help="Report the join, write nothing")
+    parser.add_argument("--ground-truth", type=Path, default=GROUND_TRUTH,
+                        help=f"merged label CSV to load (default: {GROUND_TRUTH.relative_to(ROOT)})")
+    parser.add_argument("--dry-run", action="store_true", help="Report the load, write nothing")
     parser.add_argument("--assign-split", action="store_true",
-                        help="Fix the build/holdout split after loading. Do this ONCE, when every label file is in.")
+                        help="Fix the build/holdout split after loading. Do this ONCE, when every label is in.")
     parser.add_argument("--holdout-frac", type=float, default=0.3)
     parser.add_argument("--force-split", action="store_true",
                         help="Re-assign an existing split. Only with a deliberate reason.")
+    parser.add_argument("--allow-incomplete", action="store_true",
+                        help="Allow --assign-split even while some active validation "
+                             "papers still have no label. The split can only be fixed "
+                             "once, so this is a deliberate override, not a default.")
     args = parser.parse_args()
 
-    manifest_rows = list(csv.DictReader(MANIFEST.open(newline="", encoding="utf-8")))
-    meta = load_meta(META)
-    files = find_label_files(args.labels)
+    if not args.ground_truth.exists():
+        raise SystemExit(f"{args.ground_truth} not found. Run "
+                          f"scripts/07_build_ground_truth.py first.")
 
-    all_labels, all_review = [], []
-    for path in files:
-        labels, review = load_file(path, manifest_rows, meta)
-        all_labels.extend(labels)
-        all_review.extend(review)
+    rows = read_ground_truth(args.ground_truth)
+    active = active_validation_paper_ids()
+    labels, review, pending, dropped = build(rows, active)
 
-        folder = folder_for(path)
-        in_corpus = sum(1 for r in manifest_rows
-                        if r["set"] == "validation" and r["folder"] == folder)
-        print(f"{path.name}: {len(labels) + len(review)} citations -> "
-              f"{len(labels)} matched, {len(review)} to review "
-              f"({in_corpus} papers in that collection)")
+    disagreements = sum(1 for r in review if r["problem"].startswith("institutional"))
+    unresolved = len(review) - disagreements
+    print(f"{args.ground_truth.relative_to(ROOT)}: {len(rows)} rows -> "
+          f"{len(labels)} papers to load, {disagreements} institutional "
+          f"disagreement(s), {unresolved} unresolved citation(s), "
+          f"{pending} still pending review"
+          + (f", {dropped} dropped from the corpus before review" if dropped else ""))
 
-    by_method = collections.Counter(r["matched_by"] for r in all_labels)
-    print(f"\n{'='*70}\nJOIN ({len(all_labels)} matched, {len(all_review)} unresolved)\n{'='*70}")
-    for method, n in by_method.most_common():
-        print(f"  {method:22} {n:5}")
+    covered = {r["paper_id"] for r in labels}
+    missing = active - covered
+    print(f"\ncorpus coverage: {len(covered)} of {len(active)} active validation "
+          f"papers will have a label ({len(missing)} still missing)")
 
-    collisions = [pid for pid, n in collections.Counter(
-        r["paper_id"] for r in all_labels).items() if n > 1]
-    if collisions:
-        print(f"\n!! {len(collisions)} paper(s) claimed by more than one citation: "
-              f"{collisions[:5]}\n   Resolve these before loading -- one of the labels is wrong.")
-
-    labelled = collections.Counter()
-    for row in all_labels:
-        for field in ("exclusion_reason", "power", "stats", "review_category"):
-            if row[field]:
-                labelled[field] += 1
-    print("\nlabel coverage:")
-    for field, n in labelled.most_common():
-        print(f"  {field:22} {n:5}")
-
-    if all_review:
-        write_review(all_review)
-        print(f"\n{'='*70}\nNEEDS A HUMAN ({len(all_review)})\n{'='*70}")
-        for row in all_review:
-            print(f"  {row['citation_raw']}  --  {row['problem']}")
-            if row["candidates"]:
-                print(f"      {row['candidates']}")
-                print(f"      {row['candidate_titles']}")
-        print(f"\n  -> {REVIEW}")
-        print("     Fill in the right paper_id by hand, then re-run.")
+    if review:
+        write_review(review)
+        print(f"\n{'='*70}\nNEEDS A HUMAN ({len(review)})\n{'='*70}")
+        for row in review:
+            print(f"  [{row['problem']}]")
+            print(f"    {row['citation_raw']}")
+            if row["nci_answer"] or row["nhlbi_answer"]:
+                print(f"    NCI:   {row['nci_answer']}")
+                print(f"    NHLBI: {row['nhlbi_answer']}")
+        print(f"\n  -> {REVIEW.relative_to(ROOT)}")
 
     if args.dry_run:
         print("\n--dry-run: nothing written to the database.")
         return
-    if collisions:
-        raise SystemExit("\nRefusing to load while two citations claim the same paper.")
 
     conn = db.connect()
-    db.insert_labels(conn, all_labels)
-    print(f"\nloaded {len(all_labels)} label row(s) -> {db.DEFAULT_PATH}")
+
+    # This load is authoritative for anything not already locked into a split:
+    # a paper this run decided to hold out (a newly found disagreement, a
+    # citation that stopped resolving) must not leave a stale row behind from
+    # an earlier run, or expected_decision() would keep scoring against an
+    # answer this run explicitly refused to trust. A row that already carries
+    # a split is never touched here -- assign_split() is the only thing
+    # allowed to change what's in the holdout, and it can only run once.
+    keep = {row["paper_id"] for row in labels}
+    stale = [r["paper_id"] for r in conn.execute(
+        "SELECT paper_id FROM validation_labels WHERE split IS NULL")
+        if r["paper_id"] not in keep]
+    if stale:
+        conn.executemany("DELETE FROM validation_labels WHERE paper_id = ?",
+                         [(p,) for p in stale])
+        conn.commit()
+        print(f"\npruned {len(stale)} stale row(s) no longer produced by this load "
+              f"(and not already split): {', '.join(sorted(stale)[:10])}")
+
+    db.insert_labels(conn, labels)
+    print(f"\nloaded {len(labels)} label row(s) -> {db.DEFAULT_PATH}")
 
     if args.assign_split:
+        if missing and not args.allow_incomplete:
+            raise SystemExit(
+                f"\n{len(missing)} of {len(active)} active validation papers have no "
+                f"label yet. Refusing to assign the split while incomplete -- it can "
+                f"only be assigned once. Pass --allow-incomplete if you are "
+                f"deliberately proceeding without them.\n"
+                f"Missing: {', '.join(sorted(missing)[:10])}"
+                f"{', ...' if len(missing) > 10 else ''}")
         counts = db.assign_split(conn, holdout_frac=args.holdout_frac, force=args.force_split)
         print(f"split fixed: {counts[db.SPLIT_BUILD]} build / {counts[db.SPLIT_HOLDOUT]} holdout")
     else:
-        print("split not assigned. Run --assign-split once every label file is loaded.")
+        print("split not assigned. Run --assign-split once every label is loaded.")
 
     print("\nin the database now:")
     for key, value in db.label_counts(conn).items():
