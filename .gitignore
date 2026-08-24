@@ -1,15 +1,44 @@
+# --- Secrets ---
 .env
+.env.*
+!.env.example
+
+# --- Python ---
 venv/
 __pycache__/
 *.pyc
+
+# --- Corpus PDFs: copyrighted publisher papers, never redistribute ---
+# Blanket rule so a new subdirectory can never leak them again.
+*.pdf
+# Exception: our own generated figures/output live in results/.
+!results/*.pdf
+
 data/raw_pdfs/
+data/removed_pdfs/
+data/labels/
+
+# --- Cached full text of those PDFs: same redistribution problem ---
 data/extracted_text/
+**/extracted_text/
+
+# --- Zotero metadata + local DB ---
 data/zotero_meta.jsonl
+data/zotero_manifest.csv
 *.sqlite
 *.db
-.claude/
 
+# --- Tooling / scratch ---
+.claude/
 ~$*
 *.xlsx
 *.xls
 *.xlsm
+*.aux
+*.log
+
+Research Claude Plan (Outline)*
+
+# Source manuscripts supplied by the study team, not ours to redistribute.
+# Ignore02.pdf is the Glueck & Muller paper this project replicates.
+Ignore0*
