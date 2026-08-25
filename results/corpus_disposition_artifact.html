@@ -1,0 +1,398 @@
+<title>Full Corpus Breakdown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --ground:#EDF0F1; --surface:#FFFFFF; --surface-2:#F5F7F8;
+  --ink:#151C22; --muted:#54636D; --faint:#7E8D98;
+  --rule:#C7D0D5; --rule-soft:#DDE4E7;
+  --flow:#1F5E66; --keep:#2E6B4F; --hold:#8A6520; --drop:#A03E28;
+  --flow-bg:#E1ECEC; --keep-bg:#E4EFE8; --hold-bg:#F5EEDC; --drop-bg:#F7E4DE;
+  --f-display:"Newsreader",Georgia,serif;
+  --f-sans:"IBM Plex Sans",-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F1518; --surface:#161D21; --surface-2:#1B2429;
+    --ink:#E3E9EB; --muted:#9AAAB4; --faint:#75858F;
+    --rule:#2E3A41; --rule-soft:#242E34;
+    --flow:#68B8BD; --keep:#6DBD8F; --hold:#D2AB60; --drop:#E68C70;
+    --flow-bg:#152628; --keep-bg:#182A22; --hold-bg:#2B2417; --drop-bg:#2E1D18;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F1518; --surface:#161D21; --surface-2:#1B2429;
+  --ink:#E3E9EB; --muted:#9AAAB4; --faint:#75858F;
+  --rule:#2E3A41; --rule-soft:#242E34;
+  --flow:#68B8BD; --keep:#6DBD8F; --hold:#D2AB60; --drop:#E68C70;
+  --flow-bg:#152628; --keep-bg:#182A22; --hold-bg:#2B2417; --drop-bg:#2E1D18;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--f-sans);font-size:16.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:0 26px}
+
+/* header */
+.top{background:var(--surface);border-bottom:1px solid var(--rule);padding:56px 0 40px}
+.top .wrap{display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--flow);margin:0}
+h1{font-family:var(--f-display);font-weight:500;font-size:clamp(2.6rem,6vw,3.9rem);
+  line-height:1.03;letter-spacing:-.018em;margin:0;text-wrap:balance}
+.lede{font-family:var(--f-display);font-size:1.28rem;line-height:1.5;color:var(--muted);
+  max-width:60ch;margin:0}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;
+  background:var(--rule);border:1px solid var(--rule);margin-top:14px}
+.pair>div{background:var(--surface);padding:20px 22px;display:flex;flex-direction:column;gap:4px}
+.pair .n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:2.6rem;
+  font-weight:500;line-height:1;letter-spacing:-.03em;color:var(--flow)}
+.pair .k{font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+.pair .s{font-size:14px;color:var(--muted)}
+
+/* sections */
+section{padding:60px 0;border-bottom:1px solid var(--rule-soft)}
+section:nth-of-type(even){background:var(--surface-2)}
+.head{display:flex;flex-direction:column;gap:9px;margin-bottom:34px;max-width:64ch}
+.tag{font-family:var(--f-mono);font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint)}
+h2{font-family:var(--f-display);font-weight:500;font-size:clamp(1.8rem,3.6vw,2.35rem);
+  line-height:1.13;letter-spacing:-.012em;margin:0;text-wrap:balance}
+.head p{margin:0;color:var(--muted);font-size:16px}
+
+/* prisma flow */
+.flow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:0}
+.node{grid-column:1;background:var(--surface);border:1px solid var(--rule);
+  border-left:4px solid var(--flow);padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:20px}
+.node.final{border-left-color:var(--keep);background:var(--keep-bg)}
+.node .lab{font-weight:600;font-size:16px;letter-spacing:-.005em}
+.node .sub{font-size:13.5px;color:var(--muted);font-weight:400;margin-top:2px}
+.node .n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;
+  font-size:2.1rem;font-weight:500;line-height:1;color:var(--flow);white-space:nowrap;
+  letter-spacing:-.02em}
+.node.final .n{color:var(--keep)}
+
+.link{grid-column:1;position:relative;min-height:30px}
+.link::before{content:"";position:absolute;left:34px;top:0;bottom:0;width:2px;background:var(--rule)}
+.link[data-spur]::after{content:"";position:absolute;left:34px;top:50%;
+  height:2px;width:calc(100% - 34px);background:var(--rule)}
+.link[data-spur]{min-height:88px}
+.tip{position:absolute;left:27px;bottom:-1px;width:0;height:0;
+  border-left:8px solid transparent;border-right:8px solid transparent;
+  border-top:10px solid var(--rule)}
+
+.br{grid-column:2;align-self:center;border:1px dashed var(--rule);
+  border-left:3px solid var(--drop);padding:13px 18px;background:var(--surface);
+  display:flex;align-items:center;justify-content:space-between;gap:18px}
+.br.hold{border-left-color:var(--hold)}
+.br .lab{font-size:14.5px;font-weight:600}
+.br .sub{font-size:13px;color:var(--muted);font-weight:400;margin-top:2px;line-height:1.4}
+.br .n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:1.4rem;
+  font-weight:500;color:var(--drop);white-space:nowrap}
+.br.hold .n{color:var(--hold)}
+.note{margin:22px 0 0;font-size:14px;color:var(--faint);max-width:78ch;line-height:1.55}
+.note code,td code,.br code{font-family:var(--f-mono);font-size:.88em;
+  background:var(--surface-2);padding:1px 4px;border-radius:2px}
+
+/* tables */
+.tbl{width:100%;overflow-x:auto;border:1px solid var(--rule);background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{text-align:left;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--faint);font-weight:600;padding:13px 16px;border-bottom:1px solid var(--rule);
+  background:var(--surface-2);white-space:nowrap}
+td{padding:13px 16px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+tfoot td{font-weight:600;background:var(--surface-2);border-top:1px solid var(--rule)}
+.pill{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 8px;border-radius:2px;font-weight:500;white-space:nowrap;display:inline-block}
+.pill.real{background:var(--drop-bg);color:var(--drop)}
+.pill.not{background:var(--keep-bg);color:var(--keep)}
+
+/* callout */
+.call{background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--hold);
+  padding:22px 26px;display:flex;flex-direction:column;gap:12px;margin-top:24px}
+.call.drop{border-left-color:var(--drop)}
+.call h3{font-family:var(--f-display);font-weight:600;font-size:1.28rem;margin:0;line-height:1.25}
+.call p{margin:0;font-size:15.5px;color:var(--muted);line-height:1.55;max-width:80ch}
+.call p strong{color:var(--ink);font-weight:600}
+
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;align-items:start}
+
+@media (max-width:780px){
+  .flow{grid-template-columns:minmax(0,1fr)}
+  .br{grid-column:1;margin-left:44px}
+  .link[data-spur]{min-height:30px}
+  .link[data-spur]::after{display:none}
+}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Cluster trial review · corpus accounting</p>
+    <h1>Full Corpus Breakdown</h1>
+    <p class="lede">Where every fetched paper ended up. Nothing is deleted — a paper that leaves is marked, its file moved aside, and its reason recorded.</p>
+    <div class="pair">
+      <div>
+        <span class="n">1284</span>
+        <span class="k">Unlabelled Set</span>
+        <span class="s">Papers the model will classify</span>
+      </div>
+      <div>
+        <span class="n">530</span>
+        <span class="k">Human Labelled Set</span>
+        <span class="s">Papers NCI or NHLBI already reviewed</span>
+      </div>
+      <div>
+        <span class="n">12</span>
+        <span class="k">In neither set</span>
+        <span class="s">An edge case — 7 need restoring</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- UNLABELLED -->
+<section>
+  <div class="wrap">
+    <div class="head">
+      <span class="tag">Set 1 of 2</span>
+      <h2>Unlabelled Set</h2>
+      <p>Fetched from one Zotero collection tree. These papers have no human answer — they are what the study is trying to measure.</p>
+    </div>
+
+    <div class="flow">
+      <div class="node">
+        <div><div class="lab">Raw Zotero items</div><div class="sub">23 institute subcollections</div></div>
+        <span class="n">2115</span>
+      </div>
+
+      <div class="link" data-spur><span class="tip"></span></div>
+      <div class="br">
+        <div><div class="lab">Collapsed or skipped</div><div class="sub">483 papers were filed under 2–6 institutes each and counted once per institute</div></div>
+        <span class="n">−621</span>
+      </div>
+
+      <div class="node">
+        <div><div class="lab">Unique papers fetched</div><div class="sub">Zero download failures</div></div>
+        <span class="n">1494</span>
+      </div>
+
+      <div class="link" data-spur><span class="tip"></span></div>
+      <div class="br">
+        <div><div class="lab">Already in the Labelled Set</div><div class="sub">The same paper, with a human answer attached — keep that copy, not this one</div></div>
+        <span class="n">−207</span>
+      </div>
+
+      <div class="node">
+        <div><div class="lab">Papers not already labelled</div></div>
+        <span class="n">1287</span>
+      </div>
+
+      <div class="link" data-spur><span class="tip"></span></div>
+      <div class="br">
+        <div><div class="lab">Correction notices</div><div class="sub">An erratum is not a study. All three were found by hand review</div></div>
+        <span class="n">−3</span>
+      </div>
+
+      <div class="node final">
+        <div><div class="lab">Active Unlabelled Set</div><div class="sub">Full text extracted and cached</div></div>
+        <span class="n">1284</span>
+      </div>
+    </div>
+
+    <p class="note">A fourth collection, <code>sample NCI-new</code> (104 papers), was excluded before any of this and never fetched. Seven more papers are owed <em>back</em> into this set — see the last section.</p>
+  </div>
+</section>
+
+<!-- LABELLED -->
+<section>
+  <div class="wrap">
+    <div class="head">
+      <span class="tag">Set 2 of 2</span>
+      <h2>Human Labelled Set</h2>
+      <p>Two separate Zotero groups, reviewed by two separate teams. These are the answers the model is scored against.</p>
+    </div>
+
+    <div class="flow">
+      <div class="node">
+        <div><div class="lab">Fetched from two groups</div><div class="sub">NCI 232 + NHLBI 337</div></div>
+        <span class="n">569</span>
+      </div>
+
+      <div class="link" data-spur><span class="tip"></span></div>
+      <div class="br">
+        <div><div class="lab">Internal duplicates merged</div><div class="sub">The same paper sat in both groups under different Zotero keys</div></div>
+        <span class="n">−15</span>
+      </div>
+
+      <div class="node">
+        <div><div class="lab">Manifest rows</div></div>
+        <span class="n">554</span>
+      </div>
+
+      <div class="link" data-spur><span class="tip"></span></div>
+      <div class="br">
+        <div><div class="lab">Correction notice</div><div class="sub">One <code>Correction to:</code> notice, dropped by hand</div></div>
+        <span class="n">−1</span>
+      </div>
+
+      <div class="node">
+        <div><div class="lab">Real articles</div></div>
+        <span class="n">553</span>
+      </div>
+
+      <div class="link" data-spur><span class="tip"></span></div>
+      <div class="br">
+        <div><div class="lab">Cited but never reviewed</div><div class="sub">Every label column blank. The NHLBI review will not resume, so these were dropped rather than waited on</div></div>
+        <span class="n">−23</span>
+      </div>
+
+      <div class="node">
+        <div><div class="lab">Active Human Labelled Set</div><div class="sub">All extracted and cached</div></div>
+        <span class="n">530</span>
+      </div>
+
+      <div class="link" data-spur><span class="tip"></span></div>
+      <div class="br hold">
+        <div><div class="lab">Held for a human decision</div><div class="sub">6 papers where the institutes disagreed, plus 1 citation that resolves to two candidates</div></div>
+        <span class="n">−7</span>
+      </div>
+
+      <div class="node">
+        <div><div class="lab">Loaded into the label table</div></div>
+        <span class="n">523</span>
+      </div>
+
+      <div class="link" data-spur><span class="tip"></span></div>
+      <div class="br">
+        <div><div class="lab">Random tie-break exclusions</div><div class="sub">Excluded by a coin flip because another paper shared a first author — nothing a model could read off the page</div></div>
+        <span class="n">−31</span>
+      </div>
+
+      <div class="node final">
+        <div><div class="lab">Scoreable for exclusion</div><div class="sub">316 exclude · 176 keep</div></div>
+        <span class="n">492</span>
+      </div>
+
+      <div class="link" data-spur><span class="tip"></span></div>
+      <div class="br hold">
+        <div><div class="lab">Excluded by the reviewers</div><div class="sub">No power or data-analysis label exists for these — by design, not an omission</div></div>
+        <span class="n">−316</span>
+      </div>
+
+      <div class="node final">
+        <div><div class="lab">Pass the gate</div><div class="sub">Carry power and data-analysis answers</div></div>
+        <span class="n">176</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MANUAL REVIEW -->
+<section>
+  <div class="wrap">
+    <div class="head">
+      <span class="tag">Hand review</span>
+      <h2>The 28 flagged PDFs</h2>
+      <p>Identity verification compares each PDF's first two pages against its Zotero record. Anything that fails goes to a small review window that opens the PDF, the DOI, PubMed and the Zotero record side by side. Replacements are re-checked the moment they are picked.</p>
+    </div>
+
+    <div class="tbl">
+      <table>
+        <thead><tr>
+          <th>Flagged as</th><th class="num">Flagged</th><th class="num">Replaced</th>
+          <th class="num">Cleared</th><th class="num">Dropped</th><th>What it meant</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Wrong document</td><td class="num">18</td><td class="num">18</td><td class="num">—</td><td class="num">—</td><td>The PDF was a different paper; the correct file was located and attached</td></tr>
+          <tr><td>Probably fine</td><td class="num">4</td><td class="num">1</td><td class="num">3</td><td class="num">—</td><td>Borderline score, mostly genuine on inspection</td></tr>
+          <tr><td>Thin text</td><td class="num">2</td><td class="num">—</td><td class="num">—</td><td class="num">2</td><td>Far too short to be an article — both turned out to be correction notices</td></tr>
+          <tr><td>Correction notice</td><td class="num">2</td><td class="num">—</td><td class="num">—</td><td class="num">2</td><td>Title announces an erratum or correction, not a study</td></tr>
+          <tr><td>Likely wrong</td><td class="num">1</td><td class="num">—</td><td class="num">1</td><td class="num">—</td><td>Cleared on reading</td></tr>
+          <tr><td>Unreadable</td><td class="num">1</td><td class="num">1</td><td class="num">—</td><td class="num">—</td><td>Corrupt file, replaced</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td class="num">28</td><td class="num">20</td><td class="num">4</td><td class="num">4</td><td>One paper was reviewed twice; one was skipped</td></tr></tfoot>
+      </table>
+    </div>
+
+    <p class="note">All four dropped papers were correction notices — two caught by the title rule, two by the thin-text rule and confirmed on inspection. Three came from the Unlabelled Set, one from the Labelled Set. Replaced originals are backed up to <code>data/removed_pdfs/replaced/</code>.</p>
+  </div>
+</section>
+
+<!-- DISAGREEMENTS -->
+<section>
+  <div class="wrap">
+    <div class="head">
+      <span class="tag">Inter-rater</span>
+      <h2>Disagreements were escalated, not resolved silently</h2>
+      <p>Fifteen papers were reviewed independently by both institutes. Nine agreed on every label and were merged automatically. The remaining six carried conflicting labels and were held for human adjudication rather than auto-resolved.</p>
+    </div>
+  </div>
+</section>
+
+<!-- INSTITUTE GAP -->
+<section>
+  <div class="wrap">
+    <div class="head">
+      <span class="tag">Protocol difference</span>
+      <h2>Exclusion rate by institute</h2>
+      <p>NHLBI excluded 72.9% of what it reviewed. NCI excluded 56.7%.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ORPHANS -->
+<section>
+  <div class="wrap">
+    <div class="head">
+      <span class="tag">Edge case</span>
+      <h2>Orphan Papers: Add Back to Unlabelled Set</h2>
+      <p>The duplicate check ran before the labelled set was final. 207 papers left the Unlabelled Set because a copy sat in the Labelled Set — and twelve of those copies have since left too.</p>
+    </div>
+
+    <div class="tbl">
+      <table>
+        <thead><tr><th>What happened to the labelled copy</th><th class="num">Papers</th><th>What to do</th></tr></thead>
+        <tbody>
+          <tr><td>Still loaded and carries an answer</td><td class="num">195</td><td>Nothing — working as intended</td></tr>
+          <tr><td>Dropped as never-reviewed</td><td class="num">7</td><td><strong>Restore to the Unlabelled Set.</strong> They are ordinary corpus papers now and will never get a human label</td></tr>
+          <tr><td>Held pending adjudication</td><td class="num">5</td><td>Leave alone — resolves itself once the disagreements are decided</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note">The seven to restore: <code>EMQMPLJ5</code>, <code>DH6IG7JY</code>, <code>N35XJ5YV</code>, <code>4GPSLLBZ</code>, <code>FP3HZHGS</code>, <code>TCS56FZY</code>, <code>VH6KS89D</code>. Their PDFs and cached text were never deleted, so restoring them is a bookkeeping edit rather than a refetch. This check has to be re-run after any future change to the labelled set — the same trap springs every time a labelled paper is dropped.</p>
+  </div>
+</section>
+
+<!-- SCORING -->
+<section>
+  <div class="wrap">
+    <div class="head">
+      <span class="tag">What gets measured</span>
+      <h2>Three tasks, and why accuracy is the wrong number</h2>
+      <p>Inclusion was dropped: every paper in this study is already included, and nothing in the labels encodes it.</p>
+    </div>
+
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Task</th><th class="num">Papers</th><th>Class split</th><th class="num">Score for always guessing the majority</th></tr></thead>
+        <tbody>
+          <tr><td>Exclusion</td><td class="num">492</td><td>316 exclude / 176 keep</td><td class="num">64%</td></tr>
+          <tr><td>Power analysis</td><td class="num">176</td><td>136 incorrect / 40 correct</td><td class="num">77%</td></tr>
+          <tr><td>Data analysis</td><td class="num">176</td><td>129 incorrect / 47 correct</td><td class="num">73%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="call drop">
+      <h3>A model that answers "incorrect" every time scores 77%</h3>
+      <p>That is the problem with accuracy on imbalanced data: the number looks respectable and means nothing. Three fixes, all of which belong in the methods section — report <strong>balanced accuracy or macro-F1</strong> as the headline, since both collapse to 50% for a constant guesser; print the <strong>majority-class baseline beside every figure</strong> so a reader can see the floor; and give the <strong>full confusion matrix</strong>, because for exclusion a wrong <em>keep</em> is cheap and a wrong <em>exclude</em> removes a paper from the study permanently.</p>
+      <p>And because this compares a model against human reviewers rather than against objective truth — the source paper calls its own labels "the opinion of two knowledgeable reviewers, rather than an objective classification scheme" — <strong>Cohen's κ is the right statistic</strong>, read against the 80% the two institutes managed with each other.</p>
+    </div>
+  </div>
+</section>

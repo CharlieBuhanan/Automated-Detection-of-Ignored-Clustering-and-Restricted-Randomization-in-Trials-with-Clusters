@@ -1,0 +1,91 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{hyperref}
+
+\title{Unvalidated Testing Set: Zotero Fetch Summary}
+\author{Cluster-Paper Review}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Overview}
+
+This document summarizes the corpus fetched from Zotero (Glykos \(\triangleright\) \emph{Boring Task}),
+labeled the \textbf{Unvalidated Set} to distinguish it from the human-labeled validation set (530 active
+papers, of 569 originally fetched), which arrives by a separate route (two other Zotero groups, NCI and
+NHLBI) and is not included here. See \texttt{results/corpus\_breakdown.tex} for the validation set's own
+reconciliation.
+
+The corpus was originally reported as ``2115 papers.'' That number was never a paper count --- it was
+\emph{collection placements} (one tally per institute a paper is tagged under), and 483 papers carry
+two or more tags. Table~\ref{tab:reconcile} walks from the raw Zotero count down to the true, deduplicated
+corpus. No PDF content is duplicated anywhere in \texttt{data/raw\_pdfs/testing/}: all 1494 files have
+distinct md5 hashes, and all 1494 \texttt{paper\_id} values in the manifest are unique, so every placement
+that collapses in the table below collapses onto a genuinely single, once-downloaded PDF.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrl}
+\toprule
+Step & Count & Note \\
+\midrule
+Raw items across 23 institute subcollections & 2115 & Zotero's own \texttt{numItems} per collection \\
+\quad less: non-\texttt{journalArticle} items & $-2$ & e.g.\ a \texttt{videoRecording} \\
+\textbf{Paper placements across institutes} & \textbf{2113} & one row per (paper, institute) pair \\
+\quad less: papers filed under $\geq$2 institutes & $-619$ & 483 papers, 2--6 tags each \\
+\textbf{Unique papers in the corpus} & \textbf{1494} & \\
+\midrule
+Fetch status \texttt{OK} & 1494 (100\%) & zero failures, zero corrupt downloads \\
+Duplicate PDF files on disk (by md5) & 0 & every \texttt{paper\_id} maps to one distinct PDF \\
+Duplicate \texttt{paper\_id} rows in the manifest & 0 & \\
+\midrule
+Records with $>$1 PDF attachment on Zotero & 172 (11.5\%) & highest-priority attachment auto-selected \\
+\quad same title attached twice & 167 & \\
+\quad genuinely different attachment titles & 5 & flagged for manual review \\
+\midrule
+DOI coverage & 1490 (99.7\%) & \\
+PMID coverage & 1494 (100\%) & \\
+PMCID coverage & 1431 (95.8\%) & \\
+\bottomrule
+\end{tabular}
+\caption{From raw Zotero collection counts to the deduplicated corpus. ``Paper placements'' is 2113,
+not 2115, because 2 non-article items (e.g.\ a video recording) were skipped before they ever became a
+row. No arithmetic or dedup error was found: every count here is independently reproducible from
+\texttt{data/zotero\_manifest.csv}.}
+\label{tab:reconcile}
+\end{table}
+
+\section{Distribution by NIH institute}
+
+Papers are filed under 23 institute subcollections beneath \emph{Boring Task} (excluding
+\texttt{sample NCI-new}, a disjoint staging collection excluded from the corpus). A paper co-funded by
+multiple institutes is counted once per institute below, so the column sums to 2113, matching
+Table~\ref{tab:reconcile} above --- not to 1494.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrr}
+\toprule
+Institute & Papers & Institute & Papers \\
+\midrule
+NIMH   & 315 & NCCIH    & 34 \\
+NCATS  & 277 & NEI      & 22 \\
+NICHD  & 239 & NINDS    & 17 \\
+NIAID  & 206 & NIAMS    & 13 \\
+NIA    & 192 & NIDCR    & 12 \\
+NIDDK  & 183 & NLM      & 11 \\
+NIDA   & 155 & NIDCD    & 7  \\
+FIC    & 107 & NIBIB    & 2  \\
+NIMHD  & 87  & NHGRI    & 1  \\
+NIAAA  & 69  & CC / CLC & 1  \\
+NIGMS  & 66  &          &    \\
+NINR   & 55  &          &    \\
+\bottomrule
+\end{tabular}
+\caption{Paper count per NIH institute subcollection (2113 total placements across 1494 unique papers).}
+\end{table}
+
+\end{document}

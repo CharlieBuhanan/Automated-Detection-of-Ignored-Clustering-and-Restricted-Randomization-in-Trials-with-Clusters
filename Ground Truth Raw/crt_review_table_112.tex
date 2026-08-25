@@ -1,0 +1,527 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{pdflscape}
+\usepackage{caption}
+\usepackage[super,sort&compress]{natbib}
+\usepackage{hyperref}
+
+% Define column types for better text wrapping
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+\begin{document}
+
+\begin{landscape}
+
+\begin{longtable}{L{1.5cm} L{1.1cm} C{0.6cm} C{0.6cm} L{1.2cm} C{0.6cm} C{0.6cm} C{0.6cm} C{0.6cm} L{0.9cm} L{1cm} L{1cm} C{0.6cm} C{0.6cm} L{1.1cm} L{1.2cm} L{1.2cm} C{0.6cm} L{1.2cm} L{1.2cm} L{1.2cm} C{0.6cm}}
+
+\caption{Systematic Review of Cluster Randomized Trials: Design and Analysis Characteristics} \label{tab:crt_review} \\
+
+\toprule
+Citation & Exclude (reason) & No. of Trt & No. of Levels & Comment on Levels & \# Outer Level & \# 2nd Level & \# 3rd Level & \# 4th Level & Unit of Rand. & Indep. Sampling Unit & Restricted Rand. & ICC(s) & \# Long. Rep. Measures & Stepped Wedge & Data Analysis Done & Data Analysis Should Have Done & Data Analysis Correct? & Data Analysis Comment & Power Analysis Done & Power Analysis Should Have Done & Power Analysis Correct? \\
+\midrule
+\endfirsthead
+
+\multicolumn{22}{c}{\tablename\ \thetable{} -- continued from previous page} \\
+\toprule
+Citation & Exclude (reason) & No. of Trt & No. of Levels & Comment on Levels & \# Outer Level & \# 2nd Level & \# 3rd Level & \# 4th Level & Unit of Rand. & Indep. Sampling Unit & Restricted Rand. & ICC(s) & \# Long. Rep. Measures & Stepped Wedge & Data Analysis Done & Data Analysis Should Have Done & Data Analysis Correct? & Data Analysis Comment & Power Analysis Done & Power Analysis Should Have Done & Power Analysis Correct? \\
+\midrule
+\endhead
+
+\midrule
+\multicolumn{22}{r}{Continued on next page} \\
+\endfoot
+
+\bottomrule
+\endlastfoot
+
+% Entry 1
+Abdullahi et al.\textsuperscript{\cite{abdullahiHydroxyureaPrimaryStroke2022}} & Not a group-randomized trial &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 2
+Abrahams-Gessel et al.\textsuperscript{\cite{abrahams-gesselManagingHighCardiovascular2023}} &  & 2 & 3 & patient within PCC within province & 3 & 6 & 5000-20000 &  & PCC & province & stratified & 0.08 & 1 & no & GEE with bias correction & Account for restricted rand. and clustering & no &  & Accounted for clustering alone & Account for restricted rand. and clustering & no \\
+
+% Entry 3
+Adams et al.\textsuperscript{\cite{adamsAutomatedSymptomTreatment2019}} &  & 2 & 2 & patient within physician & 1834 & 1270 &  &  & physician & physician & none & missing & 2 & no & bias corrected GEE - no info on clustering or repeated measures & Account for clustering alone & no &  & Accounted for clustering alone & Account for clustering alone & yes \\
+
+% Entry 4
+Adams et al.\textsuperscript{\cite{adamsClusterRandomizedFactorial2025}} &  & 4 & 2 & student within school & 13 & 50 &  &  & school & school & none & FV sel: sch 0.108, sch-wave 0.231; FV cons: sch 0.067, sch-wave 0.157 & 3 & no & zero inflated neg beta binom GLM with 3 imputation methods & Account for clustering and longitudinality & no &  & Did not account for clustering & Account for clustering and longitudinality & no \\
+
+% Entry 5
+Aifah et al.\textsuperscript{\cite{aifahIntegrationTaskStrengthening2021}} &  & 2 & 2 & patient within PHC & 30 & 32 &  &  & PHC & PHC & none & 0.04 & 2 & no & linear model accounting for clustering & Account for clustering and longitudinality & yes &  & Accounted for clustering and longitudinality & Account for clustering and longitudinality & yes \\
+
+% Entry 6
+Aifah et al.\textsuperscript{\cite{aifahStudyDesignProtocol2023}} & second study by same group, excluded randomly &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 7
+Altinger et al.\textsuperscript{\cite{altingerBehaviouralNudgingInterventions2024}} &  & 4 & 2 & encounter within hospital within time period & 8 & 150 &  &  & hospital & hospital & none & 0.1 within hospital, 0.9 for time & 2 & no & GEE without bias correction accounting for clustering and time & Account for clustering and longitudinality & no & didn't account for repeated measures on same patients - assumed exchangeable & Accounted for clustering but not longitudinality & Account for clustering and longitudinality & no \\
+
+% Entry 8
+Anderegg et al.\textsuperscript{\cite{andereggPharmacistInterventionBlood2018}} & secondary data analysis &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 9
+Ashburner et al.\textsuperscript{\cite{ashburnerDesignRationalePragmatic2019}} &  & 2 & 2 & patient within clinic & 16 & 16212 &  &  & clinic & clinic & constrained & 0.0007 & 1 & no & not bias corrected GEE accounting for clustering & Account for clustering alone & no & needed bias correction. Big design effect. & Accounted for clustering alone & Account for restricted rand. and clustering & no \\
+
+% Entry 10
+Barankay et al.\textsuperscript{\cite{barankayEffectPatientFinancial2020}} & Not a group-randomized trial &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 11
+Bartels et al.\textsuperscript{\cite{bartelsScalingBriefAlcohol2024}} &  & 2 & 2 & patient within clinic & 30 & 24 &  &  & clinic & clinic & stratified & 0.01-0.05 & 2 & no & uncorrected GEE with logit link and binomial error accounting for cluster & Account for restricted rand., clustering, and longitudinality & no & need bias correction and account for restricted rand. and longitudinality & Accounted for clustering alone & Account for restricted rand., clustering, and longitudinality & no \\
+
+% Entry 12
+Beck et al.\textsuperscript{\cite{beckMultilevelApproachPromoting2019}} &  & 2 & 2 & adult within community & 12 & 48 &  &  & community & community & stratified & 0.01-0.03 & 3 & no & permutation cluster-size weighted t-test on within pair difference & Account for restricted rand., clustering, and longitudinality & no & Cold fusion & Accounted for clustering and longitudinality but not restricted rand. & Account for restricted rand., clustering, and longitudinality & no \\
+
+% Entry 13 - EXCLUDED but data preserved
+Berkman et al.\textsuperscript{\cite{berkmanEmployeeCardiometabolicRisk2023}} & secondary analysis & 2 & 2 & May have been 3 levels in IT, agreed to ignore & 30 (nursing), 56 (IT) & 15 (LTC), 28 (IT) &  &  & workplace & workplace & constrained & 0.016 (nursing), 0.064 (IT) & 2 & no & mixed model accounting for cluster and longitudinality & Account for restricted rand., clustering, and longitudinality & yes &  & None/not reported & None of the above & no \\
+
+% Entry 14
+Bernabe-Ortiz et al.\textsuperscript{\cite{bernabe-ortizEffectSaltSubstitution2020}} &  & 2 & 3 & person within family within village & 6 & 100 & ~4 &  & village & village & none & none reported & 2 & yes & mixed model with GLMM software and identity link & Account for clustering and longitudinality & yes &  & None/not reported & Stepped wedge & no \\
+
+% Entry 15
+Birk et al.\textsuperscript{\cite{birkInterveningFearAcute2020}} & Not a group-randomized trial &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 16
+Boone et al.\textsuperscript{\cite{booneCanPrivateSector2023}} & secondary data analysis &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 17
+Boxer et al.\textsuperscript{\cite{boxerRandomizedControlledTrial2022}} &  & 2 & 2 & Should it be patient within nurse within level? & 47 & 14 &  &  & clinic & clinic & stratified & 0.0006 & 1 & no & generalized linear mixed models with logit link & Account for restricted rand. and clustering & no &  & Accounted for clustering but not restricted rand. & Account for restricted rand. and clustering & no \\
+
+% Entry 18
+Bryant-Stephens et al.\textsuperscript{\cite{bryant-stephensCommunityHealthWorkers2024}} &  & 6 & 1 or 2 & student within school for school-level intervention, otherwise student without school. Partially clustered design. & 36 & 12 &  &  & school (or person) & school, or kid & none & 0.06 & 4 & no & linear mixed model accounting for clustering and longitudinality & Account for clustering and longitudinality & yes & fantastic & Accounted for clustering and longitudinality & Account for clustering and longitudinality & yes \\
+
+% Entry 19
+Buis et al.\textsuperscript{\cite{buisEffectMHealthSelfMonitoring2024}} & Not a group-randomized trial &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 20
+Carter et al.\textsuperscript{\cite{carterClusterRandomizedTrialEvaluate2018}} &  & 2 & 2 & patient within clinic & 12 & 25 &  &  & clinic & clinic & none & 0.005 & 2 & no & linear mixed model on guideline score accounting for clustering, controlling for baseline & Account for clustering and longitudinality & yes & good & Accounted for clustering and longitudinality & Account for clustering and longitudinality & yes \\
+
+% Entry 21
+Caspi et al.\textsuperscript{\cite{caspiClusterRandomizedEvaluationSuperShelf2024}} &  & 2 & 2 & participant within food pantry & 12 & 18 &  &  & pantry & pantry & stratified & 0.047 & 2 & no & linear mixed model with two random effects for time and person within pantry & Account for restricted rand., clustering, and longitudinality & no & didn't account for restricted randomization & Accounted for clustering and longitudinality & Account for restricted rand., clustering, and longitudinality & no \\
+
+% Entry 22
+Catley et al.\textsuperscript{\cite{catleyEvaluationAdaptedVersion2022}} &  & 2 & 2 & patient within social club & 28 & 16 &  &  & social club & social club & stratified & 0.01-0.05 & 2 & no & mixed models accounting for cluster and longitudinality & Account for restricted rand., clustering, and longitudinality & no &  & Accounted for clustering and longitudinality but not restricted rand. & Account for restricted rand., clustering, and longitudinality & no \\
+
+% Entry 23
+Cattamanchi et al.\textsuperscript{\cite{cattamanchiMulticomponentStrategyDecentralized2021}} &  & 2 & 2 & patient within clinic & 20 & 532 &  &  & clinic & clinic & stratified & not mentioned & 1 & no & adjusted poisson regression accounting for clinic & Account for restricted rand. and clustering & yes &  & Accounted for restricted rand. and clustering & Account for restricted rand. and clustering & yes \\
+
+% Entry 24
+Chang et al.\textsuperscript{\cite{changNovelCommunityHealth2021}} &  & 2 & 2 & patient within clinic & 40 & 52 &  &  & clinic & clinic & restricted & 0.01 & 2 & no & log linear binomial regression with GEE & Account for restricted rand., clustering, and longitudinality & no & no bias correction for GEE & Accounted for restricted rand., clustering, and longitudinality & Account for restricted rand., clustering, and longitudinality & yes \\
+
+% Entry 25
+Ciccone et al.\textsuperscript{\cite{cicconePointofcareCreactiveProtein2024}} &  & 2 & 4 & child within CHW within village within strata & 5 & 15 & 65 & 1280 (19/CHW) & village & stratum & stratified & 0.05 & 1 & yes & GEE with bias correction with logit link & Account for restricted rand., clustering, and longitudinality & no &  & Did not account for stratified rand. & Account for restricted rand., clustering, and longitudinality & no \\
+
+% Entry 26
+Collins et al.\textsuperscript{\cite{collinsEfficacyCommunityBasedExercise2019}} & Not a group-randomized trial &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 27
+Commodore-Mensah et al.\textsuperscript{\cite{commodore-mensahDesignRationaleCardiometabolic2024}} &  & 2 & 3 & patient within provider within health system & unknown & 18 & 19/practice &  & practice & health system & stratified & 0.03 & 1 & no & GEE with logit link, no bias correction & Account for restricted rand. and clustering & no &  & Accounted for clustering but not restricted rand. & Account for restricted rand. and clustering & no \\
+
+% Entry 28
+Cooper et al.\textsuperscript{\cite{cooperEquitableCareHypertension2024}} &  & 2 & 3 & patient within practice within health system & unknown & 30 & 50/practice &  & practice & health system & stratified & 0.057 & 1 & no & GEE with no bias correction & Account for restricted rand. and clustering & no & used binary outcome which reduced power & Accounted for clustering but not restricted rand. & Account for restricted rand. and clustering & no \\
+
+% Entry 29
+Courtright et al.\textsuperscript{\cite{courtrightPrognosticatingOutcomesNudging2021}} &  & 3 & 5 & patient within clinician within ICU within hospital within pair & unknown & 10 & 17 & 279/ICU & hospital & pair & none & 0.1 (pt within clin), 0.05 (clin within ICU) & 1 & yes & simultaneous quantile regression with fixed effects for clinician, hospital cluster, time & Account for 5 levels of clustering as random effects & no &  & unclear & Account for 5 levels of clustering & no \\
+
+% Entry 30
+Cox et al.\textsuperscript{\cite{coxMobileApplicationBasedCommunication2024}} &  & 2 & 4 & patient within physician within ICU within hospital & 2 & 6 & 37 & 44/physician & physician & hospital & stratified & 0.01-0.1 & 1 & no & mixed models with fixed effects for family physician and time & Account for clustering, restricted rand., and longitudinality & no & missed several levels of clustering among other things & Accounted for some clustering but not longitudinality & Account for multiple levels of clustering and longitudinality & no \\
+
+% Entry 31
+Cox et al.\textsuperscript{\cite{coxMobileAppFacilitatedCollaborative2025}} & second study by same group, excluded randomly &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 32
+Crist et al.\textsuperscript{\cite{cristChangeGPSassessedWalking2021}} & secondary analysis &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 33
+Crist et al.\textsuperscript{\cite{cristHealthEffectsCosteffectiveness2022}} &  & 2 & 3 & patient within health coach within senior center & 12 & 4/center & 34/center &  & senior center & senior center & stratified & 0.07 & 1 & no & mixed model accounting for clustering with center & Account for all levels of clustering and restricted rand. & no & breaks Deb's heart & Accounted for clustering but not restricted rand. & Account for clustering and restricted rand. & no \\
+
+% Entry 34
+Curley et al.\textsuperscript{\cite{curleyMethodsDesignImplementation2018}} & secondary data analysis &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 35
+Davis et al.\textsuperscript{\cite{davisDesignParticipantCharacteristics2019}} & second study by same group, excluded randomly &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 36
+Davis et al.\textsuperscript{\cite{davisSchoolbasedGardeningCooking2021}} &  & 2 & 3 & patient within school within wave & 3 & 16 & 127/school &  & school & wave & stratified & <0.05 & 1 & no & generalized linear mixed models with weighted random effects for cluster & Account for stratification and clustering & no &  & Accounted for clustering but not stratification & Account for clustering and restricted rand. & no \\
+
+% Entry 37
+Desai et al.\textsuperscript{\cite{desaiImplementingPrediabetesClinical2022}} &  & 2 & 3 & patient within PCP within clinic & 34 & 9/clinic & 280/clinic &  & clinic & clinic & stratified & not listed & 1 & no & generalized linear mixed models accounting for clustering at clinic level & Account for restricted rand. and clustering & no &  & Accounted for clustering at clinic level & Account for clustering and restricted rand. & no \\
+
+% Entry 38
+Douin et al.\textsuperscript{\cite{douinEffectTargetingNormoxemia2025}} &  & 2 & 2 & patient within clinic & 6 & 236/clinic &  &  & clinic & clinic & constrained & 0.04 & 1 & yes & general linear mixed model accounting for clinic & Account for clustering by clinic & yes &  & Accounted for clustering & Account for clustering & yes \\
+
+% Entry 39
+Ebinger et al.\textsuperscript{\cite{ebingerBarbershopManagementHypertension2020}} & implementation &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 40
+Edwards et al.\textsuperscript{\cite{edwardsSimultaneouslyImplementingPathways2024}} & review &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 41
+Fiscella et al.\textsuperscript{\cite{fiscellaBloodPressureVisit2022}} &  & 2 & 3 & patient within clinician within practice & 12 & 77 & 356/clinic &  & clinic & clinic & none & not specified & 1 & yes & Cox proportional hazard and weighted GEE with bias correction, accounted for clustering 2 ways & Account for two levels of clustering & yes &  & Accounted for two levels of clustering & Account for two levels of clustering & yes \\
+
+% Entry 42
+Fiscella et al.\textsuperscript{\cite{fiscellaTeambasedHomeBlood2023}} & implementation &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 43
+Fitzsimmons-Craft et al.\textsuperscript{\cite{fitzsimmons-craftEffectivenessDigitalCognitive2020}} &  & 2 & 2 & patient within university & 27 & 25/university &  &  & university & university & stratified & 0.05-0.15 & 3 & no & general linear mixed model accounting for clustering, incorrectly for repeated measures, t-tests at end & Account for clustering, longitudinality, and restricted rand. & no & correct by the skin of their teeth & Accounted for clustering and longitudinality & Account for clustering, longitudinality, and restricted rand. & no \\
+
+% Entry 44
+Fortmann et al.\textsuperscript{\cite{fortmannMedicalAssistantHealth2021}} &  & 2 & 3 & patient within clinic within health system & 2 & 4 & 150/clinic &  & clinic & health system & stratified & not mentioned & 1 & no & multi level using full information matrix & Account for two levels of clustering & yes & Keith doesn't think correct - cheating and using bad statistical literature & Did not account for clustering & Account for clustering & no \\
+
+% Entry 45
+Foti et al.\textsuperscript{\cite{fotiEvidenceBasedPolicyMaking2020}} & Not a group-randomized trial &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 46
+Frank et al.\textsuperscript{\cite{frankAssessmentImplementationMethods2023}} &  & 2 & 2 & patient within emergency room & 18 &  &  &  & emergency room & emergency room & stratified & 0.025 & 1 & no & random effects logistic regression & Account for clustering and restricted rand. & no &  & Donner and Klar, accounted for clustering & Account for clustering and restricted rand. & no \\
+
+% Entry 47
+Frerichs et al.\textsuperscript{\cite{frerichsClusterRandomizedTrial2020}} & secondary data analysis &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 48
+Fuller et al.\textsuperscript{\cite{fullerAwarenessParalysisSymptoms2023}} & stepped wedge &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+
+% Entry 49
+Gans et al.\textsuperscript{\cite{gansMulticomponentTailoredIntervention2022}} &  & 2 & 2 & child within family child care home & 119 & 377 (~3/provider) &  &  & family child care home & family child care home & stratified & not mentioned & 2 & no & GEE not accounting for clustering & Account for clustering and stratified rand. & no & ouch & Did not account for clustering or stratified rand. & Account for clustering and stratified rand. & no \\
+
+% Entry 50
+Gerald et al.\textsuperscript{\cite{geraldSchoolsupervisedUseOncedaily2019}} &  & 2 & 2 & student within school & 20 & ~20/school &  &  & school & school & stratified & 0.15 & 2 & no & general linear mixed model accounting for clustering and repeated measures & Account for clustering and restricted rand. & no &  & Accounted for clustering but not restricted rand. & Account for clustering and restricted rand. & no \\
+
+% Entry 51
+Gimbel et al.\textsuperscript{\cite{gimbelSystemsAnalysisImprovement2020}} &  & 2 & 3 & patient within clinic within district (ignoring province) &  & 16 & 1000/clinic &  & clinic & district & constrained & 0.1-0.2 & 1 & no & generalized linear mixed model accounting for clustering within clinic & Account for clustering and restricted rand. & no & not clear what the levels of clustering are & Accounted for clustering within clinic & Account for clustering and restricted rand. & no \\
+
+% Entry 52
+Gold et al.\textsuperscript{\cite{goldEffectClinicalDecision2022}} &  & 2 & 4 & patient within clinic within organization & 14 & 70 & 265/clinic &  & organization & organization & constrained &  & 2 & no & general linear mixed models & Account for clustering and restricted rand. & no & could have accounted for more levels of clustering, but did not & Accounted for clustering & Account for clustering and restricted rand. & no \\
+
+% Entry 53
+Goldstein et al.\textsuperscript{\cite{goldsteinImprovingCommunicationHeart2019}} & & 2 & 2 & patient within clinician within hospital & 6 & 58 & 525 & & hospital & hospital & none & 0.04 & 1 & no & GEE or GLM, not accounting for clustering at both levels & Account for clustering at clinician and hospital level & no & & Accounted for clustering by hospital only & Account for clustering at clinician and hospital level & no \\
+
+% Entry 54
+Grant et al.\textsuperscript{\cite{grantVisitPlanningUsing2019}} & & 2 & 2 & patient within provider within primary care center & 8 & 73 & 750 & & physician & primary care clinic & none & NR & 1 & no & General linear mixed model controlling for physician & Account for clustering at both physician and clinic level & no & Missed the outer layer of clustering & No power analysis reported & Power analysis accounting for clustering at clinic and physician level & no \\
+
+% Entry 55
+Green et al.\textsuperscript{\cite{greenPuttingPatientsCenter2018}} & & 2 & 3 & Complicated design with cross-clustering and cross-nesting; outer level is clinic (n=8), 2nd level is physician (NR), 3rd level is patients ($\sim$500 per physician); also cross-clustering via 2 kidney care specialists & 8 & NR & 500 per physician & & clinic & clinic & yes, by clinic size and region & 0.05 & 3 & no & t-test accounting for clustering & Complex mixed model with multiple levels of cross-clustering & no & Uncertain how to analyze this study given cross-clustering complexity & Accounts for clustering within clinic only; ignores physician and kidney specialist levels & Power analysis accounting for all levels of cross-clustering & no --- uncertain how to do power for this study \\
+
+% Entry 56
+Grembi et al.\textsuperscript{\cite{grembiInfluenceHydrometeorologicalRisk2024}} & secondary data analysis & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 57
+Grissom et al.\textsuperscript{\cite{grissomImplementationCoordinatedSpontaneous2023}} & & 2 & 3 & Patient within ICU within hospital; only one hospital has multiple ICUs (one hospital has 4, rest have 1), making this an underanalyzable design & 12 & $\sim$1 per hospital (one has 4) & 3600 per hospital & & hospital & hospital & yes & NR & up to 28 & no & Model accounting for clustering by center but not all random effects & Censored survival analysis accounting for centering by depth and additional clustering factors & no & Uncertain how to analyze this study given complex clustering structure & Accounted for some clustering & Account for all clustering & no \\
+
+% Entry 58
+Ha et al.\textsuperscript{\cite{haConqueringHypertensionVietnamsolutions2020}} & & 2 & 3 & patient within commune within district & 4 & 16 & 680 total & & commune & district & yes & 0.011 & 1 & no & REML estimator for generalized linear mixed model & Generalized linear mixed model accounting for multilevel clustering and repeated measures & no & Could not determine what random effects were included due to lack of clarity in reporting & Accounted for one level of clustering but not restricted randomization & Account for restricted randomization and two-level clustering & no \\
+
+% Entry 59
+Hahn et al.\textsuperscript{\cite{hahnUsingVirtualAgents2020}} & & 2 & 3 & child within YMCA center within matched pair & 12 & 24 & 20 per YMCA center & & YMCA center & matched pair & yes, stratification by free and reduced lunch program & NR & 4 & no & Accounts for clustering within matched pairs and within center & Account for clustering within matched pair and center & yes & Both reviewers found reporting intensely unclear & Accounted for both sources of correlation (matched pairs and centers) & Account for correlation between matched pairs and centers & yes \\
+
+% Entry 60
+Halterman et al.\textsuperscript{\cite{haltermanEffectSchoolBasedAsthma2022}} & & 3 & 3 & student within school within strata & NR & 69 & 430 & & student & strata & yes & NR & 3 & no & GEE & Analysis accounting for clustering within school and stratum and longitudinal repeated measures & no & Both reviewers said ``wow'' three times & Did not account for clustering & Account for clustering & no \\
+
+% Entry 61
+Hanrahan et al.\textsuperscript{\cite{hanrahanHouseholdIncentiveBasedContact2023}} & & 2 & 2 & patient within family group within clinic & 56 & 782 per clinic & & & clinic & clinic & yes & NR & 2 & no & Poisson regression accounting for clustering within clinic & Account for clustering within clinic and family group and repeated measures for crossover design & no & Biased because family grouping not accounted for & NR & Account for clustering within family and clinic & no \\
+
+% Entry 62
+Hardy et al.\textsuperscript{\cite{hardyDesignEquityPrevention2023}} & & 2 & 3 & patient within peer coach within church; 2--3 peer coaches per church & 20 & 2--3 per church & 480 & & church & church & no & NR & 3 & no & Does not account for clustering in any way & Account for clustering by peer coach and church & no & Not written up clearly & Does not account for clustering in any way & Power analysis accounting for clustering by peer coach and church & no \\
+
+% Entry 63
+Haug et al.\textsuperscript{\cite{haugBestCaseWorst2022}} & & 2 & 3 & patient within nephrologist within site & 10 & 40 & 320 & & nephrologist & site & no & NR & 1 & no & Accounts for clustering within physician but not within site & Account for clustering within both site and physician & no & They tried; used fixed effects & Does not account for clustering within physician or site & Account for clustering within physician and site & no \\
+
+% Entry 64
+Hearst et al.\textsuperscript{\cite{hearstBreakfastBrainFood2019}} & secondary data analysis & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 65
+Hern\'andez-Galdamez et al.\textsuperscript{\cite{hernandez-galdamezMonitoringStudyParticipants2021}} & implementation & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 66
+Hieda et al.\textsuperscript{\cite{hiedaImpact2Years2019}} & secondary data analysis & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 67
+Howden et al.\textsuperscript{\cite{howdenReversingCardiacEffects2018}} & Not a group-randomized trial & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 68
+Huffman et al.\textsuperscript{\cite{huffmanEffectQualityImprovement2018}} & stepped wedge & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 69
+ICU-RESUS et al.\textsuperscript{\cite{icu-resusandeunicekennedyshrivernationalinstituteofchildhealthEffectPhysiologicPointofCare2022}} & stepped wedge & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 70
+Jack et al.\textsuperscript{\cite{jackClusterRandomisedTrial2021}} & & 3 & 3 & participant within village within matched village set & NR & 35 & 1414 & & village & stratum & yes & 0.07 & 1 & no & GEE & Analysis accounting for clustering within village and matching & no & Painful & Does not account for matching & Account for both clustering and matching & no \\
+
+% Entry 71
+Jacobs et al.\textsuperscript{\cite{jacobsClinicalEconomicEffectiveness2023}} & stepped wedge & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 72
+Johnson et al.\textsuperscript{\cite{johnsonEvaluationWalkingSchool2024}} & & 2 & 3 & child within school within matched pair within city & 2 & 11 & 22 & 300 & school & city & yes, pair matching & 0.04 & 1 & no & Accounted for clustering within schools only & Account for clustering within schools and matched pairs & no & Tragic & Accounted for clustering & Account for clustering and matching & no \\
+
+% Entry 73
+Jones et al.\textsuperscript{\cite{jonesRandomizedEvaluationDecision2022}} & & 2 & 2 & patient within provider within center & 6 & 240 & 5.18 per provider & & provider & center & yes, stratification & 0.10--0.25 & 1 & no & Not described & Analysis accounting for restricted randomization and clustering at both levels & no & Analyzable data but not analyzed correctly & Accounted for clustering & Account for clustering and restricted randomization with two levels of clustering & no \\
+
+% Entry 74
+Joshi et al.\textsuperscript{\cite{joshiCardiovascularRiskFactor2019}} & & 2 & 3 & participant within household within village within state; 3 states, 20 villages, 2312 households, 3261 participants & 3 & 20 & 2312 & 3261 & household & state & unclear & 0.09--0.38 & 1 & no & GEE with random effects accounting for household only & Account for random effects for household, village, potentially state and community health worker & no & Difficult to understand given community health workers on intervention side only; resembles a mutant individually randomized group treatment trial & Accounted for clustering by household & Account for clustering by household, village, and potentially state and community health workers & no \\
+
+% Entry 75
+Kakande et al.\textsuperscript{\cite{kakandeCommunitybasedDynamicChoice2023}} & & 2 & 2 & participant within village within matched village pair & 8 & 16 & 429 & & village & matched pair & yes, pair matching & NR & 1 & no & t-test & Analysis accounting for pair matching and clustering & no & Paper suggests pair matching should have been accounted for, but statistical analysis plan indicates they broke all pair matches & Accounted for pair matching and clustering & Account for pair matching and clustering & yes \\
+
+% Entry 76
+Kavishe et al.\textsuperscript{\cite{kavisheStudyProtocolEngage2025}} & & 2 & 1 & patient within community & 20 & 400 per community & & & community & stratum & yes, by community size & 0.08 & 1 & no & Mixed model with random effect for community & Account for both community and stratification & no & Did not account for restricted randomization & Accounted for community but not restricted randomization & Account for community and restricted randomization & no \\
+
+% Entry 77
+Kennelty et al.\textsuperscript{\cite{kenneltyDisseminationTelehealthCardiovascular2021}} & & 2 & 1 & patient within clinic & 13 & 325 + 288 & & & clinic & clinic & yes, stratified by percentage of minority participants & 0.024 & 4 & no & Mixed model accounting for clustering & Account for both clustering and restricted randomization & no & & Accounted for clustering & Account for clustering and restricted randomization & no \\
+
+% Entry 78
+Kerr et al.\textsuperscript{\cite{kerrClusterRandomizedControlled2018}} & & 2 & 2 & participant within educational group within site & 11 & 13 & 307 & & site & group & no & 0.07 & 5 & no & Mixed model with random effects accounting for group and site & Mixed model with random effects accounting for group and site & yes & Yay, we finally found a correct one & Accounted for site & Account for group and site & yes (close enough) \\
+
+% Entry 79
+Kharbanda et al.\textsuperscript{\cite{kharbandaEvaluationElectronicClinical2018}} & & 2 & 1 & patient within clinic & 18 & 1226 & & & clinic & clinic & yes, stratified by percentage with public insurance and matched pairs on adolescent patient volume & 0.04 & 1 & no & Generalized mixed model with random effect for clinic & Account for stratification and matching in addition to clustering by clinic & no & Missed the stratification and matching & Accounted for ICC but not stratification and matching & Account for clustering, stratification, and matching & no \\
+
+% Entry 80
+King et al.\textsuperscript{\cite{kingTestingEffectivenessCommunityengaged2021}} & & 2 & 2 & patient within site within matched pair & 5 & 10 & 300 & & site & matched pair & yes, matched on location & NR & 1 & no & Mixed model accounting for clustering but not matching & Model accounting for both clustering and matching & no & Did not account for matching & Did not account for clustering or matching & Power analysis accounting for clustering and matching & no \\
+
+% Entry 81
+Kinnamon et al.\textsuperscript{\cite{kinnamonEffectivenessFamilyHeart2023}} & & 2 & 2 & person within family within site & 28 & 1111 & 4646 & & family & site & yes, stratified by race, ethnicity, and site & NR & 1 & no & Generalized linear mixed model with logit link function accounting for both site and family & Same & yes & & Monte Carlo simulation accounting for correlation by family and site & Same & yes \\
+
+% Entry 82
+Kossek et al.\textsuperscript{\cite{kossekCaringElderlyWork2019}} & & 2 & 1 & patient within care home & 30 & 931 & & & care home & care home & yes, stratified on three factors & NR & 1 & no & Accounted for clustering but not stratification & Account for both clustering and stratification & no & Very hard to read & Accounted for clustering but not stratification & Account for clustering and stratification & no \\
+
+% Entry 83
+Kronish et al.\textsuperscript{\cite{kronishMultifacetedImplementationStrategy2023}} & & 2 & 1 & patient within clinic & 8 & 1186 & & & clinic & matched pair & yes, matched pairs & NR & 2 & no & Multilevel Poisson regression accounting for clustering & Multilevel Poisson regression accounting for clustering and matching & no & Well written and clear & Monte Carlo simulation accounting for clustering & Account for clustering and restricted randomization (pair matching) & no \\
+
+% Entry 84
+Lampman et al.\textsuperscript{\cite{lampmanOptimizingHuddleEngagement2021}} & & 2 & 1 & participant within team & 29 & 272 & & & team & stratum & yes, stratified randomization & 0.05 & 1 & no & Generalized linear mixed model accounting for clustering & Account for clustering and restricted randomization & no & & Accounted for clustering & Account for both clustering and restricted randomization & no \\
+
+% Entry 85
+Landry et al.\textsuperscript{\cite{landryImpactSchoolBasedGardening2021}} & secondary data analysis & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 86
+Lanspa et al.\textsuperscript{\cite{lanspaProspectiveAssessmentFeasibility2019}}} & pilot & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 87
+Lauffenburger et al.\textsuperscript{\cite{lauffenburgerReducingEthnicRacial2023}} & & 2 & 2 & patient within primary care provider within clinic & 24 & 350 & 10000 & & clinic & clinic & yes, covariate constrained randomization & 0.05 & 1 & no & GEE accounting for clustering & Account for clustering at two levels plus restricted randomization & no & Missed the covariate constrained randomization and did not account for the outer level & Accounted for one level of clustering & Account for two-level clustering plus constrained randomization & no \\
+
+% Entry 88
+Levan et al.\textsuperscript{\cite{levanFinancialIncentivesStandard2020}} & Not a group-randomized trial & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 89
+Lincoln et al.\textsuperscript{\cite{lincolnProtocolRandomisedTrial2020}} & stepped wedge & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 90
+Linton et al.\textsuperscript{\cite{lintonSystemLevelInformatics2021}} & & 2 & 1 & patient within triage nurse & 51 & 384 & & & triage nurse & stratum & yes, stratification & 0.58 & 1 & no & Generalized linear mixed model accounting for clustering within triage nurse & Account for clustering within both stratum and triage nurse & no & This study wins the honorary award for highest observed ICC & Accounted for clustering & Account for clustering and stratification & no \\
+
+% Entry 91
+Liyanage-Don et al.\textsuperscript{\cite{liyanage-donImplementingRemotePatient2025}} & & 2 & 1 & patient within primary care practice & 15 & 8000 & & & practice & practice & yes & 0, 0.1, or 0.2 & 1 & no & Accounted for clustering & Account for clustering and stratification & no & Good try & Accounted for clustering & Account for clustering and stratification & no \\
+
+% Entry 92
+Longenecker et al.\textsuperscript{\cite{longeneckerImplementationStrategiesIntegrate2025}} & stepped wedge & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 93
+Ludden et al.\textsuperscript{\cite{luddenImplementationCoachMcLungsSM2022}} & stepped wedge & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 94
+Mann et al.\textsuperscript{\cite{mannImpactClinicalDecision2020}} & & 2 & 2 & patient visit within practitioner within practice & 33 & 541 & 100573 & & practice & practice & no & NR & 1 & no & GEE with logit link accounting for clustering within practice & Account for clustering within practitioner and practice & no & Did not account for repeated visits by the same patient, which adds another level of clustering & Not reported & Account for clustering by practice and practitioner & no \\
+
+% Entry 95
+Mansour-Assi et al.\textsuperscript{\cite{mansour-assiSocialMobileApproaches2022}} & Not a group-randomized trial & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 96
+Martinez et al.\textsuperscript{\cite{martinezImpactCAPTUREChronic2025}} & & 2 & 1 & patient within primary care practice & 100 & 4679 & & & practice & practice & no & 0.076 & 1 & no & GEE accounting for clustering & Account for clustering & yes & Yay & Accounted for clustering & Account for clustering & yes \\
+
+% Entry 97
+McLoughlin et al.\textsuperscript{\cite{mcloughlinUsingImplementationMapping2025}}} & pilot & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 98
+McQuaid et al.\textsuperscript{\cite{mcquaidAddressingPediatricAsthma2025}} & stepped wedge & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 99
+Mercer et al.\textsuperscript{\cite{mercerStrengtheningReferralNetworks2019}} & & 2 & 1 & participant within clinic & 8 & 200 & & & clinic & clinic & yes, stratified & 0.02--0.06 & 1 & no & Generalized linear mixed model accounting for clustering & Account for clustering and stratification & no & & Accounted for clustering & Account for clustering and stratification & no \\
+
+% Entry 100
+Miller et al.\textsuperscript{\cite{millerMasteryorientedMotorCompetence2023}} & & 2 & 1 & child within classroom & 12 & 112 & & & classroom & classroom & no & NR & 1 & no & Does not account for clustering & Account for clustering & no & & Does not account for clustering & Account for clustering & no \\
+
+% Entry 101
+Mills et al.\textsuperscript{\cite{millsImplementationMultifacetedPatientCentered2020}} & & 2 & 1 & patient within federally qualified health center & 36 & 1260 & & & federally qualified health center & federally qualified health center & no & 0.063 & 1 & no & Mixed model accounting for clustering & Mixed model accounting for clustering & yes & Well described & Accounted for clustering & Account for clustering & yes \\
+
+% Entry 102
+Miranda et al.\textsuperscript{\cite{mirandaEffectPriestLedIntervention2020}} & & 2 & 1 & participant within parish & 12 & 1488 & & & parish & parish & yes, pair matching based on parish size & CV = 0.07 & 2 & no & Accounted for clustering & Account for clustering and pairing & no & Well described & Accounted for clustering & Account for clustering and pairing & no \\
+
+% Entry 103
+Moreno et al.\textsuperscript{\cite{morenoClusterrandomizedControlledTrial2021}} & second study by same group, excluded randomly & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 104
+Morshed et al.\textsuperscript{\cite{morshedImpactHealthyWeight2019}} & Not a group-randomized trial & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 105
+Mukhopadhyay et al.\textsuperscript{\cite{mukhopadhyayClusterRandomizedTrialComparing2023}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 106
+Mukhopadhyay et al.\textsuperscript{\cite{mukhopadhyayDesignPilotImplementation2023}} & second study by same group, excluded randomly & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 107
+Nanney et al.\textsuperscript{\cite{nanneyGroupRandomizedIntervention2019}} & & 2 & 1 & student within school & 16 & NR & & & school & school & yes, by wave & NR & 2 & no & Wilcoxon test & Account for clustering by school and stratification by wave & no & Impossible to read & Not reported & Account for clustering by school and by wave & no \\
+
+% Entry 108
+Nicolau et al.\textsuperscript{\cite{nicolauDoesPriorCoronary2019}} & Not a group-randomized trial & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 109
+Ockene et al.\textsuperscript{\cite{ockeneTeachingMedicalStudents2021}} & & 2 & 1 & student within medical school & 8 & 915 & & & medical school & medical school & yes, pair matching & NR & 2 & no & Two-level analysis of covariance & Account for correlation with pair matching and clustering & no & Unclear & Not reported & Account for clustering and pair matching & no \\
+
+% Entry 110
+Ogedegbe et al.\textsuperscript{\cite{ogedegbeHealthInsuranceCoverage2018}} & & 2 & 1 & participant within community health center & 32 & 757 & & & community health center & community health center & yes, pair matching and stratified by wave & 0.06 & 2 & no & Accounted for clustering & Account for both clustering and pair matching & no & Missed the pair matching & Accounted for clustering & Account for clustering and pair matching & no \\
+
+% Entry 111
+Olomu et al.\textsuperscript{\cite{olomuImprovingDiabeticPatients2022}} & & 2 & 3 & patient within team within federally qualified health center within county & 3 & 12 & 17 & 378 & team & county & yes, matching within county & 0.002 & 5 & no & Accounted for clustering within team only & Account for clustering within team, FQHC, and county & no & Very small number of counties & Accounted for clustering within team & Account for clustering within team, FQHC, and county & no \\
+
+% Entry 112
+Olson et al.\textsuperscript{\cite{olsonWeightLossMaintenance2025}} & & 2 & 1 & trucker within terminal & 22 & 452 & & & terminal & terminal & no & NR & 3 & no & GEE accounting for clustering of truckers within terminals & Account for clustering of truckers within terminals & yes & GEE on 22 clusters & Did not account for clustering & Account for clustering & no \\
+
+% Entry 113
+Pacheco et al.\textsuperscript{\cite{pachecoEffectsDifferentAllotments2021}} & & 2 & 1 & participant within family & 72 & up to 3 per family & & & family & family & no & NR & 3 & no & t-test not accounting for clustering within family & Account for clustering within family & no & Additional clustering level of health promoters not mentioned in the study & Did not account for clustering & Account for clustering & no \\
+
+% Entry 114
+Paez et al.\textsuperscript{\cite{paezRoboticElectromagneticBronchoscopy2024}} & & 2 & 1 & patient within OR day & 202 & 400 & & & OR day & OR day & no & NR & 1 & no & Accounted for clustering by surgeon/operator, not by OR day & Account for clustering by OR day & no & Keith noted analysis not done correctly & Accounted for clustering by surgeon/operator, not by OR day & Account for correlation within OR day & no \\
+
+% Entry 115
+Paniagua-Avila et al.\textsuperscript{\cite{paniagua-avilaEvaluatingMulticomponentProgram2020}} & & 2 & 2 & participant within health district within department & 5 & 36 & 44 per health district (total 1584) & & health district & department & yes, stratified by department & 0.55 & 1 & no & Mixed model accounting for clustering & Account for clustering and stratification & no & Beautifully written & Z-test accounting for clustering & Account for clustering and stratification & no \\
+
+% Entry 116
+Panniyammakal et al.\textsuperscript{\cite{panniyammakalFamilyBasedInterventionsPromote2025}} & & 2 & 1 & patient within family & 750 & 1671 & & & family & family & no & 0.10 & 1 & no & GEE accounting for clustering & Account for clustering & yes & & Monte Carlo simulation or GEE accounting for clustering & Account for clustering & yes \\
+
+% Entry 117
+Pannu et al.\textsuperscript{\cite{pannuOptimizationInspiredOxygen2025}} & stepped wedge & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 118
+Patel et al.\textsuperscript{\cite{patelEffectivenessSchoolDrinking2023}} & & 2 & 2 & student within classroom within school & 18 & 56 & 1249 & & school & school & no & 0.005 & 3 & no & Mixed effect logistic regression accounting for clustering by school and student within classroom & Account for clustering by school, student, and classroom & yes & & Accounted for clustering within school & Account for clustering within school, classroom, and student & no \\
+
+% Entry 119
+Patterson et al.\textsuperscript{\cite{pattersonEmergencyMedicalServices2023}} & & 2 & 1 & clinician within EMS agency & 36 & 678 & & & agency & agency & yes, biased coin minimization by type and size & 0.07 & 1 & no & Accounted for clustering within agency & Account for clustering and stratification & no & & Accounted for clustering within agency & Account for clustering and stratification & no \\
+
+% Entry 120
+Pbert et al.\textsuperscript{\cite{pbertPediatricPrimaryCare2024}} & & 2 & 2 & participant within family within pediatric practice & 20 & NR & 501 & & practice & practice & yes, matched pair randomization & 0.01 & 3 & no & General linear mixed effect model clustered by pediatric practice only & Account for clustering within family, practice, and matched pair & no & Dropped the random effect that was inestimable & Accounted for clustering within practice & Account for clustering within practice, family, and matched pair & no \\
+
+% Entry 121
+Perry et al.\textsuperscript{\cite{perryResultsAsthmaEducation2018}} & & 2 & 1 & student within school district & 19 & 383 & & & school district & school district & no & 0.01 & 1 & no & Mixed effect model accounting for clustering & Mixed effect model accounting for clustering & yes & To be verified with Keith & Accounted for clustering within school district & Account for clustering within school district & yes \\
+
+% Entry 122
+Pfammatter et al.\textsuperscript{\cite{pfammatterMHealthInterventionPreserve2020}} & & 2 & 1 & student within dormitory & NR & 300 & & & dormitory & dormitory & yes, pair matching & 0.01 & 3 & no & Accounted for clustering & Account for clustering and matching & no & Cannot determine number of matched pairs or number of dormitories & Accounted for clustering & Account for clustering and pair matching & no \\
+
+% Entry 123
+Philis-Tsimikas et al.\textsuperscript{\cite{philis-tsimikasDulceDigitalMeProtocol2022}} & Not a group-randomized trial & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 124
+Piyasiri et al.\textsuperscript{\cite{piyasiriEffectivenessLonglastingInsecticideImpregnated2025}} & & 2 & 3 & participant within household within cluster within site & 2 & 20 & 600 & NR & cluster & site & no & Not used; design effect used instead & 3 & no & Did not account for clustering & Account for clustering within household, cluster, and site & no & Status very unclear & Accounted for some clustering via design effect & Account for clustering by household and site & no \\
+
+% Entry 125
+Robbins et al.\textsuperscript{\cite{robbinsInterventionEffectsGirls2019}} & & 2 & 1 & participant within school & 24 & 1519 & & & school & matched pair & yes, pair matching & 0.02 & 2 & no & Mixed model accounting for clustering only & Account for clustering and matching & no & Did not account for pair matching & Accounted for clustering & Account for clustering and pair matching & no \\
+
+% Entry 126
+Robinson et al.\textsuperscript{\cite{robinsonCommunitybasedMultilevelMultisetting2021}} & Not a group-randomized trial & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 127
+Robinson et al.\textsuperscript{\cite{robinsonProtocolClusterRandomized2023}} & second study by same group, excluded randomly & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 128
+Rosales et al.\textsuperscript{\cite{rosalesMetaSaludDiabetes2021}} & & 2 & 1 & participant within health clinic & 22 & 518 & & & clinic & clinic & yes, stratified by clinic location & 0.03 & 2 & no & Mixed model accounting for clustering & Account for clustering and stratification & no & Used fixed effect for location; needs to ask Keith if that's acceptable & Accounted for clustering & Account for clustering and restricted randomization & no \\
+
+% Entry 129
+Rosenberg et al.\textsuperscript{\cite{rosenbergSittingTimeReduction2024}} & Not a group-randomized trial & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 130
+Sabo et al.\textsuperscript{\cite{saboMetaSaludDiabetes2018}} & second study by same group, excluded randomly & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 131
+Safford et al.\textsuperscript{\cite{saffordDesignRationaleMulticenter2023}} & & 4 & 1 & participant within practice & 69 & 1596 & & & practice & practice & yes, by state and type of practice & 0.01 & 3 & no & Accounted for clustering & Account for clustering and restricted randomization & no & To be verified with Keith & Accounted for clustering & Account for clustering and restricted randomization & no \\
+
+% Entry 132
+Sanuade et al.\textsuperscript{\cite{sanuadeFixeddoseCombinationTherapybased2023}} & & 2 & 1 & patient within primary health care center & 60 & 4427 & & & health care center & health care center & yes, stratified by baseline hypertension and baseline caseload & NR & 1 & no & Accounted for clustering & Account for clustering and restricted randomization & no & & Post-hoc power analysis accounting for clustering & Pre-hoc power analysis accounting for clustering and restricted randomization & no \\
+
+% Entry 133
+Schenker et al.\textsuperscript{\cite{schenkerEffectOncologyNurseLed2021}} & & 2 & 1 & patient within community oncology clinic & 17 & 672 & & & clinic & clinic & yes, stratified by type, size, and sex makeup & 0.03 & 2 & no & Accounted for clustering & Account for clustering and restricted randomization & no & & Accounted for clustering & Account for clustering and restricted randomization & no \\
+
+% Entry 134
+Schlenz et al.\textsuperscript{\cite{schlenzSuccessfulImplementationStroke2025}} & & 3 & 1 & patient within stroke center site & 13 & 720 & & & stroke center & stroke center & yes, pair matching & NR & 2 & no & Generalized linear Poisson model accounting for clustering only & Account for both pair matching and clustering & no & Failed & t-test, did not account for clustering & Account for both clustering and pair matching & no \\
+
+% Entry 135
+Seguin-Fowler et al.\textsuperscript{\cite{seguin-fowlerImprovementsMaintenanceClinical2022}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 136
+Semitala et al.\textsuperscript{\cite{semitalaComparison3Optimized2024}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 137
+Semler et al.\textsuperscript{\cite{semlerOxygenSaturationTargetsCritically2022}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 138
+Shi et al.\textsuperscript{\cite{shiSolvingInsomniaElectronically2019}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 139
+Silber et al.\textsuperscript{\cite{silberPatientSafetyOutcomes2019}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 140
+Smith et al.\textsuperscript{\cite{smithCommunityInterventionReduce2025}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 141
+Sobers et al.\textsuperscript{\cite{sobersAssessingEffectivenessImplementation2021}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 142
+Sperl-Hillen et al.\textsuperscript{\cite{sperl-hillenProtocolPatientRandomized2024}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 143
+Stefan et al.\textsuperscript{\cite{stefanUpdateStudyProtocol2021}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 144
+Tabak et al.\textsuperscript{\cite{tabakDisseminatingImplementingLifestylebased2019}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 145
+Takada et al.\textsuperscript{\cite{takadaProtocolType32025}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 146
+Tan et al.\textsuperscript{\cite{tanTELEhealthSharedDecisionmaking2024}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 147
+VanEvery et al.\textsuperscript{\cite{vaneveryImpactAvocadoIntake2023}} & secondary outcomes & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 148
+Victor et al.\textsuperscript{\cite{victorClusterRandomizedTrialBloodPressure2018}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 149
+Vinson et al.\textsuperscript{\cite{vinsonDecisionSupportIntervention2024}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 150
+Vorderstrasse et al.\textsuperscript{\cite{vorderstrasseRecruitmentEnrollmentParticipants2021}}} & implementation & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 151
+Ward et al.\textsuperscript{\cite{wardKeysHealthyFamily2020}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 152
+Warner et al.\textsuperscript{\cite{warnerPracticalAnemiaBundle2025}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 153
+Wilfley et al.\textsuperscript{\cite{wilfleyTrainingModelsImplementing2020}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 154
+Williams et al.\textsuperscript{\cite{williamsProtocolPaperStepped2020}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 155
+Wright et al.\textsuperscript{\cite{wrightCommunityMobilisationAdoption2025}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 156
+Wright et al.\textsuperscript{\cite{wrightReducingPaediatricOverweight2020}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 157
+Yawn et al.\textsuperscript{\cite{yawnUseAsthmaAPGAR2018}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 158
+Youssouf et al.\textsuperscript{\cite{youssoufDesigningImplementationScience2024}}} & pilot & & & & & & & & & & & & & & & & & & & & \\
+
+% Entry 159
+Yuan et al.\textsuperscript{\cite{yuanAchievingCardiovascularHealth2025}} & & & & & & & & & & & & & & & & & & & & & \\
+
+% Data rows will be added here
+
+\end{longtable}
+
+\end{landscape}
+
+\bibliographystyle{unsrt}
+\bibliography{Ignore03_NHLBI}
+
+\end{document}

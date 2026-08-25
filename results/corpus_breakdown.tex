@@ -1,0 +1,191 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.9in]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{hyperref}
+
+\title{Corpus Breakdown}
+\author{Cluster-Paper Review}
+\date{\today}
+
+\begin{document}
+\maketitle
+\vspace{-2em}
+
+\section{Corpus reconciliation}
+
+Every paper that left the corpus is recorded in \texttt{results/exclusions.csv} with its stage, reason,
+and who decided. The 2115 $\rightarrow$ 1494 reduction predates the manifest and is documented separately
+in \texttt{results/unvalidated\_set\_summary.tex}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrl}
+\toprule
+\textbf{Stage} & \textbf{Papers} & \textbf{Decided by} \\
+\midrule
+Fetched from Zotero (1494 testing + 569 validation) & 2063 & --- \\
+\quad $-$ Cross-set duplicates (already in validation) & $-$207 & rule \\
+\quad $-$ Validation internal duplicates (merged) & $-$15 & rule \\
+\midrule
+Rows in the manifest & 1841 & \\
+\quad $-$ Correction notices dropped & $-$4 & human \\
+\quad $-$ NHLBI, cited but never reviewed & $-$23 & human \\
+\midrule
+\textbf{Active corpus} & \textbf{1814} & \\
+\quad Testing (to classify) & 1284 & \\
+\quad Validation (human-labeled) & 530 & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Duplicates}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llrl}
+\toprule
+\textbf{Type} & \textbf{Matched on} & \textbf{Count} & \textbf{Resolution} \\
+\midrule
+Testing $\leftrightarrow$ validation & DOI / PMID / PMCID & 207 & Removed from testing; kept in validation \\
+Within validation (NCI $\leftrightarrow$ NHLBI) & DOI / PMID & 15 pairs & Merged to one row, NCI key kept \\
+Within testing & --- & 0 & All 1494 md5 hashes distinct \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Cross-set duplicates were dropped from testing rather than validation because they already carry a human
+label. The 15 within-validation pairs arrived from two Zotero groups under different item keys, so
+\texttt{paper\_id} could not detect them; 9 of 15 had byte-identical PDFs, 6 differed. Merged rows are
+marked \texttt{folder = "Both NCI and NHLBI"} and \texttt{folder\_path = "Both Validation Institutes"}.
+
+\section{Identity verification and human review}
+
+Automated verification compared each PDF's first two pages against its Zotero metadata. Of 2063 papers,
+2041 verified automatically (1989 on DOI, 52 on title$+$author) and 24 were flagged for a human. A further
+4 were flagged later by title screening and thin-text detection.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Review outcome} & \textbf{Testing} & \textbf{Validation} \\
+\midrule
+PDF replaced (wrong document attached) & 16 & 4 \\
+Confirmed correct, no change & 2 & 2 \\
+Dropped from the corpus & 3 & 1 \\
+\midrule
+\textbf{Total reviewed by hand} & \textbf{21} & \textbf{7} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All 28 queued papers are decided; none remain outstanding. Replacements span 14 institute folders, the
+largest being NIMH (4), NCI validation (3), and NICHD (2). Twelve of the originally flagged documents were
+NIH grant summary statements or study-section review sheets filed where the article should be --- caught
+by a header-phrase rule, since a grant and the paper it funds share a title and first author.
+
+\section{Exclusions by reason}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llrl}
+\toprule
+\textbf{Reason} & \textbf{Stage} & \textbf{Count} & \textbf{Decided by} \\
+\midrule
+Cross-set duplicate & Post-fetch & 207 & rule \\
+Validation internal duplicate & Post-fetch & 15 & rule \\
+Correction / erratum notice & Hand review & 4 & human \\
+NHLBI, cited but never reviewed & Ground truth load & 23 & human \\
+Unjoinable ground-truth label & Label load & 2 & rule \\
+\midrule
+\textbf{Total} & & \textbf{251} & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The 4 correction notices were 2 flagged by character count (a Corrigendum and an Erratum) and 2 by a
+title-anchored rule matching seven markers (\emph{erratum}, \emph{corrigendum}, \emph{correction},
+\emph{retraction}, \emph{withdrawn}, \emph{addendum}, \emph{expression of concern}). Anchoring to the
+title's start is required: unanchored matching would also have removed two genuine trials, one on
+``Reentry from Corrections to Community Treatment'' and one on ``Neonatal Opioid Withdrawal''. For 3 of
+the 4 notices the corrected article is independently present in the corpus; only the corrigendum to
+``Analysis of cluster-randomized test-negative designs'' has no underlying article on file.
+
+\section{Text extraction}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+Papers extracted (active corpus) & 1814 \\
+Extracted by PyMuPDF & 1814 (100\%) \\
+Requiring OCR & 0 \\
+Extraction failures & 0 \\
+Total pages & \num{24094} \\
+Total characters & \num{98129548} \\
+Median characters per paper & \num{51712} \\
+Range (min--max) & \num{3531}--\num{170753} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+No PDF in the corpus lacked a text layer, so OCR was never invoked. Extraction is text-only: tables
+linearize into label/value runs that preserve reading order and arm labels, while figure content survives
+only as embedded text. Cached text is invalidated by the source PDF's md5, so replacing a PDF during
+review forces re-extraction. \textbf{The extracted text has not yet been checked for encoding corruption,
+multi-article PDFs, or truncation.}
+
+\section{Ground truth}
+
+All institutes' labels have arrived, in three files with three different shapes (Table
+\ref{tab:gt-sources}). The build/holdout split is still not assigned: it may only be fixed once, and
+7 active papers do not yet carry a trustworthy label (below).
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrl}
+\toprule
+\textbf{Source} & \textbf{Rows} & \textbf{Covers} \\
+\midrule
+\texttt{GroundTruthDataNCI01.xlsx} & 232 & every NCI validation paper \\
+\texttt{crt\_review\_table\_112.tex} & 159 & NHLBI papers taken to full extraction \\
+\texttt{NHLBI\_exclusions\_178.csv} & 178 & NHLBI papers rejected before extraction \\
+\bottomrule
+\end{tabular}
+\caption{Every institute's label file. \texttt{scripts/07\_build\_ground\_truth.py} merges the three
+into one wide table, \texttt{data/ground\_truth.csv} --- 569 rows, 567 resolved to a Zotero
+\texttt{paper\_id}.}
+\label{tab:gt-sources}
+\end{table}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+Active validation papers & 530 \\
+\quad Loaded with one clean label & 523 \\
+\quad Held out --- NCI/NHLBI reviewed the same paper and disagreed & 6 \\
+\quad Held out --- citation still unresolved & 1 \\
+\midrule
+Of the 523 loaded: excluded (gated out) & 347 \\
+Of the 523 loaded: kept, with power/stats labels & 176 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The 347 excluded papers carry reasons dominated by \emph{secondary analysis} (164), followed by
+\emph{implementation} (31), \emph{duplicate study by the same group} (31), \emph{methods paper} (30),
+\emph{not group-randomized} (23), and \emph{baseline analysis} (23); the remaining nine categories
+each account for fewer than a dozen. NCI's review additionally sorts its 95 gate survivors into
+review categories A (30), B (19), C (33), and D (13) --- NHLBI's review does not use this scheme, so
+it is blank on 81 of the 176 kept papers.
+
+\textbf{15 papers were reviewed independently by both institutes}, because they were fetched into
+both Zotero groups. 9 of the 15 pairs agree on every field and were merged automatically; 6 disagree
+and neither answer is trusted over the other. One disagreement is a complete flip --- NCI calls a
+paper's power and data analysis both correct, NHLBI calls the same paper's analyses both incorrect.
+All 6 are listed with each institute's answer in \texttt{results/review/05\_label\_match\_review.csv},
+awaiting a human decision.
+
+\end{document}

@@ -1,0 +1,3 @@
+source_institute,source_file,source_row,citation_raw,cite_key,match_score,labeled
+NCI,GroundTruthDataNCI01.xlsx,168,"168. (Patterson et al., 2022a)",,,1
+NCI,GroundTruthDataNCI01.xlsx,169,"169. (Patterson et al., 2022b)",,,1

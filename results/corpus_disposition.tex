@@ -1,0 +1,265 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.9in]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{longtable}
+\usepackage{hyperref}
+
+\title{Corpus Disposition: What Happened to Every Paper}
+\author{Cluster-Paper Review}
+\date{\today}
+
+\begin{document}
+\maketitle
+\vspace{-2em}
+
+\noindent
+Every paper fetched for this study, and where it ended up. Two sets are tracked separately: the
+\textbf{Unlabelled Set} (papers to be classified by the model) and the \textbf{Human Labelled Set}
+(papers already reviewed by NCI or NHLBI). No paper is ever deleted --- departures are recorded as a
+manifest verdict, and PDFs are moved to \texttt{data/removed\_pdfs/} rather than removed.
+Every count below is reproducible from \texttt{data/zotero\_manifest.csv} and \texttt{data/review.db}.
+
+\section{Unlabelled Set}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrl}
+\toprule
+\textbf{Step} & \textbf{Change} & \textbf{Remaining} & \textbf{Why} \\
+\midrule
+Raw Zotero items, 23 institute subcollections & --- & 2115 & Zotero's own \texttt{numItems} per collection \\
+Non-article items removed & $-2$ & 2113 & A \texttt{videoRecording} and one other non-article \\
+Multi-institute placements collapsed & $-619$ & 1494 & 483 papers are filed under 2--6 institutes each \\
+\midrule
+\textbf{Unique papers fetched} & & \textbf{1494} & 100\% fetch success, zero corrupt downloads \\
+\midrule
+Cross-set duplicates removed & $-207$ & 1287 & Same paper already in the Human Labelled Set, where it carries a human answer \\
+Correction notices dropped by hand & $-3$ & 1284 & An erratum is not a study \\
+\midrule
+\textbf{Active Unlabelled Set} & & \textbf{1284} & All text extracted and cached \\
+\midrule
+Owed back (pending) & $+7$ & (1291) & See Section~\ref{sec:orphans} \\
+\bottomrule
+\end{tabular}
+\caption{The collection \texttt{sample NCI-new} (104 papers, disjoint from every other collection)
+was excluded before this table begins and never fetched.}
+\end{table}
+
+\subsection*{The three dropped papers}
+
+All three were correction notices rather than full articles. Two were caught by the anchored
+title rule, one by the thin-text rule and confirmed on inspection.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llp{7.2cm}}
+\toprule
+\textbf{paper\_id} & \textbf{Flagged as} & \textbf{Title} \\
+\midrule
+\texttt{A3H3NDHF} & thin text & \emph{Erratum to:} Culturally adaptive storytelling intervention \dots\ hypertension control in Vietnam \\
+\texttt{NBBD4EVE} & thin text & \emph{Corrigendum:} Analysis of cluster-randomized test-negative designs \\
+\texttt{AT7F9XWR} & correction notice & \emph{Correction:} Assessing COVID-19 testing strategies in K-12 schools \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Human Labelled Set}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrl}
+\toprule
+\textbf{Step} & \textbf{Change} & \textbf{Remaining} & \textbf{Why} \\
+\midrule
+NCI group, \texttt{FinalCollectionFor Publication} & --- & 232 & Flat collection, no subcollections \\
+NHLBI group, \texttt{Locked\_26\_01\_08\_337} & $+337$ & 569 & Fetched in a second run \\
+\midrule
+\textbf{Fetched} & & \textbf{569} & All 569 passed identity verification \\
+\midrule
+Internal duplicates merged & $-15$ & 554 & Same paper in both Zotero groups under different item keys \\
+Correction notice dropped & $-1$ & 553 & \texttt{JBUFJCLU}, a \emph{Correction to:} notice \\
+NHLBI cited but never reviewed & $-23$ & 530 & Blank in every label column; the review will not resume \\
+\midrule
+\textbf{Active Human Labelled Set} & & \textbf{530} & All text extracted and cached \\
+\midrule
+Held for human adjudication & $-7$ & 523 & 6 institutional disagreements, 1 unresolved citation \\
+\midrule
+\textbf{Loaded into the label table} & & \textbf{523} & \\
+\midrule
+Random tie-break exclusions removed & $-31$ & 492 & \texttt{duplicate\_group\_random\_drop}: a coin flip, not a property of the paper \\
+\midrule
+\textbf{Scoreable for exclusion} & & \textbf{492} & 316 exclude, 176 keep \\
+\quad of which pass the gate & & 176 & These carry power and data-analysis labels \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{Why the random tie-break exclusions are removed}
+
+The source protocol used a pseudo-random number generator to pick one manuscript whenever several
+shared a first author, in order to reduce the influence of very productive groups. That decision
+depends on which \emph{other} papers happen to be in the collection, so no model reading a single PDF
+can reproduce it. Scoring the model against those 31 papers would impose a hard ceiling near 94\% on
+exclusion accuracy and penalise it for a coin flip. Same-first-author de-duplication, if wanted, is
+applied afterwards as a deterministic pass over the model's survivors, with a recorded seed.
+
+\section{Manual review of flagged PDFs}
+
+28 papers were flagged by identity verification and reviewed by hand in a small GUI, which opens the
+PDF, the DOI, PubMed and the Zotero record side by side. Replacements are re-verified against the
+same identity ladder the moment they are chosen. Originals are backed up to
+\texttt{data/removed\_pdfs/replaced/}; nothing is destroyed.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Flagged as} & \textbf{Flagged} & \textbf{Replaced} & \textbf{Cleared} & \textbf{Dropped} & \textbf{Skipped} \\
+\midrule
+Wrong document       & 18 & 18 & --- & --- & --- \\
+Probably fine        &  4 &  1 &  3 & --- & --- \\
+Thin text            &  2 & --- & --- &  2 & --- \\
+Correction notice    &  2 & --- & --- &  2 & --- \\
+Likely wrong         &  1 & --- &  1 & --- &  1 \\
+Unreadable           &  1 &  1 & --- & --- & --- \\
+\midrule
+\textbf{Total}       & \textbf{28} & \textbf{20} & \textbf{4} & \textbf{4} & \textbf{1} \\
+\bottomrule
+\end{tabular}
+\caption{One paper was reviewed twice, so decisions total 29 across 28 papers. Audit trail in
+\texttt{results/review/04\_papers\_reviewed\_results.csv}.}
+\end{table}
+
+\section{Duplicates}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llrl}
+\toprule
+\textbf{Type} & \textbf{Matched on} & \textbf{Count} & \textbf{Resolution} \\
+\midrule
+Unlabelled $\leftrightarrow$ Labelled & DOI / PMID / PMCID & 207 & Removed from Unlabelled; the labelled copy already has a human answer \\
+Within the Labelled Set & DOI / PMID & 15 pairs & Merged to one row; the NCI item key was kept \\
+Within the Unlabelled Set & md5 & 0 & All 1494 PDF hashes distinct \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Of the 15 within-set pairs, 9 had byte-identical PDFs and 6 differed. Because they arrived from two
+separate Zotero groups under different item keys, \texttt{paper\_id} could not detect them; the match
+was made on DOI and PMID.
+
+\section{Where the two institutes disagreed}
+
+The same 15 papers were reviewed independently by both institutes. Nine agreed on every label and were
+collapsed automatically. Six were flagged as conflicts --- but only three are genuine.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lllp{4.1cm}}
+\toprule
+\textbf{paper\_id} & \textbf{NCI} & \textbf{NHLBI} & \textbf{Assessment} \\
+\midrule
+\texttt{VGG3KIMT} & excluded (baseline only) & kept, both analyses incorrect & \textbf{Genuine} --- keep vs.\ exclude \\
+\texttt{HLQA5RI6} & excluded (secondary analysis) & kept, both analyses incorrect & \textbf{Genuine} --- keep vs.\ exclude \\
+\texttt{RJD9XX6D} & kept, both analyses correct & kept, both analyses incorrect & \textbf{Genuine} --- a complete flip \\
+\midrule
+\texttt{Z7NF2G6Q} & excluded (baseline only) & excluded (implementation) & Not a conflict; both exclude \\
+\texttt{E92KWK4B} & excluded (implementation) & excluded (methods) & Not a conflict; both exclude \\
+\texttt{DPPC94XT} & excluded (random tie-break) & kept, both analyses incorrect & Not a conflict; the NCI exclusion was a coin flip, now removed \\
+\bottomrule
+\end{tabular}
+\caption{Binary keep/exclude agreement across the 15 co-reviewed papers is 12/15 (80\%). That figure
+is the ceiling against which model--human agreement should be read.}
+\end{table}
+
+\subsection*{The two institutes did not use the same exclusion criteria}
+
+NHLBI excluded 72.9\% of what it reviewed (218/299); NCI excluded 56.7\% (122/215). Most of the
+16-point gap is accounted for by seven exclusion categories that appear in the NHLBI labels but not in
+the published NCI protocol.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Category not in the published NCI protocol} & \textbf{Papers} \\
+\midrule
+Pilot study & 11 \\
+Stepped wedge design & 9 \\
+Protocol paper & 9 \\
+Review article & 3 \\
+Cohort study & 3 \\
+Comment or letter & 3 \\
+Preprint & 3 \\
+\midrule
+\textbf{Total} & \textbf{41} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Removing those 41 papers brings the NHLBI exclusion rate to 59.2\%, against NCI's 56.7\%. That near
+convergence is strong evidence the gap is a protocol difference rather than rater disagreement. It has
+not been confirmed with the study team, and the exclusion rubric cannot be finalised until it is:
+\emph{stepped wedge design} in particular is a cluster randomized design, so excluding nine such trials
+reads more like a labelling error than a criterion.
+
+\section{The Patterson citations}
+
+Two label rows cite \texttt{(Patterson et al., 2022a)} and \texttt{(2022b)}. APA appends the
+\texttt{a}/\texttt{b} suffix only when two references share an author and year, so the suffix records
+that the labeller could not separate them either. Both citations resolve to the same underlying study:
+\texttt{IT2B87LL}, the article, and \texttt{JBUFJCLU}, a \emph{Correction to:} that article which has
+already been dropped. Only one real paper is affected. Both label rows carry identical labels
+(excluded, random tie-break), so this is a counting problem rather than a correctness one. The fix is
+to teach the citation join to skip candidates already marked dropped; it is held pending the policy
+decision on whether correction notices belong in the corpus at all.
+
+\section{Papers now in neither set}
+\label{sec:orphans}
+
+An edge case created by ordering: the cross-set duplicate check ran before the Human Labelled Set was
+final. 207 papers were removed from the Unlabelled Set because a copy sat in the Labelled Set. Twelve
+of those labelled copies have since left or stalled, so the paper currently belongs to neither set and
+would be silently absent from the study.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrp{7.2cm}}
+\toprule
+\textbf{Situation} & \textbf{Papers} & \textbf{Action} \\
+\midrule
+Labelled copy dropped as never-reviewed & 7 & \textbf{Restore to the Unlabelled Set.} They are ordinary corpus papers now and will never receive a human label \\
+Labelled copy held for adjudication & 5 & Leave. Resolves on its own once the disagreements and the Patterson citation are decided \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+The seven to restore: \texttt{EMQMPLJ5}, \texttt{DH6IG7JY}, \texttt{N35XJ5YV}, \texttt{4GPSLLBZ},
+\texttt{FP3HZHGS}, \texttt{TCS56FZY}, \texttt{VH6KS89D}. Their PDFs and cached text were never deleted,
+so restoring is a manifest edit rather than a refetch. This check must be re-run after any future
+change to the Labelled Set, because the same edge case recurs every time a labelled paper is dropped.
+
+\section{What the model will be scored on}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Task} & \textbf{Papers} & \textbf{Class split} & \textbf{Majority baseline} \\
+\midrule
+Exclusion      & 492 & 316 exclude / 176 keep    & 64\% \\
+Power analysis & 176 & 136 incorrect / 40 correct & 77\% \\
+Data analysis  & 176 & 129 incorrect / 47 correct & 73\% \\
+\bottomrule
+\end{tabular}
+\caption{All three tasks are imbalanced, so plain accuracy is not a meaningful headline. A model
+answering ``incorrect'' to every power analysis scores 77\% while learning nothing. Balanced accuracy,
+macro-F1, Cohen's $\kappa$, and the full confusion matrix are reported instead, each beside its
+majority-class baseline.}
+\end{table}
+
+\end{document}

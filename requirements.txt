@@ -1,7 +1,11 @@
 anthropic
+pyzotero
 pymupdf
 pdfplumber
 pytesseract
+pillow          # imported by the OCR fallback in src/pdf_extract.py
+rapidfuzz
+openpyxl        # reads the GroundTruth*.xlsx label files
 pydantic
 tenacity
 tqdm

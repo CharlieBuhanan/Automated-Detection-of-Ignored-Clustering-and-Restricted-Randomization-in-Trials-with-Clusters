@@ -1,0 +1,107 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+
+\title{Ground Truth Disagreements: NCI vs.\ NHLBI}
+\author{Cluster-Paper Review}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Overview}
+
+15 validation papers were reviewed independently by both NCI and NHLBI. 
+\textbf{9 of the 15 pairs agree on every field; the 6 below do not.}
+
+NHLBI's labels come from two disjoint source files: papers taken to full extraction appear in
+\emph{NHLBI-159} (\texttt{crt\_review\_table\_112.tex}, with a full power/data-analysis
+write-up), and papers rejected before extraction appear only in \emph{NHLBI-178}
+(\texttt{NHLBI\_exclusions\_178.csv}, exclusion reason only). NCI's labels come from a single
+file, \emph{NCI-232} (\texttt{GroundTruthDataNCI01.xlsx}).
+
+\begin{itemize}
+  \item \textbf{Beck 2019}: the one real flip. Both institutes kept the paper, but NCI rates
+  the power analysis and data analysis both correct (category A), while NHLBI-159 rates both
+  incorrect. This is the only case where both institutes fully extracted the paper and reached
+  opposite conclusions about its quality, the highest-priority case for a manual re-read.
+
+  \item \textbf{Bartels 2024}: a real judgment-call disagreement. NCI excludes it as
+  baseline-only (the paper reports only baseline/formative data, not trial outcomes). NHLBI-159
+  disagreed with that framing, kept it, and extracted it, rating both power and data analysis
+  incorrect.
+
+  \item \textbf{King 2021}: an artifact of NCI's own dedup policy, not a disagreement about
+  this paper. NCI's raw reason is literally \texttt{"random"}: NCI's team follows a policy of
+  keeping only one trial per research group and randomly dropping near-duplicate papers from the
+  same group. NCI's pool also contains King et al.\ 2020 (\texttt{X2MXMQA7}), which NCI kept
+  instead. NHLBI never received that 2020 paper at all, so it had nothing to drop King 2021
+  against, and just extracted it on its own merits.
+
+  \item \textbf{Ockene 2021}: a related but distinct pattern. NCI's raw reason here is
+  \texttt{"secondary"}, not \texttt{"random"}: NCI kept Ockene et al.\ 2018
+  (\texttt{I4N8RJX7}, the trial's design/rationale paper) and treated the 2021 outcomes paper as
+  a secondary analysis of that same trial, not a true duplicate. NHLBI-159 again never had the
+  2018 paper, so it reviewed the 2021 paper directly.
+
+  \item \textbf{Gilbert 2022}: both institutes exclude the paper outright; they only disagree
+  on \emph{why}. NCI calls it baseline-only, NHLBI-178 calls it an implementation study. Since
+  both sides land on ``excluded,'' this has no effect on the inclusion gate; it only matters if
+  exclusion-reason categories themselves are being scored.
+
+  \item \textbf{Smith 2023}: same shape as Gilbert. Both institutes exclude the paper; NCI
+  calls it an implementation study, NHLBI-178 calls it a methods paper. Again, the gate outcome
+  agrees; only the reason label differs.
+\end{itemize}
+
+\newpage
+\section{Table}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{1cm}p{0.5cm}p{2.6cm}p{4.7cm}p{4.9cm}}
+\toprule
+Paper & Yr & DOI / PMID & NCI-232 (row) & NHLBI (source, row) \\
+\midrule
+Bartels et al. & 2024 &
+10.1186/s13012-024-01368-6 \newline PMID 38867283 &
+row 11: excluded --- baseline\_only (raw: ``baseline'') &
+NHLBI-159, row 11: kept --- power=no, data=no \\
+\addlinespace
+Beck et al. & 2019 &
+10.1186/s12889-019-6443-8 \newline PMID 30700262 &
+row 14: kept --- power=yes, data=yes, category A &
+NHLBI-159, row 12: kept --- power=no, data=no \\
+\addlinespace
+Gilbert & 2022 &
+10.1123/jpah.2021-0677 \newline PMID 35272263 &
+row 68: excluded --- baseline\_only (raw: ``baseline'') &
+NHLBI-178, row 21: excluded --- implementation\_study (raw: ``Implementation'') \\
+\addlinespace
+King et al. & 2021 &
+10.1016/\newline j.cct.2021.106526 \newline PMID 34371162 &
+row 105: excluded --- duplicate\_group\_random\_drop (raw: ``random''); NCI kept King 2020
+(X2MXMQA7) instead &
+NHLBI-159, row 80: kept --- power=no, data=no \\
+\addlinespace
+Ockene et al. & 2021 &
+10.1007/s11606-020-06571-x \newline PMID 33835315 &
+row 149: excluded --- secondary\_analysis (raw: ``secondary''); NCI kept Ockene 2018
+(I4N8RJX7, cat.\ C) instead &
+NHLBI-159, row 109: kept --- power=no, data=no \\
+\addlinespace
+Smith & 2023 &
+10.18865/\newline ed.decipher.18 \newline PMID 38846735 &
+row 201: excluded --- implementation\_study (raw: ``implementation'') &
+NHLBI-178, row 49: excluded --- methods\_paper (raw: ``Methods'') \\
+\bottomrule
+\end{tabular}
+\caption{All 6 papers were identity-confirmed by DOI/PMID match and PDF comparison across the
+NCI and NHLBI copies. \texttt{paper\_id} (kept side / merged NHLBI twin): Bartels
+VGG3KIMT/TCF92VSK; Beck RJD9XX6D/9G7ZMMY3; Gilbert Z7NF2G6Q/BMCWCLQH; King
+DPPC94XT/6EI22ZER; Ockene HLQA5RI6/QQ3EW96Q; Smith E92KWK4B/ASTFEXJ3.}
+\end{table}
+
+\end{document}
