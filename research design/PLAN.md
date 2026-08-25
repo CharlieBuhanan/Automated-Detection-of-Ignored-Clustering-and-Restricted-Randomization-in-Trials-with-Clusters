@@ -455,6 +455,27 @@ scored as misses.
    prompt has to ask for JSON and the wrapper validates with pydantic and re-prompts on a parse failure;
    and one process per paper, so no prompt caching and it runs slower. Fine at <100 papers a round.
 
+   **Label leakage must be blocked structurally — `claude -p` is agentic, not a completion endpoint.**
+   Run inside the repo it has file tools, and `data/ground_truth.csv`, `data/review.db`, and an
+   auto-loaded CLAUDE.md naming both are right there. Telling it not to look is not a control. Four rules,
+   enforced by the wrapper:
+   - **Run from a scratch directory outside the repo** — no CLAUDE.md, no memory index, no relative path
+     to the answers resolves. Never `--add-dir` the repo.
+   - **No tools, one turn** (`--max-turns 1`, empty allowed-tools) — makes it a pure text completion,
+     behaviorally identical to an API call.
+   - **Text on stdin, never a file path.** Write outputs outside the scratch cwd, so one paper's response
+     is not readable by the next.
+   - **Blind the identifier** — send a random token, keep the token→`paper_id` map in the wrapper, so a
+     leak is not lookup-able even if one happens.
+
+   Verified three ways: `--output-format stream-json` logs every `tool_use` block, so assert zero per
+   paper and discard any run with one; a canary run of ~20 papers against a decoy `ground_truth.csv` with
+   flipped labels and tools deliberately *on* (accuracy tracking the decoy proves it is reading, not
+   reasoning); and the holdout, run once via the API, which does not depend on trusting the loop at all.
+
+   Each invocation is independent — fresh process, no shared history — unless `--resume`, `--continue`,
+   or a reused `--session-id` is passed. Don't.
+
 7. **Regression** — `src/evaluate.py` re-runs the current rubric against the whole build split, computes
    accuracy/precision/recall, appends to `results/rubric_accuracy_history.csv` with the commit hash.
 
