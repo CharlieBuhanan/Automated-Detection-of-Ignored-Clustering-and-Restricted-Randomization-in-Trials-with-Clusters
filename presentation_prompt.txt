@@ -1,0 +1,544 @@
+===============================================================================
+PROMPT FOR CLAUDE DESIGN - SLIDE DECK
+Paste everything below into Claude Design to generate the canvas.
+19 slides, 16:9 landscape, one artboard per slide.
+===============================================================================
+
+CONTEXT
+
+Internal research-group presentation at the University of Colorado Anschutz
+Medical Campus. Audience: biostatisticians and clinical trial methodologists.
+Technically expert, not machine-learning people. They care about rigour,
+reproducibility, and whether the method survives peer review. They will be
+actively suspicious of AI hype.
+
+The project uses a large language model to replicate an expert systematic
+review of cluster randomized trials, then scale it to a corpus five times
+larger than the humans could read.
+
+Tone: measured, precise, quietly confident. This is a methods talk. Assume the
+audience interrupts to ask how something was validated.
+
+HARD CONSTRAINT: Do not use em-dashes anywhere in this deck. Use commas,
+colons, semicolons, or parentheses instead. This applies to every slide.
+
+
+-------------------------------------------------------------------------------
+DESIGN DIRECTION
+-------------------------------------------------------------------------------
+
+Visual world: clinical trial reporting and statistical software output. PRISMA
+diagrams, journal typography, well-set tables. Restrained and academic, not a
+default template.
+
+PALETTE (exact values):
+  Ink / text        #151C22
+  Muted text        #54636D
+  Page ground       #FFFFFF
+  Panel ground      #EEF2F3
+  Hairline          #C7D0D5
+  Primary accent    #1F5E66   petrol: structure, the model, the flow
+  Human accent      #8A4F7D   plum: anywhere a HUMAN decides
+  Positive          #2E6B4F   forest: outputs, completed work
+  Attention         #A03E28   sienna: papers removed, warnings, caveats
+
+The petrol/plum split is the argument of the talk: petrol marks what the model
+does, plum marks what a person does. State it once on slide 3, then let colour
+carry it.
+
+TYPOGRAPHY:
+  Headings      a literary serif (Newsreader or Source Serif 4)
+  Body          a humanist sans (IBM Plex Sans preferred, not Inter)
+  Numbers/code  a mono with tabular figures (IBM Plex Mono)
+  All figures in tables and stat callouts use tabular lining numerals.
+
+LAYOUT RULES:
+  Short slide title top-left with a thin hairline under it.
+  Maximum 5 bullets per slide, each one sentence.
+  Big numbers are a design element: large, mono, petrol.
+  Body text equivalent to at least 20pt; this is projected.
+  Slide number bottom-right, small and muted.
+  Citations: a single muted line at the bottom-left in 12pt, prefixed "Source:".
+  No emoji, no stock imagery, no gradients, no drop shadows.
+  Where a diagram belongs, leave a dashed placeholder box with a label. Real
+  TikZ figures get dropped in later.
+
+
+===============================================================================
+SLIDE CONTENT
+===============================================================================
+
+=== SLIDE 1: TITLE ===
+Title (large, serif):
+  Automated Detection of Ignored Clustering and Restricted Randomization
+  in Trials with Clusters
+Subtitle:
+  Replicating and scaling an expert methodological review with a large
+  language model
+Authors, on one line or stacked:
+  Charlie W. Buhanan, Deborah H. Glueck, Keith E. Muller
+Affiliation:
+  University of Colorado Anschutz Medical Campus
+Date placeholder: [DATE]
+
+
+=== SLIDE 2: WHAT ARE WE DOING HERE? ===
+Title: What are we doing here?
+Open with the question as a serif pull quote, centred, large:
+  "Can a language model reproduce expert methodological review closely enough
+   to scale it?"
+Then a short framing block, three bullets:
+  - Glueck and Muller reviewed 232 NCI-funded cluster trials by hand. Only 21%
+    got both the power analysis and the data analysis right.
+  - That review took two experts reading every paper independently, then
+    meeting to resolve every disagreement. Rigorous, and unscalable.
+  - We have 530 papers those experts already judged, and 1,284 that nobody has
+    looked at.
+Closing line, set apart:
+  If the model matches the experts on the first set, we can trust it on the
+  second.
+Source: Glueck DH, Muller KE. Ignoring clustering, restricted randomization,
+or both is common in NCI-funded trials with clusters. 2026.
+
+
+=== SLIDE 3: A HUMAN-CENTERED WORKFLOW ===
+Title: A human-centered workflow, in six stages
+Intro line:
+  We follow Zupic's human-centered workflow for LLM content analysis. These
+  are his six stages, with what each one means for us.
+Horizontal strip of six numbered boxes. Top line is Zupic's stage name, second
+line is ours:
+  1  Research design                              three tasks, never mixed
+  2  Data collection and preparation              2,115 records to 1,284 papers
+  3  Promptbook development                       judge, compare, fix, repeat
+  4  Processing                                   1,284 papers, batch API
+  5  Assessing validity and reliability           holdout, touched once
+  6  Interpretation and further analysis          report and write up
+Loop-back arrow above box 3 labelled "repeat until plateau".
+Two closing notes, muted:
+  - The researcher designs, supervises, and validates every stage. The model
+    never decides what the rules are.
+  - A promptbook is the master protocol: task instructions, definitions,
+    exclusion criteria, and formatting constraints that keep the performance
+    consistent across thousands of documents. The name is borrowed from
+    theatre, where the promptbook is the master script that keeps a production
+    consistent across different nights and casts.
+Inline colour key: petrol = the model does this | plum = a person does this
+[FIGURE PLACEHOLDER A]
+Source: Zupic I. A Human-Centered Workflow for Using Large Language Models in
+Content Analysis. arXiv:2603.19271, 2026. Promptbook term after Stuhler et al.
+2025.
+
+
+=== SLIDE 4: STAGE 1, THREE TASKS ===
+Title: Stage 1. Three tasks, never mixed
+Three equal cards:
+  EXCLUSION        Should this paper be reviewed at all?
+  POWER ANALYSIS   Did they account for clustering when sizing the trial?
+  DATA ANALYSIS    Did they account for it when analysing the results?
+Bullets:
+  - One promptbook, one prompt, one pipeline each. Failure modes differ, and
+    mixing them would invalidate the study.
+  - Exclusion runs first and gates the other two. Only survivors are scored on
+    power and data.
+  - We run them in that order, never in parallel, because each promptbook is
+    tuned against its own misses.
+  - A fourth task, "inclusion", was dropped. Nothing in the human labels
+    actually encodes it.
+
+
+=== SLIDE 5: STAGE 2, THE UNLABELLED SET ===
+Title: Stage 2. Building the Unlabelled Set
+Bullets:
+  - 2,115 Zotero records reduce to 1,284 papers, and every departure is logged
+    with a reason.
+  - Every PDF is checked against its own metadata before anything reads it.
+    The corpus really did contain grant paperwork filed as journal articles.
+  - Nothing is ever deleted. A dropped paper gets a verdict and its file moves
+    aside.
+Right side, reduction table, mono, right-aligned:
+  Raw Zotero records            2115
+  Duplicate placements          -621
+  Already in the labelled set   -207
+  Correction notices              -3
+  ------------------------------------
+  Unlabelled Set                1284
+[FIGURE PLACEHOLDER B]
+Source: Page MJ et al. The PRISMA 2020 statement. BMJ 2021;372:n71.
+
+
+=== SLIDE 6: STAGE 3, THE HUMAN LABELLED SET ===
+Title: Stage 3. The Human Labelled Set
+Bullets:
+  - 530 papers already reviewed by NCI or NHLBI: 492 usable for scoring
+    exclusion, 176 for power and data analysis.
+  - Labels arrive as citation strings, not identifiers, so they are matched
+    back to papers by author and year and never guessed.
+  - 31 papers were excluded by a coin flip in the original protocol. No model
+    can reproduce that, so they leave the scored set.
+Callout box, plum border:
+  These are expert opinions, not ground truth. The source paper says so
+  itself: "the opinion of two knowledgeable reviewers, rather than an
+  objective classification scheme."
+Small note, muted:
+  We never write "ground truth", "training set", or "test set". The two sets
+  are the Unlabelled Set and the Human Labelled Set.
+
+
+=== SLIDE 7: HOW EVERYTHING IS STORED ===
+Title: How everything is stored
+Intro line:
+  Every stage writes to a named, inspectable file. Nothing lives only in
+  memory, and nothing is regenerated silently.
+Table, three columns (Artefact | Format | What it holds):
+  Zotero manifest        CSV    One row per record: identity, verdict, which set
+  Zotero metadata        JSONL  Full record per paper, all authors, raw Zotero JSON
+  Extracted text         JSON   One file per paper, cached, never re-parsed
+  Human labels           SQLite Expert answers, one row per paper per task
+  Model judgments        SQLite Append-only, one row per judgment
+  Departure ledger       CSV    Every paper that left, with reason and who decided
+Two bullets below:
+  - Model judgments are append-only. A second-pass review adds a row, it never
+    overwrites the first, so we can always ask why a decision changed.
+  - Every judgment records the git commit of the promptbook that produced it,
+    so any result traces back to the exact rules in force.
+
+
+=== SLIDE 8: PROMPT DESIGN ===
+Title: Prompt design: ISO-ScreenPrompt
+Intro line:
+  We adopt the prompt structure Cao et al. built for screening long full-text
+  articles. ISO stands for Instruction Structure Optimized.
+Bullets:
+  - Framework chain-of-thought: the model reasons against our numbered
+    criteria one at a time, rather than reasoning freely.
+  - Instruction structure optimized: the promptbook is repeated before and
+    after the article text, because models retrieve well at the start and end
+    of a long context and poorly in the middle.
+  - Every sub-criterion is numbered, which pushes the model to reason against
+    the specific rule rather than a vague overall impression.
+  - Zero-shot: no worked examples. Every response returns four fields: the
+    decision, the reasoning, the promptbook rule relied on, and a confidence.
+Table showing why each piece earns its place (Cao, abstract screening, GPT-4):
+  Prompt                                    Accuracy   Sensitivity
+  Bare zero-shot                               65.0%         30.0%
+  Random few-shot                              78.0%         56.0%
+  Zero-shot CoT ("think step by step")         86.3%         74.5%
+  Framework CoT                                91.3%         86.5%
+  Full ScreenPrompt                            94.3%         94.5%
+  ScreenPrompt plus few-shot examples          85.8%         73.5%
+Callout, sienna border, titled "Why no examples in the prompt":
+  Adding labelled examples made things worse, dropping accuracy from 94.3% to
+  85.8%. Cao calls this semantic contamination: the model treats the reasoning
+  in the examples as directly relevant to the paper in front of it, and starts
+  pattern-matching to the examples instead of applying the criteria. We give
+  the model rules, not examples.
+Source: Cao C et al. Prompting is all you need: LLMs for systematic review
+screening. medRxiv 2024. doi:10.1101/2024.06.01.24308323
+
+
+=== SLIDE 9: WHICH MODEL ===
+Title: Which model, and when
+Two-stage diagram, left to right:
+  SONNET (first pass, all papers)  ->  confident? -> keep the answer
+                                   ->  low confidence or undecidable? ->
+  OPUS (second pass)               ->  final answer
+Bullets:
+  - Sonnet reads every paper. Opus reviews only the calls Sonnet was unsure
+    about.
+  - The escalation happens before the exclusion gate is applied, never after.
+    A wrong exclusion is unrecoverable.
+  - Both passes are stored. Keeping both rows is what lets us ask why Opus
+    overturned Sonnet, and whether those cases cluster somewhere the
+    promptbook is weak.
+  - Promptbooks are developed on Opus, then re-checked on Sonnet before the
+    full run, so we find any capability gap before spending on 1,284 papers.
+
+
+=== SLIDE 10: WHICH API, COST AND TIME ===
+Title: Standard API or Batch API
+Intro line:
+  Same model, same prompt, different delivery. Batch trades latency for half
+  the price.
+Table, mono figures, right-aligned. Highlight the Sonnet + Batch row in petrol:
+  Config                     Calls   Standard    Batch    Wall clock
+  Sonnet, single pass         2.2k       $116      $58    ~2 h  /  <24 h
+  Sonnet, 3-vote consistency  6.6k       $349     $174    ~6 h  /  <24 h
+  Opus, single pass           2.2k       $193      $97    ~3 h  /  <24 h
+  Opus, 3-vote consistency    6.6k       $580     $290    ~8 h  /  <24 h
+Below the table, small:
+  Estimates assume 1,284 exclusion calls plus about 920 power and data calls,
+  at roughly 15,000 input tokens each. Sonnet $3 / $15 per million tokens,
+  Opus $5 / $25, batch at half. Promptbook development adds roughly $200 of
+  Opus calls on top.
+Bullets:
+  - Nothing here is latency-sensitive. There is no user waiting on a response.
+  - Batch is the obvious choice: half the cost, and a guaranteed result inside
+    24 hours.
+  - Cost is not the binding constraint at this scale. Researcher time is.
+
+
+=== SLIDE 11: THE API DOES NOT REMEMBER ===
+Title: The API does not remember, and that matters
+Bullets:
+  - Every API call is stateless. The model receives the prompt and the paper,
+    returns an answer, and retains nothing.
+  - Calling it again on the same paper does not build on the previous call. It
+    starts from the same blank state.
+  - This is not fine-tuning. We never change the model's weights. We change the
+    promptbook, which is a document we control and version in git.
+Callout, forest border, titled "Why this is useful":
+  Any paper can be re-run safely at any time. Re-running does not contaminate
+  the result, does not leak the previous answer, and does not teach the model
+  anything. An interrupted batch can simply be replayed. Self-consistency
+  voting works for exactly this reason: three calls on one paper are three
+  genuinely independent opinions, not one opinion repeated.
+Small note, muted:
+  This is also why the holdout stays clean. A paper seen during promptbook
+  development leaves no trace in the model, only in the promptbook a human
+  wrote afterwards.
+
+
+=== SLIDE 12: SELF-CONSISTENCY VOTING ===
+Title: Self-consistency: is it worth asking more than once?
+Intro line:
+  Ask the model the same question several times and take the majority answer.
+  Cao et al. used 11 votes, on the Batch API.
+Bullets:
+  - Model answers vary between runs. On a borderline paper a single call is
+    close to a coin flip; a majority vote is stabler and reproducible.
+  - Cost is linear in the number of votes.
+What it actually bought Cao, on full-text screening with ISO-ScreenPrompt:
+  Dataset        Accuracy       Sensitivity     Specificity     Cost
+  SeroTracker    96.5 to 97.5   98.5 to 97.5    94.5 to 97.5    $51 to $142
+  Reinfection    83.3 to 87.5   89.7 to 92.4    79.6 to 84.7    $51 to $131
+Our own projected cost, highlight the 3-vote row:
+  Votes   Calls   Input tokens   Approx. cost (batch)
+      1    2.2k          ~33M                    $58
+      3    6.6k         ~100M                   $174
+     11   24.2k         ~364M                   $638
+Two closing callouts side by side:
+  RECOMMENDATION (petrol): Three votes. Cao's 11 votes bought 1 to 4 points of
+  accuracy for roughly 2.6 times the cost, and most of that gain arrives well
+  before the eleventh vote. Their largest gains were in specificity, on their
+  worst-performing dataset.
+  THE TUNABLE KNOB (forest): The vote threshold is a dial, not just a majority.
+  Cao swept it from 0 to 12 votes to trade sensitivity against specificity and
+  drew an ROC curve from it. We can tune where our gate sits on that curve.
+Small note, muted:
+  Cao varied the random seed per vote. Claude does not expose a seed or a
+  temperature setting, so our votes vary through the model's own stochasticity.
+Source: Cao C et al. medRxiv 2024. doi:10.1101/2024.06.01.24308323,
+Supplementary Table 17. Self-consistency: Wang X et al. arXiv:2203.11171, 2022.
+
+
+=== SLIDE 13: WHY NOT BERT ===
+Title: Why a language model, and not a classifier
+Four bullets with bold lead-ins:
+  - No fine-tuning, no training data. BERT-style classifiers need thousands of
+    labelled examples. We have 176 for power analysis, and training on them
+    would consume the very set we need for validation.
+  - It explains itself. Every judgment comes back with reasoning and the rule
+    it relied on, so a mistake is diagnosable. A classifier returns a number
+    and no argument.
+  - We iterate in English, not in weights. Fixing an error means editing a
+    sentence in a versioned document, not retraining a model.
+  - Cost is no longer the obstacle. Roughly 1,300 calls for the gate; a
+    fine-tuning pipeline would cost far more in researcher time than this
+    costs in API spend.
+Closing line, muted:
+  The deciding factor is the second one. This study has to be auditable.
+Source: Devlin J et al. BERT: Pre-training of Deep Bidirectional Transformers
+for Language Understanding. arXiv:1810.04805, 2019.
+
+
+=== SLIDE 14: STAGE 4, THE PROMPTBOOK LOOP ===
+Title: Stage 4. The promptbook loop
+Give the diagram most of the slide. Cycle of five stages, first three petrol,
+last two plum:
+  Sample a batch -> Model classifies -> Score against the human answer ->
+  Triage the misses -> Update the promptbook -> (back to Sample)
+Bullets, short:
+  - One task at a time, in order: exclusion, then power, then data. Never in
+    parallel.
+  - Each round samples a batch from the build split, classifies it, and scores
+    it against the expert answers.
+  - A miss becomes a rule only when we see it at least twice. A one-off goes to
+    a person to read, because it may be a bad label rather than a bad rule.
+  - No promptbook change is committed without human approval, and every round
+    is recorded: the judgments, the promptbook version, and the accuracy delta.
+  - Stop when two consecutive rounds each gain less than one percentage point.
+[FIGURE PLACEHOLDER C]
+
+
+=== SLIDE 15: STAGE 5, WHY WE HOLD PAPERS BACK ===
+Title: Stage 5. Why we hold papers back
+Bullets:
+  - Rules written to fix the papers in front of you will always score well on
+    those papers.
+  - 30% of the labelled set is put aside, untouched, and scored exactly once at
+    the end.
+  - The split is stratified so power and data analysis each get about 53
+    holdout papers.
+  - The split is assigned by hash and refuses to re-run. You cannot reshuffle
+    after seeing a disappointing number.
+Two-box diagram:
+  BUILD SPLIT, 344 papers. Promptbooks developed here. Everything measured here
+  is optimistic by construction.
+  HOLDOUT, 148 papers. Touched once. This is the honest number.
+
+
+=== SLIDE 16: STAGE 6, RUNNING AT SCALE ===
+Title: Stage 6. Running at scale
+Bullets:
+  - Exclusion runs on all 1,284 papers first. Only survivors go on to power and
+    data analysis.
+  - Survivor count is unknown until the first job finishes, and it determines
+    the size and cost of the second.
+  - A wrong exclusion is unrecoverable: the paper silently leaves the study and
+    no later step can bring it back.
+Job-shape block, mono:
+  job 1   1,284 x 1 (exclusion)         = 1,284 calls
+  job 2   survivors x 2 (power, data)   = 2 x however many survive
+Small note:
+  Every dropped paper is recorded with the reason the model gave. That drop
+  table is a study result in its own right, not plumbing.
+
+
+=== SLIDE 17: HOW WE MEASURE IT ===
+Title: How we measure it, and why accuracy alone would mislead you
+Opening line, set large:
+  A model that answers "incorrect" to every power analysis scores 77%.
+Table:
+  Task         n     Class split                  Always guess majority
+  Exclusion  492     316 exclude / 176 keep                        64%
+  Power      176     136 incorrect / 40 correct                    77%
+  Data       176     129 incorrect / 47 correct                    73%
+Second table, Zupic's three-way framework for judging LLM output:
+  Question              Metrics we report
+  Validity              Accuracy, precision, recall, F1, sensitivity, specificity
+  Reliability           Cohen's kappa, intraclass correlation across repeat runs
+  Robustness            Agreement across models (Sonnet versus Opus)
+Bullets:
+  - Cohen's kappa is agreement corrected for luck. It asks how much better than
+    chance two raters agree, which matters when one answer dominates.
+  - Zupic files kappa under reliability, not validity, and uses it for both
+    inter-rater and inter-model agreement. We use it for both.
+  - We are comparing a model to human raters, not to truth, so kappa is the
+    right headline and raw accuracy is not.
+  - The two institutes agreed with each other on 12 of 15 shared papers. That
+    80% is the bar, not perfection.
+Callout, sienna:
+  For exclusion the errors are not symmetric. A wrong "keep" is caught
+  downstream by a human. A wrong "exclude" removes the paper permanently.
+Source: Zupic I. arXiv:2603.19271, 2026, Table 3.
+
+
+=== SLIDE 18: WHAT WE HAVE ALREADY FOUND ===
+Title: What the accounting already turned up
+Three finding cards:
+  EVERY PAPER ACCOUNTED FOR
+  Twelve papers turned out to be in neither corpus: dropped from one set
+  because a copy existed in the other, which was then dropped too. They are
+  being restored.
+
+  THIRTY-ONE UNLEARNABLE EXCLUSIONS
+  The original protocol used a random number generator to drop one of any two
+  papers sharing a first author. No model reading a single PDF can reproduce
+  that, so those papers leave the scored set.
+
+  TWO DIFFERENT EXCLUSION PROTOCOLS
+  NCI and NHLBI did not apply identical criteria. Raised with the study team;
+  source institute will be carried as a covariate.
+Closing line, muted:
+  None of this was visible until every paper was tracked individually.
+
+
+=== SLIDE 19: WHERE WE ARE, WHAT IS NEXT ===
+Title: Where we are, and what is next
+Three columns:
+  DONE (forest)
+    Corpus built and verified: 1,284 papers, full text cached
+    Human labels loaded and reconciled: 492 scoreable
+    Every departure from the corpus logged with a reason
+
+  NEXT (petrol)
+    Write the first exclusion promptbook
+    Run the loop to plateau, then re-check on Sonnet
+    Assign the split and run the gate
+
+  OPEN (plum)
+    Batch size and stopping rule, provisional until we see real behaviour
+    Confidence threshold for the second pass
+    Erratum policy, and the NCI versus NHLBI criteria difference
+Final line, centred, larger:
+  The pipeline is built. What remains is teaching it to judge.
+
+
+===============================================================================
+FIGURE PLACEHOLDERS
+===============================================================================
+
+On slides 3, 5, and 14, leave a clean empty box with a dashed hairline border
+and a small centred label. Do not draw the diagram; real TikZ figures get
+dropped in later.
+
+  [FIGURE PLACEHOLDER A]  slide 3, six-stage workflow strip, full width
+  [FIGURE PLACEHOLDER B]  slide 5, PRISMA corpus reduction diagram, right half
+  [FIGURE PLACEHOLDER C]  slide 14, promptbook loop cycle, centre, large
+
+If a simple inline version is easy, draw it for slide 3 only.
+
+
+===============================================================================
+THINGS TO GET RIGHT
+===============================================================================
+
+- No em-dashes anywhere. This is the most common failure; check every slide.
+- Spell it "promptbook" throughout, never "rubric" or "prompt template".
+- "Unlabelled Set" and "Human Labelled Set" are proper nouns. Never write
+  "ground truth", "training set", or "test set" anywhere in this deck.
+- Numbers must match exactly as written above. Do not round, adjust, or invent
+  any figure.
+- Every claim on slides 17 and 18 is load-bearing and will be questioned. Keep
+  the wording precise.
+- No slide has more than five bullets, and no bullet runs longer than one
+  sentence.
+- Citations go in a single muted line at the bottom of the slide, prefixed
+  "Source:". Only on the slides listed above.
+
+
+===============================================================================
+FULL REFERENCE LIST (for a backup slide if wanted)
+===============================================================================
+
+Boetje J, van de Schoot R. The SAFE procedure: a practical stopping heuristic
+  for active learning-based screening in systematic reviews and meta-analyses.
+  Syst Rev. 2024;13:81. doi:10.1186/s13643-024-02502-7
+
+Cao C, Sang J, Arora R, Kloosterman R, Cecere M, Gorla J, et al. Prompting is
+  all you need: LLMs for systematic review screening. medRxiv. 2024.
+  doi:10.1101/2024.06.01.24308323
+
+Devlin J, Chang MW, Lee K, Toutanova K. BERT: Pre-training of Deep
+  Bidirectional Transformers for Language Understanding. arXiv:1810.04805. 2019.
+
+Glueck DH, Muller KE. Ignoring clustering, restricted randomization, or both is
+  common in NCI-funded trials with clusters, and may lead to decision errors.
+  2026.
+
+Page MJ, McKenzie JE, Bossuyt PM, Boutron I, Hoffmann TC, Mulrow CD, et al. The
+  PRISMA 2020 statement: an updated guideline for reporting systematic reviews.
+  BMJ. 2021;372:n71. doi:10.1136/bmj.n71
+
+Wang X, Wei J, Schuurmans D, Le Q, Chi E, Narang S, et al. Self-Consistency
+  Improves Chain of Thought Reasoning in Language Models. arXiv:2203.11171. 2022.
+
+Zhang Z, Zhang A, Li M, Smola A. Automatic Chain of Thought Prompting in Large
+  Language Models. arXiv:2210.03493. 2022.
+
+Zheng L, Chiang WL, Sheng Y, Zhuang S, Wu Z, Zhuang Y, et al. Judging
+  LLM-as-a-Judge with MT-Bench and Chatbot Arena. arXiv:2306.05685. 2023.
+
+Zupic I. A Human-Centered Workflow for Using Large Language Models in Content
+  Analysis. arXiv:2603.19271. 2026.
