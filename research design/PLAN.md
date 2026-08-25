@@ -29,20 +29,6 @@ of the conflict (reading the actual paper is only needed to decide it).
 
 Corpus prep is **done**: 1814 active papers (1284 testing + 530 validation), all extracted and cached.
 
-- [x] **Close the NHLBI label gap.** Resolved by dropping rather than waiting. The NHLBI review lived
-      in **two** files: `crt_review_table_112.tex` (159 papers taken to full extraction) and
-      `NHLBI_exclusions_178.csv` (178 rejected before extraction) — disjoint, together covering all 337.
-      23 tex entries were cited with every field blank: candidates for full extraction that never got
-      it. That review will not resume, so `scripts/09_drop_unreviewed_nhlbi.py` dropped them —
-      manifest verdict `DROPPED` / `NHLBI_UNREVIEWED`, PDF and cached text both moved (never deleted)
-      to `data/removed_pdfs/nhlbi_unreviewed/`, logged in
-      `results/review/09_nhlbi_unreviewed_dropped.csv`. They still appear in `data/ground_truth.csv`
-      as `labeled=0` rows — the citation is a historical fact even though the paper left the corpus.
-      **523 of 530 active validation papers are loaded into `validation_labels`** — the other 7 are
-      1 real unresolved paper (Patterson, see below) and 6 papers where NCI and NHLBI reviewed the
-      same paper and disagreed (see the duplicate-pairs item further down). `--assign-split` now
-      refuses on its own while any active paper still lacks a label, so nothing here blocks it anymore.
-      Full detail in [Ground Truth Raw/NOTES.md](Ground%20Truth%20Raw/NOTES.md).
 - [ ] **Request `Ignore03_NHLBI.bib` from the NHLBI team.** The extraction table cites it, but the
       bundle shipped `references.bib` instead — the manuscript's own bibliography, which contains none
       of the 159 cite keys. The right file carries DOIs and would make the NHLBI join exact instead of
@@ -459,6 +445,15 @@ scored as misses.
    worked example, append it to that task's rubric, commit with the accuracy delta in the message.
    Opus is worth the cost here: one-time, low-volume, high-stakes, and it shapes the rubric Sonnet
    relies on for the cheap full run.
+
+   **Option: run the rubric loop through the Claude Code CLI instead of the API, to spend subscription
+   quota rather than API credits.** `claude -p "<prompt>" --output-format json` runs headless and
+   authenticates off the subscription login. A small script walks `data/extracted_text/*.json`, pipes
+   each paper's text in with the current rubric, and writes one response JSON per paper to a new
+   directory for hand-inspection. Only for rubric refinement — the full run stays on the Batches API
+   (see the standing rule). Two trade-offs to accept if we go this way: no forced `tool_choice`, so the
+   prompt has to ask for JSON and the wrapper validates with pydantic and re-prompts on a parse failure;
+   and one process per paper, so no prompt caching and it runs slower. Fine at <100 papers a round.
 
 7. **Regression** — `src/evaluate.py` re-runs the current rubric against the whole build split, computes
    accuracy/precision/recall, appends to `results/rubric_accuracy_history.csv` with the commit hash.

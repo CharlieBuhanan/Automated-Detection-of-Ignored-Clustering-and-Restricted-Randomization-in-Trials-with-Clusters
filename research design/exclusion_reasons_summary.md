@@ -39,5 +39,3 @@ NCI: 136 excluded, 8 reasons. NHLBI: 225 excluded, 13 reasons (7 don't exist in 
 ## Discuss with Deb
 
 **`protocol_paper` (9) and `pilot_study` (11)** — genuinely new criteria, no NCI counterpart. These skew the headline power/data-analysis-correctness rate because both types rarely report a proper power analysis, so excluding them removes likely "incorrect" cases from NHLBI's denominator. Need a decision: adopt for both arms, or drop from NHLBI to match NCI.
-
-Full backup analysis: [exclusionLabelDiscrepancy.md](exclusionLabelDiscrepancy.md)
