@@ -4,8 +4,8 @@
 \usepackage{siunitx}
 \usepackage{hyperref}
 
-\title{Unvalidated Testing Set: Zotero Fetch Summary}
-\author{Cluster-Paper Review}
+\title{Unlabelled Set: Zotero Fetch Summary}
+\author{Automated Detection of Ignored Clustering and Restricted Randomization in Trials with Clusters}
 \date{\today}
 
 \begin{document}
@@ -14,15 +14,15 @@
 \section{Overview}
 
 This document summarizes the corpus fetched from Zotero (Glykos \(\triangleright\) \emph{Boring Task}),
-labeled the \textbf{Unvalidated Set} to distinguish it from the human-labeled validation set (530 active
+labeled the \textbf{Unlabelled Set} to distinguish it from the Human Labelled Set (530 active
 papers, of 569 originally fetched), which arrives by a separate route (two other Zotero groups, NCI and
-NHLBI) and is not included here. See \texttt{results/corpus\_breakdown.tex} for the validation set's own
+NHLBI) and is not included here. See \texttt{results/corpus\_breakdown.tex} for the Human Labelled Set's own
 reconciliation.
 
 The corpus was originally reported as ``2115 papers.'' That number was never a paper count --- it was
 \emph{collection placements} (one tally per institute a paper is tagged under), and 483 papers carry
 two or more tags. Table~\ref{tab:reconcile} walks from the raw Zotero count down to the true, deduplicated
-corpus. No PDF content is duplicated anywhere in \texttt{data/raw\_pdfs/testing/}: all 1494 files have
+corpus. No PDF content is duplicated anywhere in \texttt{data/raw\_pdfs/Unlabelled Set/}: all 1494 files have
 distinct md5 hashes, and all 1494 \texttt{paper\_id} values in the manifest are unique, so every placement
 that collapses in the table below collapses onto a genuinely single, once-downloaded PDF.
 

@@ -5,7 +5,7 @@
 \usepackage{hyperref}
 
 \title{Corpus Breakdown}
-\author{Cluster-Paper Review}
+\author{Automated Detection of Ignored Clustering and Restricted Randomization in Trials with Clusters}
 \date{\today}
 
 \begin{document}
@@ -24,17 +24,17 @@ in \texttt{results/unvalidated\_set\_summary.tex}.
 \toprule
 \textbf{Stage} & \textbf{Papers} & \textbf{Decided by} \\
 \midrule
-Fetched from Zotero (1494 testing + 569 validation) & 2063 & --- \\
-\quad $-$ Cross-set duplicates (already in validation) & $-$207 & rule \\
-\quad $-$ Validation internal duplicates (merged) & $-$15 & rule \\
+Fetched from Zotero (1494 US + 569 HLS) & 2063 & --- \\
+\quad $-$ Cross-set duplicates (already in the HLS) & $-$207 & rule \\
+\quad $-$ HLS internal duplicates (merged) & $-$15 & rule \\
 \midrule
 Rows in the manifest & 1841 & \\
 \quad $-$ Correction notices dropped & $-$4 & human \\
 \quad $-$ NHLBI, cited but never reviewed & $-$23 & human \\
 \midrule
 \textbf{Active corpus} & \textbf{1814} & \\
-\quad Testing (to classify) & 1284 & \\
-\quad Validation (human-labeled) & 530 & \\
+\quad Unlabelled Set (to classify) & 1284 & \\
+\quad Human Labelled Set (human-labeled) & 530 & \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -47,15 +47,15 @@ Rows in the manifest & 1841 & \\
 \toprule
 \textbf{Type} & \textbf{Matched on} & \textbf{Count} & \textbf{Resolution} \\
 \midrule
-Testing $\leftrightarrow$ validation & DOI / PMID / PMCID & 207 & Removed from testing; kept in validation \\
-Within validation (NCI $\leftrightarrow$ NHLBI) & DOI / PMID & 15 pairs & Merged to one row, NCI key kept \\
-Within testing & --- & 0 & All 1494 md5 hashes distinct \\
+US $\leftrightarrow$ HLS & DOI / PMID / PMCID & 207 & Removed from the US; kept in the HLS \\
+Within the HLS (NCI $\leftrightarrow$ NHLBI) & DOI / PMID & 15 pairs & Merged to one row, NCI key kept \\
+Within the US & --- & 0 & All 1494 md5 hashes distinct \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Cross-set duplicates were dropped from testing rather than validation because they already carry a human
-label. The 15 within-validation pairs arrived from two Zotero groups under different item keys, so
+Cross-set duplicates were dropped from the US rather than the HLS because they already carry a human
+label. The 15 within-HLS pairs arrived from two Zotero groups under different item keys, so
 \texttt{paper\_id} could not detect them; 9 of 15 had byte-identical PDFs, 6 differed. Merged rows are
 marked \texttt{folder = "Both NCI and NHLBI"} and \texttt{folder\_path = "Both Validation Institutes"}.
 
@@ -69,7 +69,7 @@ Automated verification compared each PDF's first two pages against its Zotero me
 \centering
 \begin{tabular}{lrr}
 \toprule
-\textbf{Review outcome} & \textbf{Testing} & \textbf{Validation} \\
+\textbf{Review outcome} & \textbf{US} & \textbf{HLS} \\
 \midrule
 PDF replaced (wrong document attached) & 16 & 4 \\
 Confirmed correct, no change & 2 & 2 \\
@@ -81,7 +81,7 @@ Dropped from the corpus & 3 & 1 \\
 \end{table}
 
 All 28 queued papers are decided; none remain outstanding. Replacements span 14 institute folders, the
-largest being NIMH (4), NCI validation (3), and NICHD (2). Twelve of the originally flagged documents were
+largest being NIMH (4), NCI HLS (3), and NICHD (2). Twelve of the originally flagged documents were
 NIH grant summary statements or study-section review sheets filed where the article should be --- caught
 by a header-phrase rule, since a grant and the paper it funds share a title and first author.
 
@@ -94,7 +94,7 @@ by a header-phrase rule, since a grant and the paper it funds share a title and 
 \textbf{Reason} & \textbf{Stage} & \textbf{Count} & \textbf{Decided by} \\
 \midrule
 Cross-set duplicate & Post-fetch & 207 & rule \\
-Validation internal duplicate & Post-fetch & 15 & rule \\
+HLS internal duplicate & Post-fetch & 15 & rule \\
 Correction / erratum notice & Hand review & 4 & human \\
 NHLBI, cited but never reviewed & Ground truth load & 23 & human \\
 Unjoinable ground-truth label & Label load & 2 & rule \\
@@ -148,7 +148,7 @@ All institutes' labels have arrived, in three files with three different shapes 
 \toprule
 \textbf{Source} & \textbf{Rows} & \textbf{Covers} \\
 \midrule
-\texttt{GroundTruthDataNCI01.xlsx} & 232 & every NCI validation paper \\
+\texttt{GroundTruthDataNCI01.xlsx} & 232 & every NCI HLS paper \\
 \texttt{crt\_review\_table\_112.tex} & 159 & NHLBI papers taken to full extraction \\
 \texttt{NHLBI\_exclusions\_178.csv} & 178 & NHLBI papers rejected before extraction \\
 \bottomrule
@@ -163,7 +163,7 @@ into one wide table, \texttt{data/ground\_truth.csv} --- 569 rows, 567 resolved 
 \centering
 \begin{tabular}{lr}
 \toprule
-Active validation papers & 530 \\
+Active HLS papers & 530 \\
 \quad Loaded with one clean label & 523 \\
 \quad Held out --- NCI/NHLBI reviewed the same paper and disagreed & 6 \\
 \quad Held out --- citation still unresolved & 1 \\

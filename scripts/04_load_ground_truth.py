@@ -1,4 +1,4 @@
-"""Load the merged ground truth into SQLite and fix the build/holdout split (PLAN.md step 4).
+"""Load the merged ground truth into SQLite and fix the build/holdout split (research design/PLAN.md step 4).
 
 HOW TO RUN
     python scripts/04_load_ground_truth.py --dry-run          # report, write nothing
@@ -62,6 +62,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 import db
+from zotero_fetch import SET_HUMAN_LABELLED
 
 ROOT = Path(__file__).resolve().parent.parent
 GROUND_TRUTH = ROOT / "data" / "ground_truth.csv"
@@ -141,13 +142,13 @@ def to_label_row(row: dict) -> dict:
 def active_validation_paper_ids() -> set:
     """paper_ids the corpus currently expects a label for.
 
-    The manifest's validation rows minus anything DROPPED -- not the raw label
+    The manifest's Human Labelled Set rows minus anything DROPPED -- not the raw label
     counts, which would double count the 15 NCI/NHLBI duplicate-pair papers
     that collapse to a single manifest row apiece.
     """
     with open(MANIFEST, encoding="utf-8") as handle:
         return {row["paper_id"] for row in csv.DictReader(handle)
-                if row["set"] == "validation" and row["verdict"] != "DROPPED"}
+                if row["set"] == SET_HUMAN_LABELLED and row["verdict"] != "DROPPED"}
 
 
 def build(rows: list[dict], active: set) -> tuple[list[dict], list[dict], int, int]:
@@ -219,7 +220,7 @@ def main():
     parser.add_argument("--force-split", action="store_true",
                         help="Re-assign an existing split. Only with a deliberate reason.")
     parser.add_argument("--allow-incomplete", action="store_true",
-                        help="Allow --assign-split even while some active validation "
+                        help="Allow --assign-split even while some active Human Labelled Set "
                              "papers still have no label. The split can only be fixed "
                              "once, so this is a deliberate override, not a default.")
     args = parser.parse_args()
@@ -242,7 +243,7 @@ def main():
 
     covered = {r["paper_id"] for r in labels}
     missing = active - covered
-    print(f"\ncorpus coverage: {len(covered)} of {len(active)} active validation "
+    print(f"\ncorpus coverage: {len(covered)} of {len(active)} active HLS "
           f"papers will have a label ({len(missing)} still missing)")
 
     if review:
@@ -286,7 +287,7 @@ def main():
     if args.assign_split:
         if missing and not args.allow_incomplete:
             raise SystemExit(
-                f"\n{len(missing)} of {len(active)} active validation papers have no "
+                f"\n{len(missing)} of {len(active)} active HLS papers have no "
                 f"label yet. Refusing to assign the split while incomplete -- it can "
                 f"only be assigned once. Pass --allow-incomplete if you are "
                 f"deliberately proceeding without them.\n"

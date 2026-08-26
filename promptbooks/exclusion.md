@@ -3,7 +3,7 @@
 Criteria only. Source: Glueck & Muller (`Ignore02.pdf`), Methods p.3 and Supplemental A.
 
 `yes` = exclude, `no` = keep. Test E1-E16 in order; first hit decides and goes in
-`rubric_evidence`. No hit → `no`.
+`promptbook_evidence`. No hit → `no`.
 
 ## Search-stage
 
@@ -55,7 +55,7 @@ The seven reasons Ignore02's reviewers recorded.
 18. **E18.** `undecidable` only when the text is missing, truncated, or unreadable. A hard call is
     still a call.
 
-## Contested — see [Deb.md](Deb.md)
+## Contested — see [Deb.md](../research%20design/Deb.md)
 
 - **E3** cuts both ways: NHLBI excluded 9 stepped-wedge papers but kept and fully scored 5 others.
   On costs 5 unrecoverable false exclusions to gain 9 correct ones.

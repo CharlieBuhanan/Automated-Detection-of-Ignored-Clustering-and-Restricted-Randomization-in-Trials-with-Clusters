@@ -1,4 +1,4 @@
-"""Merge the human-labeled ground truth from every institute into one CSV (PLAN.md step 4).
+"""Merge the human-labeled ground truth from every institute into one CSV (research design/PLAN.md step 4).
 
 HOW TO RUN
     python scripts/07_build_ground_truth.py            # write data/ground_truth.csv
@@ -62,6 +62,7 @@ from rapidfuzz import fuzz
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
+from zotero_fetch import SET_HUMAN_LABELLED
 
 RAW = ROOT / "Ground Truth Raw"
 META = ROOT / "data" / "zotero_meta.jsonl"
@@ -81,7 +82,7 @@ SOURCE_FOLDERS = {
 # 06_merge_validation_duplicates.py rewrites a merged pair's folder to "Both NCI
 # and NHLBI" -- but only in data/zotero_manifest.csv. zotero_meta.jsonl, which
 # candidate_pool() below actually reads, is the fetch's untouched output: every
-# validation record there still carries exactly the one folder it was fetched
+# Human Labelled Set record there still carries exactly the one folder it was fetched
 # under, so both halves of a merged pair are found through their own institute's
 # entry and no "matches either name" fallback is needed here.
 
@@ -466,7 +467,7 @@ def load_duplicate_remap() -> dict:
 def candidate_pool(meta: dict, institute: str) -> dict:
     folder = SOURCE_FOLDERS[institute]
     return {pid: rec for pid, rec in meta.items()
-            if rec.get("set") == "validation" and folder in rec.get("folders", [])}
+            if rec.get("set") == SET_HUMAN_LABELLED and folder in rec.get("folders", [])}
 
 
 def join_nhlbi(row: dict, pool: dict) -> tuple[str, str, str]:
@@ -700,7 +701,7 @@ def main() -> None:
 
 
 def active_validation_paper_ids() -> set:
-    """paper_ids that actually need a label: the manifest's current validation
+    """paper_ids that actually need a label: the manifest's current Human Labelled Set
     rows, minus anything dropped from the corpus.
 
     Deliberately not the raw per-institute meta pools -- those still contain
@@ -710,7 +711,7 @@ def active_validation_paper_ids() -> set:
     """
     with open(MANIFEST, encoding="utf-8") as handle:
         return {row["paper_id"] for row in csv.DictReader(handle)
-                if row["set"] == "validation" and row["verdict"] != "DROPPED"}
+                if row["set"] == SET_HUMAN_LABELLED and row["verdict"] != "DROPPED"}
 
 
 def report(rows: list[dict]) -> None:
@@ -741,7 +742,7 @@ def report(rows: list[dict]) -> None:
     active = active_validation_paper_ids()
     labeled = {r["paper_id"] for r in rows if r["labeled"] == "1" and r["paper_id"]}
     covered, missing = active & labeled, active - labeled
-    print(f"\ncorpus coverage: {len(covered)} of {len(active)} active validation "
+    print(f"\ncorpus coverage: {len(covered)} of {len(active)} active HLS "
           f"papers have a label ({len(missing)} missing)")
     stray = labeled - active
     if stray:

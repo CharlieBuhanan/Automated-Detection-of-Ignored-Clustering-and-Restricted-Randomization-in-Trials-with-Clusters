@@ -8,7 +8,7 @@ bullets; the full rationale for every decision is in [PLAN.md](PLAN.md).
 - Verified every download against Zotero's own md5.
 
 **2. Deduplication**
-- Removed 207 study papers already in the validation set.
+- Removed 207 study papers already in the Human Labelled Set.
 - Corpus fell from 1,494 to 1,287 papers.
 
 **3. Identity verification**
@@ -31,7 +31,7 @@ bullets; the full rationale for every decision is in [PLAN.md](PLAN.md).
 - Merged NCI and NHLBI labels into one table.
 - Joined 567 of 569 rows to papers.
 
-**8. Validation duplicate merge**
+**8. Human Labelled Set duplicate merge**
 - Merged 15 NCI/NHLBI pairs into one row.
 - Folder marked "Both Validation Institutes"; NHLBI copy removed.
 
@@ -60,11 +60,11 @@ bullets; the full rationale for every decision is in [PLAN.md](PLAN.md).
 - Correction notice title
 - Ambiguous citation match
 - No citation match
-- Validation-set internal duplicate
+- Human Labelled Set internal duplicate
 
 ## Still to do
 
 - Verify extracted text integrity before any classification.
 - Load remaining labels, then fix build/holdout split.
-- Write four rubrics; iterate against the build split.
+- Write four promptbooks; iterate against the build split.
 - Run the gate, then the analysis, then the holdout.

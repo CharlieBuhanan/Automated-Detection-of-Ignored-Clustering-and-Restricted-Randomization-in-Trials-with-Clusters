@@ -2,7 +2,8 @@
 
 Walks a Zotero collection and every collection nested beneath it, at any
 depth, pulls each record's PDF attachment, verifies it against the md5 Zotero
-stores for that attachment, and writes data/raw_pdfs/<set>/<paper_id>.pdf.
+stores for that attachment, and writes data/raw_pdfs/<Set Name>/<paper_id>.pdf
+(the directory for a set comes from SET_DIRS; see set_dir()).
 
 paper_id is the Zotero item key (8 chars, e.g. "4XKQ7B2M"): always present,
 unique, and stable across edits. DOI/PMCID are kept as metadata only, since
@@ -10,7 +11,7 @@ they are missing or inconsistently formatted on some records.
 
 md5 verification here catches a truncated or corrupted transfer. It does NOT
 catch the wrong PDF filed under the right record -- that is identity
-verification, which runs later against extracted text (see PLAN.md step 1).
+verification, which runs later against extracted text (see research design/PLAN.md step 1).
 """
 
 import hashlib
@@ -34,12 +35,35 @@ MULTI_SEP = "; "
 # downloaded through the API.
 LINK_MODE_PRIORITY = ["imported_file", "imported_url", "linked_url"]
 
-# Which half of the corpus a paper belongs to. "testing" papers are the ones
-# being classified; "validation" papers carry human labels and are the
-# regression suite. Zotero knows nothing about this split -- it comes from
-# which collection was fetched.
-SET_TESTING = "testing"
-SET_VALIDATION = "validation"
+# Which half of the corpus a paper belongs to. The Unlabelled Set (US) is the
+# papers being classified; the Human Labelled Set (HLS) carries human labels
+# and is the regression suite. Zotero knows nothing about this split -- it
+# comes from which collection was fetched.
+SET_UNLABELLED = "unlabelled"
+SET_HUMAN_LABELLED = "human_labelled"
+
+# The set is stored as a slug, never as a directory name: it is baked into
+# every manifest row, so a folder rename must not require rewriting the data.
+# This map is the single place the two are connected.
+SET_DIRS = {
+    SET_UNLABELLED: "Unlabelled Set",
+    SET_HUMAN_LABELLED: "Human Labelled Set",
+}
+
+
+def set_dir(root: Path, set_name: str) -> Path:
+    """data/raw_pdfs/ subdirectory holding `set_name`'s PDFs.
+
+    Raises on an unknown set rather than silently building a path to a
+    directory that does not exist -- the old failure mode, which surfaced as
+    "PDF missing" on every paper at once.
+    """
+    try:
+        return root / "data" / "raw_pdfs" / SET_DIRS[set_name]
+    except KeyError:
+        raise ValueError(
+            f"unknown set {set_name!r}; expected one of {sorted(SET_DIRS)}"
+        ) from None
 
 # Only journal articles are papers. The library also holds the occasional
 # videoRecording, webpage, or report; those are skipped and reported rather
@@ -214,7 +238,7 @@ def parse_identifiers(data: dict) -> dict:
     ID only in the URL, and some importers use archiveID instead.
 
     Missing a PMCID is not fatal -- paper_id is the Zotero key -- but these are
-    the identifiers that will join this corpus to the validation labels, which
+    the identifiers that will join this corpus to the human labels, which
     are almost certainly keyed by DOI or PMCID rather than a Zotero key.
     """
     extra = data.get("extra") or ""
@@ -270,7 +294,7 @@ def build_metadata(item: dict) -> dict:
     }
 
 
-def build_meta_records(records: dict, set_name: str = SET_TESTING) -> list[dict]:
+def build_meta_records(records: dict, set_name: str = SET_UNLABELLED) -> list[dict]:
     """Build the full metadata record for each paper, for data/zotero_meta.jsonl.
 
     The manifest CSV keeps one scannable row per paper; this keeps everything
@@ -469,7 +493,7 @@ def iter_fetch_records(
     zot: zotero.Zotero,
     records: dict,
     pdf_dir: Path,
-    set_name: str = SET_TESTING,
+    set_name: str = SET_UNLABELLED,
     skip_ids: set | None = None,
     progress=None,
 ):
@@ -480,8 +504,8 @@ def iter_fetch_records(
     disk with nothing describing them -- and they are named by Zotero item key,
     so without the manifest they are opaque.
 
-    `set_name` tags every row as SET_TESTING (papers to classify) or
-    SET_VALIDATION (papers with human labels, used for scoring). It comes from
+    `set_name` tags every row as SET_UNLABELLED (papers to classify) or
+    SET_HUMAN_LABELLED (papers with human labels, used for scoring). It comes from
     the caller because it is a property of which collection is being fetched,
     not of anything Zotero records about the item.
 

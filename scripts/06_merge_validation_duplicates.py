@@ -26,7 +26,7 @@ WHAT IT DOES
 OUTPUTS
     data/zotero_manifest.csv                             15 rows fewer
     results/review/06_merged_validation_duplicates.csv   what merged into what
-    data/removed_pdfs/validation_internal_duplicates/    the moved PDFs
+    data/removed_pdfs/hls_internal_duplicates/           the moved PDFs
 """
 
 import argparse
@@ -39,13 +39,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-from zotero_fetch import MANIFEST_COLUMNS
+from zotero_fetch import MANIFEST_COLUMNS, SET_HUMAN_LABELLED, set_dir
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
 DUPLICATES = ROOT / "results" / "review" / "03_validation_internal_duplicates.csv"
 LOG = ROOT / "results" / "review" / "06_merged_validation_duplicates.csv"
-MOVED_DIR = ROOT / "data" / "removed_pdfs" / "validation_internal_duplicates"
+MOVED_DIR = ROOT / "data" / "removed_pdfs" / "hls_internal_duplicates"
 CACHE_DIR = ROOT / "data" / "extracted_text"
 
 # Written into `folder` and `folder_path` on a merged row. The point is that a
@@ -135,7 +135,7 @@ def main():
     MOVED_DIR.mkdir(parents=True, exist_ok=True)
     moved = 0
     for _pair_id, _keep, drop in plan:
-        pdf = ROOT / "data" / "raw_pdfs" / "validation" / f"{drop['paper_id']}.pdf"
+        pdf = set_dir(ROOT, SET_HUMAN_LABELLED) / f"{drop['paper_id']}.pdf"
         if pdf.exists():
             shutil.move(str(pdf), str(MOVED_DIR / pdf.name))
             moved += 1

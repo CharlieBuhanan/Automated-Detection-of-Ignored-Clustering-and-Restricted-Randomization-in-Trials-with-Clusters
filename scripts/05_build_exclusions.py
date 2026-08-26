@@ -32,6 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from identity import looks_like_correction
+from zotero_fetch import SET_HUMAN_LABELLED, SET_UNLABELLED
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
@@ -60,16 +61,16 @@ def read_csv(path: Path) -> list[dict]:
 
 
 def cross_set_duplicates(titles: dict) -> list[dict]:
-    """Testing papers removed because the same paper sits in validation."""
+    """Unlabelled Set papers removed because the same paper sits in the Human Labelled Set."""
     rows = []
     for row in read_csv(REVIEW_DIR / "02_removed_testing_duplicates.csv"):
         paper_id = row["removed_paper_id"]
         rows.append({
             "paper_id": paper_id,
-            "set": "testing",
+            "set": SET_UNLABELLED,
             "stage": "cross_set_duplicate",
             "removed_from": "corpus",
-            "reason": f"same paper as validation {row['matched_validation_paper_id']}, "
+            "reason": f"same paper as Human Labelled Set {row['matched_validation_paper_id']}, "
                       f"which already carries a human label",
             "evidence": f"matched on {row['matched_on']}"
                         + (", PDF bytes identical" if row.get("pdf_bytes_identical") == "True" else ""),
@@ -82,7 +83,7 @@ def cross_set_duplicates(titles: dict) -> list[dict]:
 
 
 def merged_validation_duplicates() -> list[dict]:
-    """Validation rows folded into their NCI twin.
+    """Human Labelled Set rows folded into their NCI twin.
 
     Not an exclusion in the usual sense -- the paper is still in the study, it
     just has one row instead of two. It belongs here anyway: without it the
@@ -93,7 +94,7 @@ def merged_validation_duplicates() -> list[dict]:
     for row in read_csv(REVIEW_DIR / "06_merged_validation_duplicates.csv"):
         rows.append({
             "paper_id": row["removed_paper_id"],
-            "set": "validation",
+            "set": SET_HUMAN_LABELLED,
             "stage": "validation_internal_duplicate",
             "removed_from": "corpus",
             "reason": f"same paper as {row['kept_paper_id']}, fetched from both the "
@@ -200,7 +201,7 @@ def nhlbi_unreviewed_drops(titles: dict) -> list[dict]:
         paper_id = row["paper_id"]
         rows.append({
             "paper_id": paper_id,
-            "set": "validation",
+            "set": SET_HUMAN_LABELLED,
             "stage": "nhlbi_unreviewed",
             "removed_from": "corpus",
             "reason": row["reason"],
@@ -219,7 +220,7 @@ def unjoinable_labels(titles: dict) -> list[dict]:
 
     These do not remove a paper from the corpus -- the paper is still there and
     still gets classified. What is lost is the ground truth for it, which
-    shrinks the validation denominator, so it belongs in the ledger with
+    shrinks the Human Labelled Set denominator, so it belongs in the ledger with
     `removed_from` saying exactly what was lost.
 
     scripts/04_load_ground_truth.py writes two different problems to this file,
@@ -232,7 +233,7 @@ def unjoinable_labels(titles: dict) -> list[dict]:
         is_disagreement = row["problem"].startswith("institutional")
         rows.append({
             "paper_id": row.get("paper_id", ""),
-            "set": "validation",
+            "set": SET_HUMAN_LABELLED,
             "stage": "institutional_disagreement" if is_disagreement else "label_unjoinable",
             "removed_from": "validation_labels",
             "reason": row["problem"],
@@ -306,7 +307,7 @@ def main():
 
     pending = read_csv(REVIEW_DIR / "03_validation_internal_duplicates.csv")
     if pending:
-        print(f"\n  PENDING: {len(pending)} validation rows ({len(pending)//2} pairs) are flagged as")
+        print(f"\n  PENDING: {len(pending)} HLS rows ({len(pending)//2} pairs) are flagged as")
         print("           internal duplicates and not yet decided; none are excluded yet.")
 
     if args.check:

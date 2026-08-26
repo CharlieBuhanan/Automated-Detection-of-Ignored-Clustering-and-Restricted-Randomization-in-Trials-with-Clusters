@@ -1,26 +1,26 @@
-# Cluster-Paper Review
+# Automated Ignore
 
 Classifies papers with Claude on four independent tasks — **exclusion**, **inclusion**,
 **power_analysis**, **data_analysis** — and scores that against human labels.
 
 The corpus is gated, not classified wholesale: exclusion and inclusion run on all 1,287 study
-papers, and only survivors are scored on power and data analysis. Rubrics are built empirically
-against a human-labelled validation set until accuracy plateaus.
+papers, and only survivors are scored on power and data analysis. Promptbooks are built empirically
+against the Human Labelled Set until accuracy plateaus.
 
-[PLAN.md](PLAN.md) — roadmap and schemas · [CLAUDE.md](.claude/CLAUDE.md) — project rules ·
-[Deb.md](Deb.md) — open questions · [rubrics/](rubrics/) — the four codebooks
+[PLAN.md](research%20design/PLAN.md) — roadmap and schemas · [CLAUDE.md](.claude/CLAUDE.md) — project rules ·
+[Deb.md](research%20design/Deb.md) — open questions · [promptbooks/](promptbooks/) — the four codebooks
 
 ## Status
 
 | | Count |
 |---|---|
 | Study papers to classify | 1,287 |
-| Validation PDFs fetched | 569 (232 NCI + 337 NHLBI) |
-| Validation papers active | 530 |
+| Human Labelled Set PDFs fetched | 569 (232 NCI + 337 NHLBI) |
+| Human Labelled Set papers active | 530 |
 | …with one clean label | 523 |
 | Papers extracted to text | 1,814 |
 
-Corpus prep is complete. **Rubric work is blocked** on 7 held-out papers — 6 NCI/NHLBI
+Corpus prep is complete. **Promptbook work is blocked** on 7 held-out papers — 6 NCI/NHLBI
 disagreements and 1 unresolved citation, in `results/review/05_label_match_review.csv`. The
 build/holdout split may only be assigned once, so it cannot be fixed on a partial label set.
 
@@ -63,7 +63,7 @@ changed ones, `05` and `07` rebuild from scratch.
 
 | script | what it does | state |
 |---|---|---|
-| `00_fetch_zotero.py` | Pulls Zotero into `data/raw_pdfs/<set>/`; writes the manifest (tracked) and `zotero_meta.jsonl` (gitignored). | 1,287 testing + 569 validation |
+| `00_fetch_zotero.py` | Pulls Zotero into `data/raw_pdfs/<Set Name>/`; writes the manifest (tracked) and `zotero_meta.jsonl` (gitignored). | 1,287 US + 569 HLS |
 | `01_verify_identity.py` | Checks each PDF really is the paper Zotero claims — first two pages vs. title, author, DOI. | 2,041 VERIFIED, 24 resolved by hand |
 | `02_extract_pdfs.py` | Full text → `data/extracted_text/<id>.json`. Manifest-driven, so it only touches `VERIFIED` papers; a glob would extract the MISMATCH files still on disk. | 1,856 papers, PyMuPDF, no OCR |
 | `03_review_mismatches.py` | tkinter GUI to triage flagged PDFs: No Issue / Replace / Drop / Skip. Replacements re-verify on the spot. | 24 decided — 20 replaced, 4 confirmed |
@@ -71,7 +71,7 @@ changed ones, `05` and `07` rebuild from scratch.
 | `09_drop_unreviewed_nhlbi.py` | Drops NHLBI papers cited but never judged. Nothing deleted — files move to `data/removed_pdfs/`. Re-run `07` after. | 23 dropped; 553 → 530 |
 | `04_load_ground_truth.py` | Loads the CSV into SQLite, collapsing source rows to one per paper. Agreeing NCI/NHLBI pairs merge; disagreeing ones are held out, never resolved by picking a side. | 523 loaded, 7 held out |
 | `05_build_exclusions.py` | Every departed paper with `stage`, `reason`, `evidence`, `decided_by`. Rebuilt each run, never hand-edited. | reconciles 2,063 → 1,814 |
-| `06_merge_validation_duplicates.py` | Collapses papers in both validation collections, so none is split across the holdout. Idempotent. | 15 pairs merged |
+| `06_merge_validation_duplicates.py` | Collapses papers in both Human Labelled Set collections, so none is split across the holdout. Idempotent. | 15 pairs merged |
 | `08_tex_to_xlsx.py` | tex → `.xlsx` for visual review, reusing `07`'s parser so the two cannot drift. | `crt_review_table_112.xlsx` |
 
 ## Library modules
@@ -79,6 +79,6 @@ changed ones, `05` and `07` rebuild from scratch.
 | module | what it holds |
 |---|---|
 | `src/zotero_fetch.py` | Collection walking, download, md5 verification, manifest writing |
-| `src/pdf_extract.py` | `extract_head_text()` for identity; `extract_and_cache()` for the PyMuPDF → pdfplumber → OCR ladder. Text only, no table grids — PLAN.md step 2 has the measurements |
+| `src/pdf_extract.py` | `extract_head_text()` for identity; `extract_and_cache()` for the PyMuPDF → pdfplumber → OCR ladder. Text only, no table grids — `research design/PLAN.md` step 2 has the measurements |
 | `src/identity.py` | Normalization, DOI/title/author signals, verdict ladder. Pure functions, so re-checks reuse the same logic |
 | `src/db.py` | SQLite: `validation_labels` (human) and `judgments` (model, append-only). `assign_split()` hashes `seed + paper_id`, runs once, refuses to re-run. Extracted text deliberately lives outside |

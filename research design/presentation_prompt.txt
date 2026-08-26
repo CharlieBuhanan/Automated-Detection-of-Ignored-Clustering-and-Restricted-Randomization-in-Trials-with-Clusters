@@ -337,7 +337,7 @@ Title: Why a language model, and not a classifier
 Four bullets with bold lead-ins:
   - No fine-tuning, no training data. BERT-style classifiers need thousands of
     labelled examples. We have 176 for power analysis, and training on them
-    would consume the very set we need for validation.
+    would consume the very set we need as the Human Labelled Set.
   - It explains itself. Every judgment comes back with reasoning and the rule
     it relied on, so a mistake is diagnosable. A classifier returns a number
     and no argument.
@@ -495,7 +495,7 @@ THINGS TO GET RIGHT
 ===============================================================================
 
 - No em-dashes anywhere. This is the most common failure; check every slide.
-- Spell it "promptbook" throughout, never "rubric" or "prompt template".
+- Spell it "promptbook" throughout, never "promptbook" or "prompt template".
 - "Unlabelled Set" and "Human Labelled Set" are proper nouns. Never write
   "ground truth", "training set", or "test set" anywhere in this deck.
 - Numbers must match exactly as written above. Do not round, adjust, or invent

@@ -36,7 +36,7 @@ OUTPUT  results/review/04_papers_reviewed_results.csv   your decisions, appended
         data/zotero_manifest.csv                        verdicts updated
         data/removed_pdfs/replaced/                     backups of replaced PDFs
 
-Deciding here is what unblocks the corpus: PLAN.md step 2 extracts VERIFIED
+Deciding here is what unblocks the corpus: research design/PLAN.md step 2 extracts VERIFIED
 papers only, so a flagged paper contributes nothing until it is resolved.
 """
 
@@ -56,7 +56,7 @@ from tkinter import filedialog, messagebox, ttk
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 import identity
 from pdf_extract import extract_head_text
-from zotero_fetch import MANIFEST_COLUMNS, load_meta
+from zotero_fetch import MANIFEST_COLUMNS, SET_UNLABELLED, load_meta, set_dir
 
 ROOT = Path(__file__).resolve().parent.parent
 REVIEW_LIST = ROOT / "results" / "review" / "01_papers_to_review.csv"
@@ -69,7 +69,7 @@ BACKUP_DIR = ROOT / "data" / "removed_pdfs" / "replaced"
 # records the collection a paper came from but not its group, so the group is
 # recovered from set + collection name. Edit these if the corpus grows.
 ZOTERO_GROUPS = {
-    "testing": "6586218",
+    SET_UNLABELLED: "6586218",
     "FinalCollectionFor Publication": "5573699",   # NCI
     "Locked_26_01_08_337": "6363893",              # NHLBI
     # The 15 NCI/NHLBI duplicate pairs were merged into one row each, keeping
@@ -180,7 +180,7 @@ class ReviewApp:
 
         self.index = self._first_undecided()
 
-        root.title("Cluster-Paper Review - flagged PDF triage")
+        root.title("Automated Ignore - flagged PDF triage")
         root.geometry("980x760")
         root.minsize(860, 680)
         self._build()
@@ -242,7 +242,7 @@ class ReviewApp:
         """Remove rows for papers no longer in the manifest, and say why.
 
         This is what caught 6AUXHCLQ: it was in the review queue when this
-        file was built, then removed from testing as a cross-set duplicate of
+        file was built, then removed from the Unlabelled Set as a cross-set duplicate of
         J2XGTHGE by a step that runs independently of this one. Without this
         check the GUI reports "not on disk" for a paper that was never lost --
         it just moved, or was intentionally dropped -- which reads as a bug
@@ -253,7 +253,7 @@ class ReviewApp:
         manifest_ids = {r["paper_id"] for r in read_csv(MANIFEST)}
         removed_reason = {
             r["removed_paper_id"]: f"removed as a cross-set duplicate of "
-                                    f"{r['matched_validation_paper_id']} (kept in validation)"
+                                    f"{r['matched_validation_paper_id']} (kept in the Human Labelled Set)"
             for r in read_csv(REVIEW_LIST.parent / "02_removed_testing_duplicates.csv")
         }
 
@@ -387,7 +387,7 @@ class ReviewApp:
 
     def pdf_path(self, paper=None):
         p = paper or self.paper
-        return ROOT / "data" / "raw_pdfs" / p["set"] / f"{p['paper_id']}.pdf"
+        return set_dir(ROOT, p["set"]) / f"{p['paper_id']}.pdf"
 
     def _show(self):
         p = self.paper
@@ -618,7 +618,7 @@ class ReviewApp:
             # hashes to this column; leaving the old Zotero md5 here would make
             # the next ordinary 00_fetch_zotero.py run treat the paper as stale
             # and re-download the very PDF that was just rejected.
-            path = ROOT / "data" / "raw_pdfs" / row["set"] / f"{paper_id}.pdf"
+            path = set_dir(ROOT, row["set"]) / f"{paper_id}.pdf"
             if decision == "replaced" and path.exists():
                 row["md5"] = hashlib.md5(path.read_bytes()).hexdigest()
                 row["detail"] = "manually replaced during review"

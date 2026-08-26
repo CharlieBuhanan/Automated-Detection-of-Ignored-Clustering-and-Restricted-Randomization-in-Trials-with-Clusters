@@ -1,8 +1,8 @@
-"""Extract the full text of every verified paper (PLAN.md step 2).
+"""Extract the full text of every verified paper (research design/PLAN.md step 2).
 
 HOW TO RUN
     python scripts/02_extract_pdfs.py                    # both sets
-    python scripts/02_extract_pdfs.py --set validation   # one set only
+    python scripts/02_extract_pdfs.py --set human_labelled  # one set only
     python scripts/02_extract_pdfs.py --overwrite        # re-parse everything
 
 WHAT IT DOES
@@ -11,7 +11,7 @@ WHAT IT DOES
     data/extracted_text/<paper_id>.json.
 
     WEAK is included because a WEAK paper enters the corpus flagged and has its
-    identity re-checked at classification time (PLAN.md step 1). Extracting
+    identity re-checked at classification time (research design/PLAN.md step 1). Extracting
     only VERIFIED would drop it from the study with no error and no trace.
 
     This is the second of two extraction stages. Step 1 read the first 2 pages
@@ -62,7 +62,7 @@ from tqdm import tqdm
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from identity import looks_like_correction
 from pdf_extract import extract_and_cache
-from zotero_fetch import SET_TESTING, SET_VALIDATION
+from zotero_fetch import SET_HUMAN_LABELLED, SET_UNLABELLED, set_dir
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
@@ -70,7 +70,7 @@ CACHE_DIR = ROOT / "data" / "extracted_text"
 REPORT = ROOT / "results" / "extraction_report.csv"
 REVIEW_LIST = ROOT / "results" / "review" / "01_papers_to_review.csv"
 
-# Verdicts that enter the corpus. WEAK is included on purpose: PLAN.md step 1
+# Verdicts that enter the corpus. WEAK is included on purpose: research design/PLAN.md step 1
 # says a WEAK paper enters flagged and has its identity re-checked at
 # classification time, so skipping it here would drop it from the study
 # silently -- no error, no review queue entry, just a paper that quietly stops
@@ -123,7 +123,7 @@ def read_manifest() -> list[dict]:
 
 
 def pdf_path_for(row: dict) -> Path:
-    return ROOT / "data" / "raw_pdfs" / row["set"] / f"{row['paper_id']}.pdf"
+    return set_dir(ROOT, row["set"]) / f"{row['paper_id']}.pdf"
 
 
 def cache_path_for(paper_id: str) -> Path:
@@ -261,7 +261,7 @@ def write_report(report_rows: list[dict]) -> None:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--set", choices=[SET_TESTING, SET_VALIDATION],
+    parser.add_argument("--set", choices=[SET_UNLABELLED, SET_HUMAN_LABELLED],
                         help="Only extract one half of the corpus (default: both)")
     parser.add_argument("--overwrite", action="store_true",
                         help="Re-parse even papers already in the cache (e.g. after changing extraction logic)")

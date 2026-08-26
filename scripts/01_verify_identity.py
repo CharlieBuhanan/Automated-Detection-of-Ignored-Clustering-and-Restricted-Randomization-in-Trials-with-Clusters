@@ -1,8 +1,8 @@
-"""Verify every fetched PDF is the paper Zotero says it is (PLAN.md step 1).
+"""Verify every fetched PDF is the paper Zotero says it is (research design/PLAN.md step 1).
 
 HOW TO RUN
     python scripts/01_verify_identity.py                      # both sets, offline
-    python scripts/01_verify_identity.py --set validation     # one set only
+    python scripts/01_verify_identity.py --set human_labelled # one set only
     python scripts/01_verify_identity.py --retry-attachments  # + repair stage (needs Zotero)
     python scripts/01_verify_identity.py --show MISMATCH      # list one verdict's papers
 
@@ -44,13 +44,14 @@ import identity
 from pdf_extract import extract_head_text
 from zotero_fetch import (
     MANIFEST_COLUMNS,
-    SET_TESTING,
-    SET_VALIDATION,
+    SET_HUMAN_LABELLED,
+    SET_UNLABELLED,
     STATUS_OK,
     _md5,
     connect,
     load_meta,
     select_pdf_attachment,
+    set_dir,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -83,7 +84,7 @@ def write_manifest(rows: list[dict]) -> None:
 
 
 def pdf_path_for(row: dict) -> Path:
-    return ROOT / "data" / "raw_pdfs" / row["set"] / f"{row['paper_id']}.pdf"
+    return set_dir(ROOT, row["set"]) / f"{row['paper_id']}.pdf"
 
 
 def verify_one(pdf_path: Path, meta: dict) -> dict:
@@ -128,7 +129,7 @@ def open_libraries(library_ids: list[str], api_key: str, library_type: str) -> l
 
     The manifest records which *collection* a paper came from but not which
     *group* -- and the corpus spans three (the study library plus NCI and
-    NHLBI for validation). Rather than guess, the repair stage probes each
+    NHLBI for the Human Labelled Set). Rather than guess, the repair stage probes each
     client until one recognizes the item key. Only failures reach this path,
     so the extra calls are few.
     """
@@ -230,7 +231,7 @@ def write_report(rows: list[dict], results: dict, repairs: dict) -> None:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--set", choices=[SET_TESTING, SET_VALIDATION],
+    parser.add_argument("--set", choices=[SET_UNLABELLED, SET_HUMAN_LABELLED],
                         help="Only verify one half of the corpus (default: both)")
     parser.add_argument("--retry-attachments", action="store_true",
                         help="For papers that fail, download the record's other PDF attachments and keep one that verifies. Needs Zotero access.")

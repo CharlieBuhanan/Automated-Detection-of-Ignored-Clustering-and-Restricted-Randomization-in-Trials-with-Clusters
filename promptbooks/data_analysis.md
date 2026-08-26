@@ -3,7 +3,7 @@
 Criteria only. Source: Glueck & Muller (`Ignore02.pdf`), Methods p.3-4.
 
 `yes` = correct, `no` = incorrect. Only gate survivors get a row. Cite the deciding number in
-`rubric_evidence`.
+`promptbook_evidence`.
 
 ## Scope
 
@@ -51,7 +51,7 @@ Criteria only. Source: Glueck & Muller (`Ignore02.pdf`), Methods p.3-4.
     wrong link function, no multiplicity adjustment, missing-data handling, adjusted vs unadjusted,
     unequal cluster sizes, ITT vs per-protocol, no reported ICC.
 14. **D14. Longitudinality** — *CONTESTED, default: does not count.* Ignore02 excludes it, NHLBI
-    scored it. `MQF2Y5AM` is a known expected miss. See [Deb.md](Deb.md).
+    scored it. `MQF2Y5AM` is a known expected miss. See [Deb.md](../research%20design/Deb.md).
 
 ## Abstention
 

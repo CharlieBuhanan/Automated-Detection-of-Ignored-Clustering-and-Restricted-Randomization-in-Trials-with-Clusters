@@ -1,7 +1,7 @@
 """NOT READY -- schema is provisional. Do not build on it yet.
 
 The ground truth is incomplete: only GroundTruthDataNCI01.xlsx has arrived
-(232 rows, 230 joined), covering 232 of the 569 validation papers. The NHLBI
+(232 rows, 230 joined), covering 232 of the 569 Human Labelled Set papers. The NHLBI
 labels are still to come, and their columns may not match NCI's -- if they
 carry a different set of fields, `validation_labels` changes shape and
 `expected_decision()` changes with it.
@@ -13,7 +13,7 @@ So treat everything here as a sketch pending those files:
   - `assign_split()` has never been run, and must not be until every label
     file is loaded -- it fixes the holdout permanently on the first call
 
-`judgments` is the more settled half (it comes straight from PLAN.md) but no
+`judgments` is the more settled half (it comes straight from research design/PLAN.md) but no
 classification code writes to it yet either.
 
 ---
@@ -31,7 +31,7 @@ Extracted text is deliberately NOT here -- it lives in data/extracted_text/ as
 JSON. Text is bulk, immutable, and read by path; putting 100MB of it in the
 same file as the accuracy math would make every query drag it around.
 
-Nothing in this module knows about Claude, rubrics, or PDFs. It stores rows and
+Nothing in this module knows about Claude, promptbooks, or PDFs. It stores rows and
 answers questions about them, so the classification code can be tested against
 a temporary database.
 """
@@ -75,16 +75,16 @@ CREATE TABLE IF NOT EXISTS judgments (
     model_used      TEXT NOT NULL,
     decision        TEXT NOT NULL,
     reasoning       TEXT NOT NULL,
-    rubric_evidence TEXT NOT NULL,
+    promptbook_evidence TEXT NOT NULL,
     confidence      REAL,
-    rubric_version  TEXT NOT NULL,
+    promptbook_version  TEXT NOT NULL,
     timestamp       TEXT NOT NULL,
     UNIQUE (paper_id, task, judgment_index)
 );
 
 CREATE INDEX IF NOT EXISTS idx_judgments_paper_task ON judgments (paper_id, task);
-CREATE INDEX IF NOT EXISTS idx_judgments_rubric     ON judgments (rubric_version);
-CREATE INDEX IF NOT EXISTS idx_labels_split        ON validation_labels (split);
+CREATE INDEX IF NOT EXISTS idx_judgments_promptbook ON judgments (promptbook_version);
+CREATE INDEX IF NOT EXISTS idx_labels_split         ON validation_labels (split);
 """
 
 DEFAULT_PATH = Path(__file__).resolve().parent.parent / "data" / "review.db"
@@ -160,7 +160,7 @@ def assign_split(conn: sqlite3.Connection, holdout_frac: float = 0.3,
     """Fix the build/holdout split, once, deterministically.
 
     Refuses to re-run once any paper has a split, because the holdout is only
-    worth reporting if it was chosen before anyone saw how the rubrics perform
+    worth reporting if it was chosen before anyone saw how the promptbooks perform
     on it. Reshuffling after a disappointing holdout number is the single
     easiest way to publish an inflated one, so it takes an explicit force.
 
@@ -204,7 +204,7 @@ def assign_split(conn: sqlite3.Connection, holdout_frac: float = 0.3,
 def next_judgment_index(conn: sqlite3.Connection, paper_id: str, task: str) -> int:
     """The index the next judgment of this paper on this task should carry.
 
-    Counts across the whole project, not per run: rubric-building rounds
+    Counts across the whole project, not per run: promptbook-building rounds
     re-judge the same papers repeatedly, and the running total is what answers
     "how much has this paper been chewed on?"
     """
@@ -216,8 +216,8 @@ def next_judgment_index(conn: sqlite3.Connection, paper_id: str, task: str) -> i
 
 
 def insert_judgment(conn: sqlite3.Connection, *, paper_id: str, task: str, pass_name: str,
-                    model_used: str, decision: str, reasoning: str, rubric_evidence: str,
-                    confidence: float | None, rubric_version: str,
+                    model_used: str, decision: str, reasoning: str, promptbook_evidence: str,
+                    confidence: float | None, promptbook_version: str,
                     judgment_index: int | None = None) -> int:
     """Append one judgment. Returns its judgment_index.
 
@@ -232,32 +232,32 @@ def insert_judgment(conn: sqlite3.Connection, *, paper_id: str, task: str, pass_
     conn.execute(
         """INSERT INTO judgments
            (paper_id, task, judgment_index, pass_name, model_used, decision,
-            reasoning, rubric_evidence, confidence, rubric_version, timestamp)
+            reasoning, promptbook_evidence, confidence, promptbook_version, timestamp)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (paper_id, task, index, pass_name, model_used, decision, reasoning,
-         rubric_evidence, confidence, rubric_version, _now()),
+         promptbook_evidence, confidence, promptbook_version, _now()),
     )
     conn.commit()
     return index
 
 
 def latest_judgments(conn: sqlite3.Connection, task: str,
-                     rubric_version: str | None = None) -> list[sqlite3.Row]:
+                     promptbook_version: str | None = None) -> list[sqlite3.Row]:
     """Each paper's current answer for a task: its highest judgment_index.
 
-    Scope to a `rubric_version` to ask what a specific rubric concluded, which
-    is what the regression step compares between commits.
+    Scope to a `promptbook_version` to ask what a specific promptbook
+    concluded, which is what the regression step compares between commits.
     """
     where = "task = ?"
     params: list = [task]
-    if rubric_version:
-        where += " AND rubric_version = ?"
-        params.append(rubric_version)
+    if promptbook_version:
+        where += " AND promptbook_version = ?"
+        params.append(promptbook_version)
 
     # The same filter is applied twice on purpose: once to pick each paper's
     # highest index within this scope, once to keep the joined row inside it.
     # Filtering only the subquery would let a paper's judgment from a different
-    # rubric version come back as its "latest".
+    # promptbook version come back as its "latest".
     return conn.execute(
         f"""SELECT j.* FROM judgments j
             JOIN (SELECT paper_id, MAX(judgment_index) AS top
@@ -272,18 +272,18 @@ def latest_judgments(conn: sqlite3.Connection, task: str,
 
 
 def accuracy_against_labels(conn: sqlite3.Connection, task: str, split: str = SPLIT_BUILD,
-                            rubric_version: str | None = None) -> dict:
+                            promptbook_version: str | None = None) -> dict:
     """Compare the current judgments for a task against the human labels.
 
     `undecidable` is counted separately, never as a miss: it is an abstention,
-    and folding it into the error rate would hide a rubric that is learning to
+    and folding it into the error rate would hide a promptbook that is learning to
     refuse rather than to judge.
     """
     labels = {r["paper_id"]: r for r in conn.execute(
         "SELECT * FROM validation_labels WHERE split = ?", (split,))}
 
     hit = miss = abstained = unlabeled = 0
-    for row in latest_judgments(conn, task, rubric_version):
+    for row in latest_judgments(conn, task, promptbook_version):
         label = labels.get(row["paper_id"])
         if label is None:
             unlabeled += 1
