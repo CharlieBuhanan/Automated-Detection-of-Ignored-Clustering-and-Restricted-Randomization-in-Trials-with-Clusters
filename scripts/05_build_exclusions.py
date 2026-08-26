@@ -246,39 +246,62 @@ def nonjudgeable_exclusion_drops(titles: dict) -> list[dict]:
 
 
 def unjoinable_labels(titles: dict) -> list[dict]:
-    """Human labels that could not be turned into one trustworthy answer.
+    """Citations that never resolved to a paper_id at all.
 
-    These do not remove a paper from the corpus -- the paper is still there and
-    still gets classified. What is lost is the ground truth for it, which
-    shrinks the Human Labelled Set denominator, so it belongs in the ledger with
-    `removed_from` saying exactly what was lost.
-
-    scripts/04_load_ground_truth.py writes two different problems to this file,
-    and they read differently here: an institutional disagreement already knows
-    its paper_id (NCI and NHLBI both reviewed it, they just disagreed), while an
-    unresolved citation genuinely does not (the citation itself never resolved).
+    Unlike an institutional disagreement, these do not know which paper is
+    meant -- the citation itself could not be matched. Institutional
+    disagreements are handled separately by institutional_disagreement_drops()
+    below: scripts/12_drop_institutional_disagreements.py fully drops those
+    papers from the corpus now (DC37), so listing them here too would double
+    them in the ledger under two different `removed_from` values for the same
+    underlying fact.
     """
     rows = []
     for row in read_csv(REVIEW_DIR / "05_label_match_review.csv"):
-        is_disagreement = row["problem"].startswith("institutional")
+        if row["problem"].startswith("institutional"):
+            continue
         rows.append({
             "paper_id": row.get("paper_id", ""),
             "set": SET_HUMAN_LABELLED,
-            "stage": "institutional_disagreement" if is_disagreement else "label_unjoinable",
+            "stage": "label_unjoinable",
             "removed_from": "validation_labels",
-            "reason": row["problem"] + (
-                " -- held out of the scored set pending adjudication by the study lead; "
-                "neither institute is preferred and the two are never averaged. May be "
-                "restored once decided." if is_disagreement else ""),
-            "evidence": (f"NCI: {row.get('nci_answer', '')}; NHLBI: {row.get('nhlbi_answer', '')}"
-                        if is_disagreement else
-                        f"citation {row['citation_raw']!r}"
+            "reason": row["problem"],
+            "evidence": (f"citation {row['citation_raw']!r}"
                         + (f"; cite_key {row['cite_key']!r}" if row.get("cite_key") else "")
                         + (f"; best match score {row['match_score']}" if row.get("match_score") else "")),
             "decided_by": BY_RULE,
             "decided_at": "",
             "source_record": "results/review/05_label_match_review.csv",
             "title": titles.get(row.get("paper_id", ""), ""),
+        })
+    return rows
+
+
+def institutional_disagreement_drops(titles: dict) -> list[dict]:
+    """HLS papers dropped because NCI and NHLBI disagreed and neither is preferred.
+
+    scripts/12_drop_institutional_disagreements.py's own log, not the review
+    file directly -- that script physically drops the paper from the manifest,
+    same as nhlbi_unreviewed_drops() and nonjudgeable_exclusion_drops() do for
+    their own categories.
+    """
+    log = REVIEW_DIR / "12_institutional_disagreements_dropped.csv"
+    if not log.exists():
+        return []
+    rows = []
+    for row in read_csv(log):
+        paper_id = row["paper_id"]
+        rows.append({
+            "paper_id": paper_id,
+            "set": SET_HUMAN_LABELLED,
+            "stage": "institutional_disagreement",
+            "removed_from": "corpus",
+            "reason": row["reason"],
+            "evidence": f"NCI: {row.get('nci_answer', '')}; NHLBI: {row.get('nhlbi_answer', '')}",
+            "decided_by": BY_HUMAN,
+            "decided_at": row.get("dropped_at", ""),
+            "source_record": "results/review/12_institutional_disagreements_dropped.csv",
+            "title": titles.get(paper_id, ""),
         })
     return rows
 
@@ -299,6 +322,7 @@ def main():
               + manual_drops(manifest)
               + nhlbi_unreviewed_drops(titles)
               + nonjudgeable_exclusion_drops(titles)
+              + institutional_disagreement_drops(titles)
               + unjoinable_labels(titles))
 
     # Two different kinds of removal, and conflating them makes the arithmetic

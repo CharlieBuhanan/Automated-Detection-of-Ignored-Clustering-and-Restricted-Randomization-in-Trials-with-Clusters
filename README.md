@@ -74,6 +74,9 @@ changed ones, `05` and `07` rebuild from scratch.
 | `05_build_exclusions.py` | Every departed paper with `stage`, `reason`, `evidence`, `decided_by`. Rebuilt each run, never hand-edited. | reconciles 2,063 → 1,814 |
 | `06_merge_hls_duplicates.py` | Collapses papers in both Human Labelled Set collections, so none is split across the holdout. Idempotent. | 15 pairs merged |
 | `08_tex_to_xlsx.py` | tex → `.xlsx` for visual review, reusing `07`'s parser so the two cannot drift. | `crt_review_table_112.xlsx` |
+| `10_drop_nonjudgeable_exclusions.py` | Drops HLS papers excluded for a cross-paper reason (protocol paper, random drop) the promptbook forbids the model to reproduce. | 42 dropped |
+| `11_scan_text_integrity.py` | Offline scan of cached text for bad parses — mojibake, multi-article PDFs, truncation, wrong documents. | 45 of 1,772 flagged |
+| `12_drop_institutional_disagreements.py` | Drops HLS papers where NCI and NHLBI disagreed, assumed unresolved for now. | 5 dropped |
 
 ## Library modules
 

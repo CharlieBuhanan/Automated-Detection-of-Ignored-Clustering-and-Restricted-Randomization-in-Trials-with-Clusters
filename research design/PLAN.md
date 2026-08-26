@@ -3,77 +3,19 @@
 Reference doc. Not loaded into context automatically — read when starting a new phase.
 Standing rules live in [.claude/CLAUDE.md](../.claude/CLAUDE.md).
 
-## TODO now — human review, before continuing
+## TODO now
 
-**Start with `results/review/05_label_match_review.csv`** — 8 rows, covers items 2 and 3 below in
-one file: each institute's answer is already spelled out, no PDF-hunting needed to see the shape
-of the conflict (reading the actual paper is only needed to decide it).
-
-- [ ] **Find the original paper for `NBBD4EVE`.** Missing from the corpus entirely — not a review-queue
-      row. Detail under "Checklist — what's next" below.
-- [ ] **Decide the Patterson papers** (`IT2B87LL` / `JBUFJCLU`). Two rows in the review file, one real
-      paper — blocked on the correction-notice policy question (see the erratum item below). Deciding
-      that question resolves this and item 4's third bullet together.
-- [ ] **Adjudicate the 6 institutional disagreements** in the review file. NCI and NHLBI reviewed the
-      same paper and reached different answers — one pair is a complete flip (NCI: both analyses
-      correct; NHLBI: both incorrect). Read the paper, decide which institute's answer is right (or
-      neither), and update `data/ground_truth.csv` or `results/review/05_label_match_review.csv`
-      accordingly — there's no automated way to pick a side for these.
-- [ ] **Other data checks before moving on:**
-      - Read the 3 correction-notice pairs' PDFs for power/stats impact — same question as items 1–2.
-      - Re-run `python scripts/05_build_exclusions.py --check` after any of the above changes anything.
-      - Confirm the A/B/C/D definition is still with Dr. Glueck. (The 23 outstanding NHLBI reviews are
-        no longer waiting on anyone — dropped, see below.)
-
-## Checklist — what's next
-
-Corpus prep is **done**: 1814 active papers (1284 US + 530 HLS), all extracted and cached.
-
-- [ ] **Decide the HLS/build batching scheme.** Earlier drafts assumed round numbers
-      (350 / 150) that predate counting what is actually on disk. Settle, in this order: how the 523
-      labeled papers divide into build and holdout; whether the split is stratified on gate-survivor
-      status (open question 2 — a flat 30% holdout leaves only ~53 survivors to score power and data
-      analysis on, which is thin for a headline number); and what per-round sample size the promptbook loop
-      draws from the build split (CLAUDE.md currently says under 100). All three have to be fixed
-      before `--assign-split`, because it only runs once.
-- [ ] **Resolve `(Patterson et al., 2022a)` / `(2022b)` — low risk, and now precisely scoped: only
-      one real corpus paper is affected, not two.** The two citations point at `IT2B87LL` (the article,
-      "A cluster randomized controlled trial for a multi-level, clinic-based smoking cessation program")
-      and `JBUFJCLU` (`Correction to:` that same article) — and `JBUFJCLU` is already `DROPPED` from the
-      manifest. APA only appends `a`/`b` when two references share an author and year, so the suffix is
-      the labeller recording that *they* could not separate them either — nothing in the citation
-      decides it, and `07_build_ground_truth.py` leaves both in
-      `results/review/07_ground_truth_unjoined.csv` rather than guessing. The reason it still can't be
-      resolved automatically is that the join reads `zotero_meta.jsonl`, which still lists `JBUFJCLU` as
-      a live candidate — `06_merge_hls_duplicates.py`'s DROPPED verdict lives only in the
-      manifest and was never propagated back to the metadata the join actually searches.
-
-      **Both label rows carry identical labels** — `excluded`, reason `random` ("second study by same
-      group, excluded randomly"), no Power/Stats/Category — so this is a counting problem, not a
-      correctness one, and does not block `--assign-split`.
-
-      **The fix, once decided:** teach the join to skip any candidate whose manifest `verdict` is
-      `DROPPED`, so only `IT2B87LL` remains and the ambiguity resolves on its own. Held until the same
-      policy question as the erratum item below is answered: whether `Correction to:` notices belong in
-      the corpus at all.
-- [ ] **Write `promptbooks/exclusion.md` v0.** Nothing blocks this — start with "exclude if secondary
-      analysis". Only the scoring loop needs step 4.
-- [ ] **Decide on the extracted-text integrity scan.** 100M characters have never been checked for
-      anything but length: mojibake, multi-article PDFs, and truncation are all still unmeasured.
-- [ ] **Decide how an erratum affects its parent paper's power/data analysis.** Dropping the notice keeps
-      the corpus clean, but the correction itself may change the very numbers being judged — an erratum
-      that fixes a sample size, a test statistic, or a p-value makes the *uncorrected* article wrong on
-      exactly the criteria this study scores. Three papers are affected, each with its correction now
-      dropped and its parent still active:
-      `A3H3NDHF` → `J9F7U6CX`, `AT7F9XWR` → `MPSTWIIE`, `JBUFJCLU` → `IT2B87LL`.
-      Read the four notices, see whether any touch power or statistics, and decide whether the parent's
-      extracted text should carry the correction appended, be re-fetched as a corrected version, or be
-      judged as published. Record whichever rule is chosen — a reviewer will ask.
-- [ ] **Find the original paper for `NBBD4EVE`.** It is the one dropped correction whose parent is *not*
-      in the corpus: "Corrigendum: Analysis of cluster-randomized test-negative designs: cluster-level
-      methods" (best title match against the active corpus scored only 73). Either the article was never
-      fetched or it sits under a different title. Locate it, and if it belongs in the study, add it to
-      Zotero and re-fetch — otherwise record why it is absent.
+- [ ] **Restore US papers whose HLS twin was later dropped.** 207 Unlabelled Set papers were removed
+      as cross-set duplicates because an identical HLS copy already had a usable label (DC2). Some of
+      those HLS copies have since been dropped themselves (institutional disagreement, nonjudgeable
+      exclusion, NHLBI unreviewed) — for those, the reason to drop the US twin no longer holds, and the
+      paper should re-enter the classification pool rather than being lost from the study entirely. Not
+      yet swept for existing cases. See DC42.
+- [ ] **Decide the HLS/build batching scheme's remaining piece:** the split is settled (30% holdout,
+      stratified on gate-survivor status, 50 papers/round — see below), but `db.assign_split()` still
+      needs the stratification implemented before it is run.
+- [ ] Deb's sign-off on the rest of `promptbooks/exclusion.md` v0 (E3, E5, E12/E17) — see O1 and
+      `Deb.md`.
 
 **Re-running `00_fetch_zotero.py --set human_labelled` undoes the duplicate merge** — the 15 removed NHLBI
 rows are gone from the manifest and their PDFs are moved aside, so `completed_ids()` no longer skips them
@@ -99,9 +41,12 @@ ground truth is complete (`GroundTruthDataNCI01.xlsx`, 232 rows). NHLBI's arrive
 files that together covered all 337: `crt_review_table_112.tex` (159 papers taken to full
 extraction) and `NHLBI_exclusions_178.csv` (178 rejected before extraction). The remaining 23 tex
 entries were cited but never judged and will not be — dropped by
-`scripts/09_drop_unreviewed_nhlbi.py`, not waited on. Of the 530 active papers, 7 are held for a
-human rather than loaded blind: 6 institutional disagreements and 1 unresolved citation. Every
-"500 / 350 / 150" figure in earlier drafts predates counting what is actually there.
+`scripts/09_drop_unreviewed_nhlbi.py`, not waited on. Of the 530, 5 were institutional disagreements
+— NCI and NHLBI reached different answers on the same paper — and are now dropped rather than held
+(DC37; `scripts/12_drop_institutional_disagreements.py`). Every "500 / 350 / 150" figure in earlier
+drafts predates counting what is actually there. **Current active corpus: run
+`python scripts/05_build_exclusions.py --check` for the up-to-date count** — this paragraph describes
+the fetch/label-load stage, before later drops (nonjudgeable exclusions, disagreements).
 
 All three label files are merged into `data/ground_truth.csv` by `scripts/07_build_ground_truth.py` — a
 wide union of the three source schemas, one row per HLS paper, 567 of 569 joined to a `paper_id`.
@@ -163,17 +108,28 @@ seeing a disappointing holdout number is the easiest way to publish an inflated 
 
 ## Decision schema
 
-All four tasks return the same object via forced `tool_choice`, validated by pydantic
+All three tasks return the same object via forced `tool_choice`, validated by pydantic
 (`src/schemas.py`):
 
 ```python
 {
-  "decision":        "yes" | "no" | "undecidable",
+  "decision":        "yes" | "no" | "undecidable" | "wrong_text",  # wrong_text: exclusion only
   "reasoning":       str,    # why, in the model's own words
   "promptbook_evidence": str,    # which promptbook rule(s) drove it, quoted or cited
   "confidence":      float,  # 0-1
 }
 ```
+
+**`wrong_text` is exclusion-only, and is a different abstention from `undecidable`.** The model
+checks, before anything else, whether the fetched text describes a study at all — a survey
+instrument, a letter, a comment, or a form is `wrong_text`, not forced into `yes`/`no`. `undecidable`
+means the text is readable but the *call* is genuinely unclear; `wrong_text` means the text is
+probably not the paper. Both route to human review (see below), but under separate reasons, so a
+reviewer knows whether to read closely or to check Zotero for the right PDF. This complements
+`scripts/11_scan_text_integrity.py` (step 2b): the offline scan catches parse-level garbage
+(mojibake, truncation); `wrong_text` catches a cleanly-extracted document that is simply the wrong
+one — exactly the CONSORT-EHEALTH submission forms that scan later learned to detect by pattern
+(F8) were first the kind of thing this decision exists to catch at classification time, corpus-wide.
 
 | task | `yes` means | `no` means |
 |---|---|---|
@@ -214,6 +170,7 @@ whatever stage produced it:
 | step 1 | `PDF_MISSING` / `PDF_UNREADABLE` — nothing to classify |
 | step 0 | multi-PDF `warning` where step 1 came back `WEAK` |
 | any task | `decision == "undecidable"` after the Opus second pass |
+| exclusion | `decision == "wrong_text"` — check the fetched PDF, not the paper's eligibility |
 
 A paper is only truly undecidable once **both** passes have said so — a low-confidence or `undecidable`
 Sonnet call routes to Opus first. Papers in this queue are excluded from accuracy math rather than
@@ -391,7 +348,7 @@ scored as misses.
 
    **Measured 2026-08-25: 48 of 1772 flagged, 4 genuinely wrong documents.** All 4 are Unlabelled Set
    and all passed identity on `TITLE_AUTHOR_MATCH` — a submission form carries the paper's own title
-   and first author, so title+author matching cannot catch it. `J2RUD3YQ` is a conference-abstract
+   and first author, so title+author matching cannot catch it. `J2RUD3YQ` was a conference-abstract
    submission; `FRIPQN6I`, `GY63DGR9`, `Y2SLUV8T` are CONSORT-EHEALTH forms printed from Google Forms.
    Listed in `results/review/11_text_integrity_flagged.csv` for replacement or drop.
 
@@ -552,10 +509,12 @@ then `data_analysis`.
       (1494 → 1287), logged in `results/review/02_removed_us_duplicates.csv`
 - [x] **Decide the 15 NCI↔NHLBI duplicate pairs inside the HLS.** Resolved by
       `scripts/04_load_ground_truth.py`, not by a manual decision: 9 pairs agree on every label and are
-      collapsed to one `validation_labels` row automatically; 6 disagree — sometimes completely (one
-      pair has NCI calling both analyses correct and NHLBI calling both incorrect, for the same
-      paper) — and both sides are held out, listed in `results/review/05_label_match_review.csv` for a
-      human to adjudicate by reading the paper. Neither side is silently preferred.
+      collapsed to one `validation_labels` row automatically; 6 disagree — one pair a complete flip
+      (NCI: both analyses correct; NHLBI: both incorrect). Both sides held out, never silently
+      preferred, in `results/review/05_label_match_review.csv`.
+- [x] **Institutional disagreements dropped, assumed unresolved.** 5 of the 6 (one resolved once
+      Patterson's ambiguity closed). Fully dropped from the active corpus, not just held out of the
+      labels — `scripts/12_drop_institutional_disagreements.py` (DC37). May be restored if adjudicated.
 - [x] Triage the 24 flagged papers with `scripts/03_review_mismatches.py` — 20 PDFs replaced, 4 marked
       fine, none dropped. Audit trail in `results/review/04_papers_reviewed_results.csv`
 - [x] Rewrite `scripts/02_extract_pdfs.py` for two-stage extraction; extract `VERIFIED` (1856 papers,
@@ -565,12 +524,10 @@ then `data_analysis`.
       `data/ground_truth.csv` rather than parse a spreadsheet itself) — 523 papers in
       `validation_labels`; `--assign-split` now hard-refuses while any active HLS paper still
       lacks a label (`--allow-incomplete` overrides deliberately)
-- [ ] **Resolve `(Patterson et al., 2022a)` / `(2022b)`** — only **one** real corpus paper is actually
-      affected, not two: the two citations resolve to `IT2B87LL` (the article) and `JBUFJCLU`
-      (`Correction to:` the same article, already `DROPPED` from the manifest). The join still can't
-      choose between them because it reads `zotero_meta.jsonl`, which was never pruned when `JBUFJCLU`
-      was dropped — not because there is a genuine second paper waiting on a label. Still blocked on
-      the same policy question below: whether `Correction to:` notices belong in the corpus at all.
+- [x] **Resolved `(Patterson et al., 2022a)` / `(2022b)`.** One real paper, `IT2B87LL`; the join now
+      skips `MANUAL_DROPPED` candidates like `JBUFJCLU` so the suffix resolves on its own. `IT2B87LL`
+      itself was then dropped as `duplicate_group_random_drop` — a coin-flip exclusion the model can
+      never reproduce (E17) — so the whole pair is out of the study.
 - [x] Merge every label file into `data/ground_truth.csv` (`scripts/07_build_ground_truth.py`) —
       569 rows, 567 joined to paper_ids; NCI 2×2 reproduces the published 20/11/5/60. Also fixed here:
       15 NHLBI citations were resolving to a paper_id `06_merge_hls_duplicates.py` had already
@@ -583,8 +540,13 @@ then `data_analysis`.
       held out, guaranteed rather than left to the hash); promptbook rounds sample 50 from the build
       split. `assign_split()` still needs the stratification implemented before it is run.
 - [x] Exclusion ledger (`scripts/05_build_exclusions.py`) — every departed paper with its reason and
-      who decided; reconciles 2063 fetched → 1814 active
-- [ ] `promptbooks/exclusion.md` v0 — literally just "exclude if secondary analysis"
+      who decided; reconciles 2063 fetched → active corpus (`--check` for the current count)
+- [x] `promptbooks/exclusion.md` v0 — 17 criteria, prompt block, `wrong_text` decision added. Deb has
+      confirmed E13 and the protocol-citation rule; E3/E5/E12/E17 still await her sign-off (O1).
+- [x] **Extracted-text integrity scan** (`scripts/11_scan_text_integrity.py`, step 2b) — 45 of 1772
+      flagged, 4 genuinely wrong documents found: 3 replaced and re-extracted, 1 dropped
+      (`J2RUD3YQ` — no full text exists, only a conference-abstract supplement; DC43).
+- [x] **`NBBD4EVE`'s parent found and confirmed out of scope** — does not belong in the study (DC38).
 - [ ] Promptbook loop on exclusion against the build split until plateau; Sonnet check
 - [ ] Same for power_analysis, then data_analysis
 - [ ] Tune the two-pass confidence threshold on the build split

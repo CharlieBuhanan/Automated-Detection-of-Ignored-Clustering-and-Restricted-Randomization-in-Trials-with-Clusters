@@ -280,14 +280,20 @@ def accuracy_against_labels(conn: sqlite3.Connection, task: str, split: str = SP
                             promptbook_version: str | None = None) -> dict:
     """Compare the current judgments for a task against the human labels.
 
-    `undecidable` is counted separately, never as a miss: it is an abstention,
-    and folding it into the error rate would hide a promptbook that is learning to
-    refuse rather than to judge.
+    Two decisions never count as a miss, for different reasons:
+
+    `undecidable` is an abstention -- folding it into the error rate would hide
+    a promptbook that is learning to refuse rather than to judge.
+
+    `wrong_text` is a *data* problem, not a judgment: the model is saying the
+    fetched text is not a study report at all. Scoring it against a human label
+    would charge the promptbook for a bad PDF. Counted and reported separately
+    so a cluster of them is visible as a corpus fault, which is the point.
     """
     labels = {r["paper_id"]: r for r in conn.execute(
         "SELECT * FROM validation_labels WHERE split = ?", (split,))}
 
-    hit = miss = abstained = unlabeled = 0
+    hit = miss = abstained = wrong_text = unlabeled = 0
     for row in latest_judgments(conn, task, promptbook_version):
         label = labels.get(row["paper_id"])
         if label is None:
@@ -295,6 +301,9 @@ def accuracy_against_labels(conn: sqlite3.Connection, task: str, split: str = SP
             continue
         if row["decision"] == "undecidable":
             abstained += 1
+            continue
+        if row["decision"] == "wrong_text":
+            wrong_text += 1
             continue
         truth = expected_decision(label, task)
         if truth is None:
@@ -307,7 +316,7 @@ def accuracy_against_labels(conn: sqlite3.Connection, task: str, split: str = SP
     scored = hit + miss
     return {
         "task": task, "split": split, "hit": hit, "miss": miss,
-        "undecidable": abstained, "unlabeled": unlabeled,
+        "undecidable": abstained, "wrong_text": wrong_text, "unlabeled": unlabeled,
         "accuracy": round(hit / scored, 4) if scored else None,
     }
 

@@ -8,3 +8,6 @@
 - **`06_merged_hls_duplicates.csv`** — which NCI/NHLBI duplicate pair merged into which paper_id.
 - **`07_ground_truth_unjoined.csv`** — label rows that never resolved to a paper_id.
 - **`09_nhlbi_unreviewed_dropped.csv`** — NHLBI papers dropped for never being reviewed.
+- **`10_nonjudgeable_exclusions_dropped.csv`** — HLS papers dropped for a cross-paper exclusion reason (protocol paper, random drop).
+- **`11_text_integrity_flagged.csv`** — papers whose cached text looked like the wrong document (submission forms, etc.).
+- **`12_institutional_disagreements_dropped.csv`** — HLS papers dropped for an NCI/NHLBI disagreement, assumed unresolved.

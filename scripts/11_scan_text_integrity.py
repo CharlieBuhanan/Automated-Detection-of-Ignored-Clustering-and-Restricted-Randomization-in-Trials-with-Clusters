@@ -31,6 +31,14 @@ THE CHECKS, in the order a flag is reported. A paper can carry several.
                        or font-encoding failure turns prose into symbol soup.
     F7  REPETITIVE     more than 30% of lines are exact duplicates. Running
                        headers/footers swamping the body.
+    F8  SUBMISSION_FORM  a CONSORT-EHEALTH / "Submission Form" / "Publication Form" marker in the
+                       FIRST 600 CHARACTERS. Position is what separates a wrong document from a
+                       real one: `FRIPQN6I`, `GY63DGR9`, `Y2SLUV8T` were all CONSORT-EHEALTH
+                       submission forms with the marker at char 0 -- the whole PDF was the form.
+                       The same phrase legitimately appears in real papers' own appendices,
+                       65-82% of the way through the text, citing the checklist they filled out.
+                       Matching the phrase without the position filter would have re-flagged the
+                       3 papers just replaced, plus 6 more that are genuine articles.
 
 OUTPUTS
     results/01_corpus_build/text_integrity_report.csv   one row per paper
@@ -59,8 +67,9 @@ REPORT = ROOT / "results" / "01_corpus_build" / "text_integrity_report.csv"
 MOJIBAKE = re.compile(r"�|Ã¢â‚¬|Ã©|Ã¨|â€œ|â€\x9d|Ã\xad")
 ABSTRACT_H = re.compile(r"^\s*abstract\b", re.I | re.M)
 REFERENCES_H = re.compile(r"^\s*(references|bibliography|literature cited)\b", re.I | re.M)
-SENTENCE_END = re.compile(r"[.!?)\"'\]0-9]\s*$")
 REF_ANY = re.compile(r"\breferences\b|\bbibliography\b|doi:\s*10\.", re.I)
+FORM_HEADER = re.compile(r"CONSORT-EHEALTH|Submission\s*/?\s*Publication Form|\bSubmission Form\b|\bPublication Form\b", re.I)
+FORM_HEADER_WINDOW = 600
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
@@ -93,6 +102,8 @@ def scan(text: str, pages: int, abstract: str, median_cpp: float) -> list[str]:
         dupes = len(lines) - len(set(lines))
         if dupes / len(lines) > 0.30:
             flags.append("F7_REPETITIVE")
+    if FORM_HEADER.search(body[:FORM_HEADER_WINDOW]):
+        flags.append("F8_SUBMISSION_FORM")
     return flags
 
 
@@ -144,7 +155,7 @@ def main():
     flagged = [r for r in rows if r["n_flags"]]
     print(f"\n{'='*70}\nFLAGGED: {len(flagged)} of {len(rows)} papers\n{'='*70}")
     for flag in ["F1_MOJIBAKE", "F2_MULTI_ARTICLE", "F3_NO_REFERENCES", "F4_THIN_PER_PAGE",
-                 "F5_SHORT_VS_ABSTRACT", "F6_LOW_ALPHA", "F7_REPETITIVE"]:
+                 "F5_SHORT_VS_ABSTRACT", "F6_LOW_ALPHA", "F7_REPETITIVE", "F8_SUBMISSION_FORM"]:
         print(f"  {flag:22} {counter.get(flag, 0):>5}")
 
     if flagged:

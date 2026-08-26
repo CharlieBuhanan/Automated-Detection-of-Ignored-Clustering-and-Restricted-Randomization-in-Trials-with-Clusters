@@ -18,22 +18,30 @@ Criteria only. Source: Glueck & Muller (`Ignore02.pdf`), Methods p.3 and Supplem
 Judge only the manuscript in hand: you cannot see any other paper, and no other paper's existence
 is ever a reason for your answer.
 
-**Criteria.** Test the numbered criteria below in order. The first one that matches decides.
+**First, check the text is what it claims to be.** Before testing any exclusion criterion, ask: does
+this text actually describe a clinical trial? If it is a survey instrument, a letter, a comment, a
+form, an abstract-only stub, or anything else that is not itself a study report, answer `wrong_text`
+— do not force it into `yes`/`no`. This is a data problem, not a screening judgment: the wrong PDF
+may have been fetched for this record.
 
-**Think it through step by step** before answering: work through the criteria in order, say what
-the paper shows for each, then commit.
+**Criteria.** Otherwise, test the numbered criteria below in order. The first one that matches decides.
+
+**Think it through step by step** before answering: first confirm the text describes a study at all,
+then work through the criteria in order, say what the paper shows for each, then commit.
 
 **Answer format.** Return exactly these four fields:
 
 | field | value |
 |---|---|
-| `decision` | `yes` = exclude this paper · `no` = keep it · `undecidable` = text missing, truncated, or unreadable |
+| `decision` | `yes` = exclude this paper · `no` = keep it · `undecidable` = text missing, truncated, or unreadable · `wrong_text` = the text is not a study report at all |
 | `reasoning` | why, in your own words. **60 words maximum.** |
-| `promptbook_evidence` | the criterion number that decided it, e.g. `E5` |
+| `promptbook_evidence` | the criterion number that decided it, e.g. `E5`; `WRONG_TEXT` if that decision |
 | `confidence` | 0.0-1.0 |
 
 `undecidable` is an abstention for genuinely unreadable text, **not** for a hard call. A difficult
-paper still gets a `yes` or a `no`.
+paper still gets a `yes` or a `no`. `wrong_text` is a *different* abstention — the text is readable,
+but it isn't the paper. Both route to human review; keeping them separate tells the reviewer which
+kind of check to run (read closely and decide, vs. check Zotero for the right PDF).
 
 ---
 ## Search-stage

@@ -1,8 +1,4 @@
 paper_id,set,flags,n_flags,chars,pages,chars_per_page,abstract_chars,title
-J2RUD3YQ,unlabelled,F3_NO_REFERENCES;F4_THIN_PER_PAGE;F5_SHORT_VS_ABSTRACT,3,3531,2,1766,2507,Integrating behavioral health & primary care for multiple chronic diseases: Clinical trial
-FRIPQN6I,unlabelled,F4_THIN_PER_PAGE;F7_REPETITIVE,2,80786,50,1616,2745,Tuberculosis Treatment Compliance Under Smartphone-Based Video-Observed Therapy Versus Com
-GY63DGR9,unlabelled,F4_THIN_PER_PAGE;F7_REPETITIVE,2,88060,54,1631,3351,Evaluation of the Implementation and Effectiveness of a Mobile Health Intervention to Impr
-Y2SLUV8T,unlabelled,F4_THIN_PER_PAGE;F7_REPETITIVE,2,101544,58,1751,2329,Testing Digital Methods of Patient-Reported Outcomes Data Collection: Prospective Cluster 
 2UM5FXLV,unlabelled,F3_NO_REFERENCES,1,44879,8,5610,2495,Male partner testing and sexual behaviour following provision of multiple HIV self-tests t
 3D94JQV3,unlabelled,F2_MULTI_ARTICLE,1,81506,23,3544,2165,Health care providers' perspectives on delivering gender equity focused family planning pr
 3L7C4W4M,unlabelled,F3_NO_REFERENCES,1,47407,8,5926,2374,Index participant characteristics and HIV assisted partner services efficacy in Kenya: res
@@ -693,7 +689,6 @@ E6UBBT62,unlabelled,,0,31946,8,3993,2101,Implementing an EMR-Based Referral for 
 E6V7F5MM,unlabelled,,0,76499,13,5885,2561,The PRogram In Support of Moms (PRISM): study protocol for a cluster randomized controlled
 E8BGTQDI,human_labelled,,0,57409,20,2870,1637,"Design and rationale of the ""Sedation strategy and cognitive outcome after critical illnes"
 E8TA87P4,unlabelled,,0,66409,13,5108,3121,Cluster-randomized trial of monthly malaria prophylaxis versus focused screening and treat
-E92KWK4B,human_labelled,,0,43541,9,4838,1944,Process of Engaging Community and Scientific Partners in the Development of the CIRCL-Chic
 EA86FRVU,unlabelled,,0,37097,8,4637,2322,Protocol adherence rates in superiority and noninferiority randomized clinical trials publ
 EAJAKXKC,human_labelled,,0,39654,15,2644,1917,The ecology of patient and caregiver participation in consultations involving advanced can
 EAK3A5Y3,unlabelled,,0,31863,15,2124,1485,Risk of hearing loss among multidrug-resistant tuberculosis patients according to cumulati
@@ -783,6 +778,7 @@ FPA2W97J,unlabelled,,0,59534,16,3721,1826,Attrition in serum anti-DENV antibodie
 FPX2G3LA,human_labelled,,0,57988,10,5799,2063,Examining local smoke-free coalitions in Armenia and Georgia: context and outcomes of a ma
 FR7ETLVC,unlabelled,,0,43424,9,4825,2461,Evaluating the integration of HIV self-testing into low-resource health systems: study pro
 FRHW5NA2,unlabelled,,0,101111,30,3370,1905,Parent-focused prevention of adolescent health risk behavior: Study protocol for a multisi
+FRIPQN6I,unlabelled,,0,41908,9,4656,2745,Tuberculosis Treatment Compliance Under Smartphone-Based Video-Observed Therapy Versus Com
 FRK7DQLC,human_labelled,,0,36416,17,2142,1991,Knowledge of colorectal cancer screening guidelines and intention to obtain screening amon
 FSRS8FVB,unlabelled,,0,40442,9,4494,1795,Mediators of Improved Adherence to Infant Safe Sleep Using a Mobile Health Intervention.
 FTYU2BLT,human_labelled,,0,45079,23,1960,1933,Results of an asthma education program delivered via telemedicine in rural schools
@@ -844,6 +840,7 @@ GVQJHIGK,human_labelled,,0,59708,15,3981,2033,Efficacy of an Enhanced Implementa
 GVSXRYPK,human_labelled,,0,38928,17,2290,1783,"Geriatric assessment-driven polypharmacy discussions between oncologists, older patients, "
 GW43X77W,unlabelled,,0,42339,16,2646,1316,Exploring HIV disease indicators at MDR-TB treatment initiation in South Africa.
 GXBYKEDE,unlabelled,,0,92953,24,3873,2484,"Improving HIV testing, linkage, and retention in care among South African men through U = "
+GY63DGR9,unlabelled,,0,65037,13,5003,3351,Evaluation of the Implementation and Effectiveness of a Mobile Health Intervention to Impr
 GYRIVJLS,human_labelled,,0,53856,11,4896,1972,Robotic versus Electromagnetic bronchoscopy for pulmonary LesIon AssessmeNT: the RELIANT p
 GZQ7IRAT,unlabelled,,0,39099,9,4344,1684,Biannual versus annual mass azithromycin distribution and malaria seroepidemiology among p
 GZY8FTLP,unlabelled,,0,39135,9,4348,1777,Development of a Clinical Decision Support System for Pediatric Abdominal Pain in Emergenc
@@ -882,7 +879,6 @@ HI3CPFP8,human_labelled,,0,26583,10,2658,1724,Relationships of self-perceived ag
 HJICVPT7,human_labelled,,0,36798,7,5257,1829,An international randomized phase III trial of pulse actinomycin-D versus multi-day methot
 HKEUETZX,unlabelled,,0,74084,20,3704,2404,Intervening on Trust in Science to Reduce Belief in COVID-19 Misinformation and Increase C
 HKIUYRQT,unlabelled,,0,39591,12,3299,2047,Improving child tuberculosis contact identification and screening in Lesotho: Results from
-HLQA5RI6,human_labelled,,0,39141,8,4893,2245,Teaching Medical Students to Help Patients Manage Their Weight: Outcomes of an Eight-Schoo
 HM2J3JE3,unlabelled,,0,42776,17,2516,1710,PRescribing Interventions for Chronic pain using the Electronic health record (PRINCE): St
 HMITKU4R,unlabelled,,0,37032,15,2469,1884,A behavioral intervention to promote use of multimodal pain medication for hospitalized pa
 HN6XI3DU,unlabelled,,0,11902,2,5951,0,Reduction in antimicrobial use among medical intensive care unit patients during a cluster
@@ -1338,7 +1334,6 @@ RE9NAY8K,human_labelled,,0,48726,10,4873,147,Low-dose versus High-dose Carfilzom
 REZJUIXS,human_labelled,,0,31272,6,5212,2331,Effects of a School-Based Garden Program on Academic Performance: A Cluster Randomized Con
 RFLPDXC9,unlabelled,,0,49550,8,6194,1842,"""When I Eat Well, I Will Be Healthy, and the Child Will Also Be Healthy"": Maternal Nutriti"
 RHQWSFTR,human_labelled,,0,68486,22,3113,2058,An overview of optimal designs under a given budget in cluster randomized trials with a bi
-RJD9XX6D,human_labelled,,0,55804,10,5580,2216,A multilevel approach for promoting physical activity in rural communities: a cluster rand
 RJUQYEF7,unlabelled,,0,54961,17,3233,1397,Effects of M-DEPTH Model of Depression Care on Maternal Functioning and Infant Development
 RJUV655F,unlabelled,,0,65953,18,3664,2121,Development of the ADFICE_IT clinical decision support system to assist deprescribing of f
 RJV3GKY7,unlabelled,,0,38505,10,3850,1351,"Client-Perpetrated Violence Experience Among Female Sex Worker in Guangdong, South China: "
@@ -1520,7 +1515,6 @@ VFJZH9TR,human_labelled,,0,62997,9,7000,1807,The design and rationale of a multi
 VFVDL8XM,unlabelled,,0,67296,13,5177,2847,"Promoting Small Business Support of Youth Physical Activity in Low-Income, Minority Neighb"
 VG2ZZL79,human_labelled,,0,63702,34,1874,3023,Hydroxyurea for primary stroke prevention in children with sickle cell anaemia in Nigeria 
 VG586LG9,unlabelled,,0,49148,10,4915,1455,Impact of a Family Economic Intervention (Bridges) on Health Functioning of Adolescents Or
-VGG3KIMT,human_labelled,,0,65963,14,4712,2531,Scaling up a brief alcohol intervention to prevent HIV infection in Vietnam: a cluster ran
 VGHM75AE,unlabelled,,0,87139,16,5446,2676,Power and resistance in schools: Implementing institutional change to promote health equit
 VGZFSIYN,human_labelled,,0,25981,6,4330,1452,Impact of COVID-19 on childhood obesity: Data from a paediatric weight management trial
 VH5MJZ7U,unlabelled,,0,32724,8,4090,1907,Frequency of Mass Azithromycin Distribution for Ocular Chlamydia in a Trachoma Endemic Reg
@@ -1662,6 +1656,7 @@ XYJLRGVC,human_labelled,,0,61153,17,3597,2061,Quality of Communication and Trust
 XZ6Q2C96,unlabelled,,0,70997,16,4437,2555,A Primary Care-Based Cognitive Behavioral Therapy Intervention for Long-Term Opioid Users 
 XZSSRCQQ,unlabelled,,0,30874,6,5146,1735,Enhancing Palliative Care for Patients With Advanced Heart Failure Through Simple Prognost
 Y2FW4WDH,unlabelled,,0,49069,17,2886,1794,The Short-Term Impact of a Combination Intervention on Depressive Symptoms Among School-Go
+Y2SLUV8T,unlabelled,,0,30119,8,3765,2329,Testing Digital Methods of Patient-Reported Outcomes Data Collection: Prospective Cluster 
 Y3HRMWYJ,unlabelled,,0,34365,7,4909,2366,Repeat HIV testing of individuals with discrepant HIV self-test results in Central Uganda.
 Y3IVUL24,unlabelled,,0,13621,2,6810,1616,Anthropometry and Malaria among Children in Niger: A Cross-Sectional Study.
 Y4PYDT6J,unlabelled,,0,20245,10,2024,1564,Effect of Azithromycin on the Ocular Surface Microbiome of Children in a High Prevalence T
@@ -1721,7 +1716,6 @@ Z4NURJHV,unlabelled,,0,60523,12,5044,1933,Accounting for Context in Randomized T
 Z582MYLU,unlabelled,,0,55956,9,6217,3399,Deprescribing Education vs Usual Care for Patients With Cognitive Impairment and Primary C
 Z6DJN9CQ,human_labelled,,0,44258,10,4426,1815,Completion of Patient-Reported Outcome Questionnaires Among Older Adults with Advanced Can
 Z6WDVTKT,human_labelled,,0,57987,12,4832,1763,Assessment of implementation methods in sepsis: study protocol for a cluster-randomized hy
-Z7NF2G6Q,human_labelled,,0,42937,8,5367,1475,Objective Measures of Physical Activity in Rural Communities: Factors Associated With a Va
 Z7RGX4NC,unlabelled,,0,30904,8,3863,1766,Development and implementation of a process evaluation for intervention quality improvemen
 Z8C7NKBD,unlabelled,,0,37812,12,3151,1788,Community-level chlamydial serology for assessing trachoma elimination in trachoma-endemic
 ZB7AARX9,unlabelled,,0,69527,16,4345,2525,Organizational contextual factors that predict success of a quality improvement collaborat

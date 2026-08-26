@@ -7,14 +7,13 @@ this is the index. Standing rules are in [CLAUDE.md](../.claude/CLAUDE.md).
 
 ## Open — still need a decision
 
-Everything else has been settled; the decisions are recorded as DC1-DC40 below.
+Everything else has been settled; the decisions are recorded as DC1-DC43 below.
 
 | | Question | Blocks |
 |---|---|---|
-| **O1** | **Deb's sign-off, partial.** Confirmed: E13 pilot exclusion ON (DC39); a paper citing its protocol for power/data analysis is `no`, not `undecidable` (DC40). Still open: E3 wedge OFF, E12/E17 retired as cross-paper, E5 rewritten self-declared, and adjudicating the 5 institutional disagreements. See [Deb.md](Deb.md). | v1 promptbook |
-| **O2** | **Replace or drop the 4 wrong documents** in `results/review/11_text_integrity_flagged.csv` — 1 conference-abstract form, 3 CONSORT-EHEALTH Google Forms, all in the Unlabelled Set. | 4 papers |
-| **O3** | **Inter-rater statistic for the 15 dual-reviewed pairs.** Deferred, not declined: raw agreement is 12/15 = 80%. Decide before writing the methods section whether Cohen's kappa is reported alongside it. | Methods section |
-| **O4** | **What NCI's B/C/D categories mean.** `A` is provably data-correct and is used as a cross-check (DC31); B/C/D stay undefined. Ask Deb only if a finer error taxonomy is wanted for the paper. | Nothing — optional |
+| **O1** | **Deb's sign-off, partial.** Confirmed: E13 pilot exclusion ON (DC39); a paper citing its protocol for power/data analysis is `no`, not `undecidable` (DC40). Still open: E3 wedge OFF, E12/E17 retired as cross-paper, E5 rewritten self-declared. The 5 institutional disagreements are dropped and assumed unresolved (DC37) — no longer blocking; Deb's read may restore them later. See [Deb.md](Deb.md). | v1 promptbook |
+| **O2** | **Inter-rater statistic for the 15 dual-reviewed pairs.** Deferred, not declined: raw agreement is 12/15 = 80%. Decide before writing the methods section whether Cohen's kappa is reported alongside it. | Methods section |
+| **O3** | **What NCI's B/C/D categories mean.** `A` is provably data-correct and is used as a cross-check (DC31); B/C/D stay undefined. Ask Deb only if a finer error taxonomy is wanted for the paper. | Nothing — optional |
 
 ---
 
@@ -164,20 +163,41 @@ Everything else has been settled; the decisions are recorded as DC1-DC40 below.
   checks (`scripts/11_scan_text_integrity.py`, PLAN.md step 2b). Thresholds were tuned against their
   own false positives, which outnumbered true positives 11:1 on the first pass — the report records
   what each rejected rule cost.
-- **DC37 — Irreducible human disagreement leaves the scored set.** Where NCI and NHLBI reviewed the
-  same paper and reached different answers, neither side is preferred and neither is averaged. The
-  papers are dropped with the reason recorded, pending Deb's adjudication; they may be restored later.
-  A label two trained reviewers split on is not ground truth.
+- **DC37 — Irreducible human disagreement is dropped from the active HLS, assumed unresolved.** The
+  5 papers where NCI and NHLBI reached different answers are fully dropped from the corpus
+  (`scripts/12_drop_institutional_disagreements.py`), not just held out of the labels — treated the
+  same as any other unrecoverable-label category (DC28). Assumed permanent for now; may be restored
+  if Deb adjudicates them later, but nothing downstream should wait on that. A label two trained
+  reviewers split on is not ground truth.
 - **DC38 — A missing parent that would not survive the gate is recorded absent, not chased.**
   `NBBD4EVE`'s parent ("Analysis of cluster-randomized test-negative designs: cluster-level methods")
-  is an estimator paper — E8 would exclude it even if found. The ledger records why it is absent and
-  the search stops there.
+  was searched for and found — it is an estimator/methods paper and does not belong in the study
+  (E8 would exclude it regardless). Confirmed, not just inferred from the title; closed.
 - **DC39 — Pilot/feasibility studies are excluded (E13). Confirmed by Deb.** No longer contested.
 - **DC40 — Citing a protocol paper for power or data analysis is `no`, confirmed by Deb.** Applies to
   both tasks (P2, D3): DC12 already made "absent or unclear" incorrect rather than `undecidable`;
   this settles the specific case of a manuscript that names its protocol instead of describing its
   own analysis. Consistent with dropping E12 (DC28) — the paper is still judged on its own text, it
   just fails P2/D3 rather than being excluded outright.
+- **DC41 — Exclusion has a fourth decision, `wrong_text`, distinct from `undecidable`.** The model
+  checks first whether the fetched text describes a study at all; a survey, letter, comment, or form
+  is `wrong_text`, never forced into `yes`/`no`. `undecidable` says the call is unclear; `wrong_text`
+  says the document is probably wrong. Both route to human review under separate reasons. Scoped to
+  exclusion only — power/data analysis only ever see gate survivors, which have already passed this
+  check. Complements the offline scan (DC36): that catches parse-level garbage, this catches a
+  cleanly-extracted document that just isn't the paper — what the scan's F8 rule later formalized as
+  a pattern was first exactly this kind of case (the CONSORT-EHEALTH submission forms).
+- **DC42 — A US paper's cross-set-duplicate removal is conditional on its HLS twin surviving.** 207 US
+  papers were dropped because an identical HLS copy already carried a usable answer (DC2). If that
+  HLS copy is later dropped too (DC37, or any other HLS-side removal), the reason for dropping its US
+  twin no longer holds — the paper should be restored to the classification pool rather than lost
+  from the study entirely. Not yet swept for existing cases; see the TODO in PLAN.md's checklist.
+- **DC43 — `J2RUD3YQ` dropped: no full text exists.** Its DOI (`10.1370/afm.20.s1.2679`) resolves to
+  an *Annals of Family Medicine* conference-abstract supplement, not a full article — every download
+  returned the same 2-page abstract. Dropped the same way as any single-paper mismatch decision
+  (`verdict_reason = MANUAL_DROPPED`, logged in `results/review/04_papers_reviewed_results.csv`),
+  not via a dedicated script — there was only one paper, so the established manual-drop trail applied
+  directly. Cached text cleared; removed from the mismatch review queue.
 
 - **DC22 — Message Batches API for the full run; `claude -p` CLI for the promptbook loop.** The full
   run is batch classification, not agentic tool use — Batches API, not sync calls, no MCP. The

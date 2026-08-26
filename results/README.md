@@ -51,8 +51,10 @@ The human queue. Numbered by the script that writes each file, not by date.
 | `02_removed_us_duplicates.csv` | 207 US papers also present in the HLS. Rule-decided, logged. |
 | `03_hls_internal_duplicates.csv` | 15 HLS pairs fetched from both NCI and NHLBI. |
 | `04_papers_reviewed_results.csv` | Audit trail of every hand decision: who decided what, and why. |
-| `05_label_match_review.csv` | **Open.** 6 institutional disagreements + 1 unresolved citation, held out of the labels until a human reads the paper. |
+| `05_label_match_review.csv` | 5 institutional disagreements, source record — dropped by `12`, not resolved. |
 | `06_merged_hls_duplicates.csv` | Which duplicate merged into which. |
-| `07_ground_truth_unjoined.csv` | Citations that could not be matched to a `paper_id`. Never guessed. |
+| `07_ground_truth_unjoined.csv` | Citations that could not be matched to a `paper_id`. Never guessed. Currently empty. |
 | `09_nhlbi_unreviewed_dropped.csv` | 23 NHLBI papers cited but never judged. |
-| `10_nonjudgeable_exclusions_dropped.csv` | 41 HLS papers excluded for a cross-paper reason the promptbook forbids (protocol paper, random drop). |
+| `10_nonjudgeable_exclusions_dropped.csv` | 42 HLS papers excluded for a cross-paper reason the promptbook forbids (protocol paper, random drop). |
+| `11_text_integrity_flagged.csv` | Papers whose cached text looked like the wrong document. |
+| `12_institutional_disagreements_dropped.csv` | 5 HLS papers dropped for an NCI/NHLBI disagreement, assumed unresolved. |
