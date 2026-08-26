@@ -3,11 +3,24 @@
 Reference doc. Not loaded into context automatically — read when starting a new phase.
 Standing rules live in [.claude/CLAUDE.md](../.claude/CLAUDE.md).
 
+## Run 1 is a proof of concept
+
+**One promptbook-refinement pass and one full run, finished by 2026-08-30, for
+about $60 against a $100 budget.** The goal is to prove the pipeline end to end,
+not to produce the final numbers: single pass, no self-consistency voting,
+refinement on the CLI against subscription quota so the budget goes entirely to
+the Batch API production run. Full breakdown in [Costs.md](Costs.md).
+
+What that buys: a survivor count with per-paper drop reasons, power and data
+accuracy on the survivors, and one holdout number. What it does not buy:
+majority voting, a second refinement pass, or any claim that the promptbooks
+have plateaued. Those wait for run 2.
+
 ## TODO now
 
 - [ ] **Run `db.assign_split()`.** Gate-survivor stratification is implemented (DC30); the dry run
       gives 123/53 survivors and 215/92 excluded. It runs once. Nothing blocks it now.
-- [ ] Deb's sign-off on the rest of `promptbooks/exclusion.md` v0 (E3, E5, E12/E17) — see O1 and
+- [ ] Deb's sign-off on the rest of `promptbooks/v0/exclusion.md` (E3, E5, E12/E17) — see O1 and
       `Deb.md`.
 - [ ] `src/schemas.py` does not exist. Neither do `promptbook_builder.py`, `evaluate.py`,
       `two_pass.py`, or anything in `results/04_classification/`. The classification half of this
@@ -145,12 +158,12 @@ one — exactly the CONSORT-EHEALTH submission forms that scan later learned to 
 | power_analysis | power analysis is correct | incorrect |
 | data_analysis | data analysis is correct | incorrect |
 
-**`reasoning` is capped at 60 words.** Long enough to name the deciding evidence, short enough that
+**`reasoning` is capped at 200 characters.** Long enough to name the deciding evidence, short enough that
 a human can scan 1306 of them. The cap is stated in every promptbook's prompt block; anything longer
 is the model narrating rather than deciding, and it costs output tokens on every paper.
 
 **A paper that reports no power analysis at all is `no` (incorrect)** — absent and wrong collapse into
-one label. Say this explicitly in `promptbooks/power_analysis.md`; it is the most likely place for the model
+one label. Say this explicitly in `promptbooks/v0/power_analysis.md`; it is the most likely place for the model
 to hedge.
 
 **`undecidable` is an abstention, not a third category.** It means the evidence in the paper is
@@ -422,8 +435,38 @@ scored as misses.
    The 347/176 split across all 523 labels confirms the gate (136/96 on NCI alone) — only
    papers the humans kept carry power/stats labels, exactly as `expected_decision()` assumes.
 
-5. **Promptbooks** — three independent markdown files in `promptbooks/`, versioned by git commit. Never
-   merged, never cross-referenced.
+5. **Promptbooks** — three independent markdown files, one per task. Never merged, never
+   cross-referenced.
+
+   **Versioned by directory, not just by commit.** A judgment records
+   `promptbook_version`, so a rule that changes under a fixed version makes every earlier
+   judgment unreproducible. Each version is a frozen directory; editing one in place is the
+   thing this layout exists to prevent.
+
+   ```
+   promptbooks/
+     CURRENT              one line: the active version, e.g. "v0"
+     _TEMPLATE doc.md     copy this into each new version
+     v0/
+       exclusion.md  power_analysis.md  data_analysis.md
+       v0 doc.md          what changed, why, which papers, what it scored
+     v1/  v2/  ...
+   ```
+
+   **To change a rule:** copy `vN/` to `vN+1/`, edit there, update `CURRENT`, fill in the new
+   version's doc, commit. One commit per version bump, with the accuracy delta in the message.
+
+   **`vX doc.md` is the human record; the CSV is the machine record.** The doc is tables only
+   (no prose): what changed and why, the paper_ids each rule was written against, and every
+   round run against that version with its accuracy, `undecidable` rate, `wrong_text` rate and
+   parse-retry count. Every number in it must match a row in
+   `results/04_classification/promptbook_accuracy_history.csv`, which is what gets plotted and
+   cited — the doc explains, the CSV counts. DC23's other half lives here too: a miss with no
+   pattern behind it is logged in the doc's "misses not generalized" table rather than written
+   into a rule.
+
+   Each promptbook opens with the same two-paragraph documentation rule — rules are numbered
+   lines, rationale goes in the version doc, and a frozen version is never edited.
 
 6. **Promptbook loop** — `src/promptbook_builder.py`, one task at a time, using **Opus** via forced tool-use:
    load promptbook -> sample <100 unreviewed papers **from the build split** -> judge -> compare to the SQLite label
@@ -549,7 +592,7 @@ then `data_analysis`.
       split. `assign_split()` still needs the stratification implemented before it is run.
 - [x] Exclusion ledger (`scripts/05_build_exclusions.py`) — every departed paper with its reason and
       who decided; reconciles 2063 fetched → active corpus (`--check` for the current count)
-- [x] `promptbooks/exclusion.md` v0 — 17 criteria, prompt block, `wrong_text` decision added. Deb has
+- [x] `promptbooks/v0/exclusion.md` — 17 criteria, prompt block, `wrong_text` decision added. Deb has
       confirmed E13 and the protocol-citation rule; E3/E5/E12/E17 still await her sign-off (O1).
 - [x] **Extracted-text integrity scan** (`scripts/11_scan_text_integrity.py`, step 2b) — 45 of 1772
       flagged, 4 genuinely wrong documents found: 3 replaced and re-extracted, 1 dropped

@@ -2,6 +2,19 @@
 
 Criteria only. Source: Glueck & Muller (`Ignore02.pdf`), Methods p.3 and Supplemental A.
 
+> **Documentation rule for this file.** Every rule is one numbered line: the
+> criterion, then the test that decides it. No prose paragraphs, no rationale
+> inline — rationale goes in [`v0 doc.md`](v0%20doc.md) as a table row naming the
+> papers the rule was written against. Two audiences read this file, a human
+> editing a rule and a model being handed it as a prompt (DC25), and both do
+> better with a table than with an argument.
+>
+> **Never edit a frozen version.** To change a rule, copy this directory to the
+> next `vN/`, edit there, update `promptbooks/CURRENT`, and log the change in
+> that version's doc. A judgment records `promptbook_version`, so a rule that
+> changed under a fixed version makes every earlier judgment unreproducible.
+
+
 `yes` = exclude, `no` = keep. Test E1-E16 in order; first hit decides and goes in
 `promptbook_evidence`. No hit → `no`.
 
@@ -34,7 +47,7 @@ then work through the criteria in order, say what the paper shows for each, then
 | field | value |
 |---|---|
 | `decision` | `yes` = exclude this paper · `no` = keep it · `undecidable` = text missing, truncated, or unreadable · `wrong_text` = the text is not a study report at all |
-| `reasoning` | why, in your own words. **60 words maximum.** |
+| `reasoning` | why, in your own words. **200 characters maximum.** |
 | `promptbook_evidence` | the criterion number that decided it, e.g. `E5`; `WRONG_TEXT` if that decision |
 | `confidence` | 0.0-1.0 |
 

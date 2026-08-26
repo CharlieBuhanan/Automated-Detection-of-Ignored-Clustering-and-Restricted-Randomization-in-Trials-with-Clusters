@@ -112,9 +112,11 @@ Everything else has been settled; the decisions are recorded as DC1-DC46 below.
   article**. The repeat is the point of the method: instructions placed only before a full text get
   lost in long context. Includes a zero-shot chain-of-thought instruction ("think it through step by
   step") and the answer format.
-- **DC27 — `reasoning` is capped at 60 words.** Enough to name the deciding evidence, short enough
-  to scan across 1306 papers. Beyond that the model is narrating, not deciding, and it costs output
-  tokens on every paper.
+- **DC27 — `reasoning` is capped at 200 characters.** Enough to name the deciding evidence, short
+  enough to scan across 1306 papers. Beyond that the model is narrating, not deciding, and it costs
+  output tokens on every paper. **Characters, not words** (changed 2026-08-26 from a 60-word cap):
+  the validator can check a character count exactly, where "60 words" needs a tokenizer nobody
+  agrees on and produces a rule the model can violate without either side noticing.
 - **DC28 — Cross-paper reasons are never exclusion criteria.** A paper is judged on its own text.
   "Its outcomes paper exists elsewhere" and "we kept a different paper by the same group" are facts
   about the corpus, which the model cannot see, so the 41 rows carrying them left the scored set
