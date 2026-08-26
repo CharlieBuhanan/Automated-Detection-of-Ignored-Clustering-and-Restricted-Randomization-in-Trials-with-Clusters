@@ -21,7 +21,15 @@ WHY
     proof of DC20 -- nothing is unrecoverable when a downstream script
     overwrites the manifest.
 
-    Idempotent. **Run it after every `01_verify_identity.py` run**, always.
+    **Script 01 no longer causes this.** It now skips papers with a recorded
+    decision (`src/review_log.py`), so the damage above cannot recur through the
+    normal path. This script stays for the two cases that remain: repairing a
+    manifest damaged before that guard existed, and undoing a deliberate
+    `--rescore-decided` run. Run it after `01_verify_identity.py --rescore-decided`,
+    and any time `14_check_us_clean.py` reports a verdict that should be DROPPED.
+
+    Idempotent, and safe to run at any time -- on a healthy manifest it reports
+    "already applied" and writes nothing.
 
 OUTPUTS
     data/zotero_manifest.csv    verdict/verdict_reason restored
@@ -34,28 +42,12 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+from review_log import collect_decisions  # noqa: E402
 from zotero_fetch import MANIFEST_COLUMNS  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
 REVIEW = ROOT / "results" / "review"
-
-# Each drop log, and the verdict_reason its script writes. Kept in sync by hand
-# with the VERDICT_REASON constant in each script -- if a new drop script is
-# added and not listed here, its papers come back on the next identity re-run.
-DROP_LOGS = [
-    ("09_nhlbi_unreviewed_dropped.csv", "NHLBI_UNREVIEWED"),
-    ("10_nonjudgeable_exclusions_dropped.csv", "NONJUDGEABLE_EXCLUSION"),
-    ("12_institutional_disagreements_dropped.csv", "INSTITUTIONAL_DISAGREEMENT_UNRESOLVED"),
-]
-
-# The by-hand route (script 03) records its decisions in one shared log, with
-# the verdict already in a column rather than implied by which file it is in.
-MANUAL_LOG = "04_papers_reviewed_results.csv"
-
-# What script 03 wrote for each decision, so the reason survives a rebuild.
-MANUAL_REASONS = {"no_issue": "MANUAL_OK", "replaced": "MANUAL_REPLACED",
-                  "dropped": "MANUAL_DROPPED"}
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
@@ -67,41 +59,12 @@ def read_csv(path: Path) -> list[dict]:
         return list(csv.DictReader(handle))
 
 
-def collect_decisions() -> dict[str, tuple[str, str]]:
-    """{paper_id: (verdict, verdict_reason)} for every human decision on record.
-
-    **Ordered by when the decision was made, not by which log it came from.**
-    A paper can appear in both: `J2XGTHGE` was cleared by hand in script 03 as
-    a legible PDF, then dropped weeks later by script 09 because NHLBI never
-    reviewed it. Those answer different questions, and the later one is the
-    live decision -- applying the manual log last would resurrect it.
-
-    A `skipped` row carries no verdict and is ignored: it records that the
-    reviewer moved on, not what they concluded.
-    """
-    dated: list[tuple[str, str, str, str]] = []
-    for filename, reason in DROP_LOGS:
-        for row in read_csv(REVIEW / filename):
-            if row.get("paper_id"):
-                dated.append((row.get("dropped_at", ""), row["paper_id"], "DROPPED", reason))
-    for row in read_csv(REVIEW / MANUAL_LOG):
-        verdict = row.get("new_verdict")
-        if verdict and row.get("paper_id"):
-            dated.append((row.get("reviewed_at", ""), row["paper_id"], verdict,
-                          MANUAL_REASONS.get(row.get("decision", ""), "MANUAL_REVIEWED")))
-
-    decisions = {}
-    for _, paper_id, verdict, reason in sorted(dated, key=lambda d: d[0]):
-        decisions[paper_id] = (verdict, reason)
-    return decisions
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="Report only, change nothing")
     args = parser.parse_args()
 
-    decisions = collect_decisions()
+    decisions = collect_decisions(REVIEW)
     rows = read_csv(MANIFEST)
     by_id = {r["paper_id"]: r for r in rows}
 

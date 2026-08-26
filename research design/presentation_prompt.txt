@@ -1,3 +1,167 @@
+###############################################################################
+# NOTE FOR CHARLIE - CHANGES TO MAKE BEFORE PRESENTATION 2       2026-08-26
+#
+# Read this, decide, then edit the prompt below. Nothing under this block has
+# been changed. Deck v1 has already been shown, so every number that moved is
+# a correction to state, not a silent fix.
+#
+# I could not open the deck itself. Claude Design canvases do not appear in the
+# artifact list I can read, so everything below is checked against this prompt
+# file and the live data, not against the rendered slides. If a number differs
+# on a slide from what this file says, the slide wins as evidence of what was
+# shown, and both need updating.
+#
+# -------------------------------------------------------------------------
+# 1. TYPOGRAPHY: ALL SERIF  (your request)
+# -------------------------------------------------------------------------
+# Current TYPOGRAPHY block sets headings serif, body humanist sans. Replace
+# with:
+#     Headings      Source Serif 4 (or Newsreader), 600 weight
+#     Body          Source Serif 4, 400 weight
+#     Numbers/code  Source Serif 4 tabular lining figures
+#
+# One decision you need to make: IBM Plex Mono currently carries every table
+# and stat callout, and mono is what makes columns of figures line up. Source
+# Serif 4 does have tabular lining numerals, so a pure-serif deck is possible,
+# but check one dense table (slide 10 or 17) before committing to it.
+#   - Pure serif: change LAYOUT RULES "Big numbers are ... large, mono, petrol"
+#     to "large, serif, petrol", and TYPOGRAPHY's last line already says to use
+#     tabular lining numerals - keep that, it is what makes it work.
+#   - Serif + mono kept for figures only: leave the mono line, delete only the
+#     humanist sans body line. Less pure, safer for the tables.
+# My recommendation: pure serif, with tabular figures. This deck's tables are
+# short and the visual consistency is worth more than perfect column alignment.
+#
+# -------------------------------------------------------------------------
+# 2. SLIDE 10 - TWO WRONG NUMBERS  (highest priority; these were shown)
+# -------------------------------------------------------------------------
+# The Sonnet prices are for Sonnet 4.6. Sonnet 5 is $2/$10 per 1M, not $3/$15,
+# so every Sonnet row is about 35% too high. Corrected table:
+#
+#   Config                     Calls   Standard    Batch    Wall clock
+#   Sonnet, single pass         2.3k        $77      $38    ~2 h  /  <24 h
+#   Sonnet, 3-vote consistency  6.8k       $230     $115    ~6 h  /  <24 h
+#   Opus, single pass           2.3k       $192      $96    ~3 h  /  <24 h
+#   Opus, 3-vote consistency    6.8k       $575     $287    ~8 h  /  <24 h
+#
+# And replace the note under it with:
+#   Estimates assume 1,306 exclusion calls plus about 952 power and data calls,
+#   at 15,470 input tokens each (measured, not estimated). Sonnet 5 $2 / $10 per
+#   million tokens, Opus 5 $5 / $25, batch at half. Promptbook development adds
+#   nothing: it runs through the Claude Code CLI on subscription quota.
+#
+# The old note said promptbook development adds "roughly $200 of Opus calls".
+# It does not, under the current plan. Full working: research design/Costs.md
+#
+# -------------------------------------------------------------------------
+# 3. SLIDE 12 - SELF-CONSISTENCY TABLE, same pricing error
+# -------------------------------------------------------------------------
+#   Votes   Calls   Input tokens   Approx. cost (batch)
+#       1    2.3k          ~35M                    $38
+#       3    6.8k         ~105M                   $115
+#      11   24.8k         ~384M                   $422
+#
+# Worth adding one line, since it is now a real constraint rather than a
+# hypothetical: three votes is $115, which is over the $100 budget for run 1
+# before the second pass or the holdout is counted. Run 1 is single-pass.
+#
+# -------------------------------------------------------------------------
+# 4. CORPUS COUNTS CHANGED: 1,284 -> 1,306 and 530 -> 483
+# -------------------------------------------------------------------------
+# Two real changes since deck v1, both defensible and worth a sentence out loud:
+#   +22 net to the Unlabelled Set: 23 papers were removed as duplicates of a
+#        Human Labelled Set copy that was itself later dropped, so the reason
+#        for removing them expired and they were restored. (1 unrelated paper
+#        was dropped: no full text exists.)
+#   -47 from the Human Labelled Set: papers with unusable labels left the
+#        scored set (unreviewed by NHLBI, institutional disagreements, and the
+#        coin-flip exclusions).
+#
+# Find and replace throughout:
+#     1,284  ->  1,306      (slides 2, 3, 5, 9, 16 x2, 19)
+#     1,300  ->  1,306      (slide 13, "roughly 1,300 calls")
+#     530    ->  483        (slides 2, 6)
+#     492    ->  483        (slides 6, 17, 19)
+#
+# -------------------------------------------------------------------------
+# 5. SLIDE 5 - REDUCTION TABLE
+# -------------------------------------------------------------------------
+#   Raw Zotero records            2115
+#   Duplicate placements          -621
+#   Already in the labelled set   -184
+#   Correction notices              -3
+#   No full text available          -1
+#   ------------------------------------
+#   Unlabelled Set                1306
+#
+# (-207 became -184 because 23 came back. The -1 is a paper whose DOI resolves
+# to a conference-abstract supplement, not an article.)
+#
+# -------------------------------------------------------------------------
+# 6. SLIDE 15 - SPLIT SIZES
+# -------------------------------------------------------------------------
+#   BUILD SPLIT, 338 papers   (was 344)
+#   HOLDOUT, 145 papers       (was 148)
+# "about 53 holdout papers" for power and data is now exactly 53. You can drop
+# the "about".
+#
+# -------------------------------------------------------------------------
+# 7. SLIDE 17 - CLASS SPLIT TABLE
+# -------------------------------------------------------------------------
+#   Task         n     Class split                  Always guess majority
+#   Exclusion  483     307 exclude / 176 keep                        64%
+#   Power      176     136 incorrect / 40 correct                    77%
+#   Data       176     129 incorrect / 47 correct                    73%
+#
+# Only the exclusion row moved, and the 64% is unchanged (63.6% rounds the
+# same). The opening line "answers incorrect to every power analysis scores
+# 77%" is still exactly right. This slide survives almost intact.
+#
+# -------------------------------------------------------------------------
+# 8. SLIDE 18 - BOTH FINDING CARDS NEED UPDATING
+# -------------------------------------------------------------------------
+# "EVERY PAPER ACCOUNTED FOR" says twelve papers, being restored. It was 23,
+# and they are restored, as of 2026-08-26. Suggested rewrite:
+#     Twenty-three papers turned out to be in neither corpus: dropped from the
+#     Unlabelled Set because a copy existed in the Human Labelled Set, which
+#     was then dropped too. All twenty-three have been restored.
+# Stronger as a finished finding than as work in progress.
+#
+# "THIRTY-ONE UNLEARNABLE EXCLUSIONS" is 33, not 31. The 42 total nonjudgeable
+# exclusions are 33 coin-flip plus 9 protocol papers, so you could also say
+# "forty-two unlearnable exclusions" and cover both, which is a cleaner claim.
+#
+# -------------------------------------------------------------------------
+# 9. SLIDE 19 - STATUS COLUMNS ARE OUT OF DATE
+# -------------------------------------------------------------------------
+# Move to DONE:  "Write the first exclusion promptbook" (v0 exists, 16 criteria)
+# Move to DONE:  erratum policy is settled; only the NCI/NHLBI criteria
+#                difference is still open, so split that OPEN bullet in two.
+# Add to NEXT:   "Build the CLI review environment" (the refinement harness)
+# Add to OPEN:   "Four exclusion criteria await Deb's sign-off (E3, E5, E12,
+#                E17)" - this is the real blocker and it is not on the slide.
+#
+# -------------------------------------------------------------------------
+# 10. THINGS THAT ARE STILL CORRECT - do not touch
+# -------------------------------------------------------------------------
+#   - Slide 2's "21% got both right" is the published NCI figure (20 of 96) and
+#     is correctly attributed. Our own combined figure is 18.2% of 176, which
+#     is a different denominator. Do not merge them; if asked, the 21% is
+#     Glueck and Muller's published result and the 18.2% is ours across both
+#     institutes.
+#   - Slide 8's Cao accuracy table is quoted from their paper. Unverified here
+#     (I do not have the supplement), unchanged, and should stay as cited.
+#   - Slide 17's kappa framing, and the 12-of-15 institutional agreement.
+#   - Slides 4, 7, 11, 14 need no numeric changes at all.
+#
+# -------------------------------------------------------------------------
+# 11. SEPARATELY: two published artifacts are now stale
+# -------------------------------------------------------------------------
+# "Full Corpus Breakdown" (2026-08-23) and "Cluster Review Pipeline"
+# (2026-08-20) both predate the restore and still say 1,284 / 530. If either is
+# shared with supervisors, they need the same find-and-replace as section 4.
+###############################################################################
+
 ===============================================================================
 PROMPT FOR CLAUDE DESIGN - SLIDE DECK
 Paste everything below into Claude Design to generate the canvas.

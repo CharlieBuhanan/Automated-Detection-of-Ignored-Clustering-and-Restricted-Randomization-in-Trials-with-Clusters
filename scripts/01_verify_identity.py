@@ -41,6 +41,7 @@ from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 import identity
+from review_log import collect_decisions
 from pdf_extract import extract_head_text
 from zotero_fetch import (
     MANIFEST_COLUMNS,
@@ -58,6 +59,7 @@ ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
 META = ROOT / "data" / "zotero_meta.jsonl"
 REPORT = ROOT / "results" / "01_corpus_build" / "identity_report.csv"
+REVIEW_DIR = ROOT / "results" / "review"
 
 REPORT_COLUMNS = [
     "paper_id", "set", "folder", "verdict", "verdict_reason", "explanation",
@@ -239,6 +241,9 @@ def main():
                         help="Zotero group ID to search during --retry-attachments. Repeatable; defaults to ZOTERO_LIBRARY_ID plus ZOTERO_EXTRA_LIBRARY_IDS in .env.")
     parser.add_argument("--show", metavar="VERDICT",
                         help="Print every paper with this verdict (VERIFIED/WEAK/MISMATCH/PDF_UNREADABLE) and exit.")
+    parser.add_argument("--rescore-decided", action="store_true",
+                        help="Also re-verify papers a human already decided on. Overwrites those "
+                             "decisions -- only for deliberately re-checking a replaced PDF.")
     args = parser.parse_args()
 
     all_rows = read_manifest()
@@ -247,6 +252,17 @@ def main():
     rows = [r for r in all_rows if r["status"] == STATUS_OK]
     if args.set:
         rows = [r for r in rows if r["set"] == args.set]
+
+    # A human decision is not recomputable from the PDF, so it is not rescored.
+    # Skipping is the whole guard: a dropped paper's PDF has been moved aside,
+    # so verifying it would return PDF_UNREADABLE and erase the drop; a dropped
+    # paper whose PDF stayed would come back VERIFIED and silently re-enter the
+    # corpus; and a WEAK paper a human cleared would score WEAK again, because
+    # what resolved it was a person reading the file. See src/review_log.py.
+    decided = {} if args.rescore_decided else collect_decisions(REVIEW_DIR)
+    skipped = [r for r in rows if r["paper_id"] in decided]
+    rows = [r for r in rows if r["paper_id"] not in decided]
+
     if not rows:
         sys.exit("No fetched papers to verify. Run scripts/00_fetch_zotero.py first.")
 
@@ -256,6 +272,14 @@ def main():
                 print(f"{row['paper_id']} [{row['set']}] {row.get('verdict_reason','')} "
                       f"score={row.get('title_score','')}\n    {row['title'][:100]}")
         return
+
+    if skipped:
+        kinds = Counter(decided[r["paper_id"]][1] for r in skipped)
+        print(f"Skipping {len(skipped)} paper(s) with a recorded human decision "
+              f"(pass --rescore-decided to override):")
+        for reason, n in kinds.most_common():
+            print(f"  {n:5}  {reason}")
+        print()
 
     print(f"Verifying {len(rows)} paper(s) against Zotero metadata...\n")
     results = run_verification(rows, meta_by_id)

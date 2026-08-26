@@ -5,8 +5,8 @@ Standing rules live in [.claude/CLAUDE.md](../.claude/CLAUDE.md).
 
 ## Run 1 is a proof of concept
 
-**One promptbook-refinement pass and one full run, finished by 2026-08-30, for
-about $60 against a $100 budget.** The goal is to prove the pipeline end to end,
+**One promptbook-refinement pass and one full run, finished by **2026-08-28**, for
+about **$60** against a $100 budget.** The goal is to prove the pipeline end to end,
 not to produce the final numbers: single pass, no self-consistency voting,
 refinement on the CLI against subscription quota so the budget goes entirely to
 the Batch API production run. Full breakdown in [Costs.md](Costs.md).
@@ -20,8 +20,12 @@ have plateaued. Those wait for run 2.
 
 - [ ] **Run `db.assign_split()`.** Gate-survivor stratification is implemented (DC30); the dry run
       gives 123/53 survivors and 215/92 excluded. It runs once. Nothing blocks it now.
-- [ ] Deb's sign-off on the rest of `promptbooks/v0/exclusion.md` (E3, E5, E12/E17) — see O1 and
-      `Deb.md`.
+- [ ] **Email Deb the four open exclusion criteria** (E3 stepped wedge, E5 secondary analysis,
+      E12 protocol, E17 random drop) plus the longitudinality question and the seven
+      restricted-randomization label rows. All six are written up as a checklist in
+      [Deb.md](Deb.md) — send that, not a summary. This blocks the v1 promptbook.
+- [ ] **Build the Reading Room** — the isolated CLI harness the promptbook loop runs in. See
+      "The Reading Room" below. Nothing in the refinement loop can start without it.
 - [ ] `src/schemas.py` does not exist. Neither do `promptbook_builder.py`, `evaluate.py`,
       `two_pass.py`, or anything in `results/04_classification/`. The classification half of this
       plan is documented and unwritten.
@@ -604,6 +608,65 @@ then `data_analysis`.
 - [ ] Gate run (job 1), record survivors
 - [ ] Analysis run (job 2) on survivors
 - [ ] Holdout run — report this number
+
+## The Reading Room
+
+The isolated harness the promptbook loop runs in. Named for what it is: a sealed room where a
+reviewer is handed exactly one paper, may not bring anything else in, and hands back exactly one
+filled-in form. Nothing else enters or leaves.
+
+**It exists because `claude -p` is agentic, not a completion endpoint.** Run inside this repo it has
+file tools, and `data/ground_truth.csv`, `data/review.db`, and an auto-loaded CLAUDE.md naming both
+are sitting right there. Telling it not to look is not a control; removing the ability to look is.
+
+### The four walls
+
+| Wall | How | What it stops |
+|---|---|---|
+| **Empty room** | `cwd` is a scratch directory outside the repo. Never `--add-dir`. | No CLAUDE.md, no memory index, no relative path to the answers resolves |
+| **No hands** | `--max-turns 1`, empty `--allowed-tools` | Makes it a pure text completion. It cannot read a file even if it decides to |
+| **Paper by hand** | Text on **stdin**, never a path. Output captured from stdout, written by the wrapper outside the scratch cwd | One paper's response is not readable by the next |
+| **No name** | Send a random token; the wrapper keeps token → `paper_id` | A leak is not lookup-able even if one happens |
+
+The wrapper writes the JSON, not Claude. That removes the whole class of "did it corrupt the output
+file" failure, and it means the model has no write target to be confused about.
+
+### Two scripts
+
+**`scripts/20_reading_room.py`** — runs one round. Reads `promptbooks/CURRENT`, samples from the
+build split, and for each paper spawns one `claude -p` process with the promptbook and the paper
+text on stdin. **Papers are judged one at a time, never batched into one prompt**: ten papers in one
+context would let the model make exactly the cross-paper judgments E12 and E17 forbid, and position
+effects inside the batch would contaminate the accuracy number. Speed comes from running 5-8
+processes concurrently, which buys the same wall-clock and none of the contamination.
+
+**`scripts/21_check_responses.py`** — validates what came back, before any of it is scored. In
+order: exit code → **zero `tool_use` blocks** in `--output-format stream-json`, and discard the
+whole run if any appear → JSON parses, recording whether fence-stripping was needed → pydantic
+(`src/schemas.py`) → `decision` in the allowed set, `wrong_text` only on exclusion → `reasoning`
+within 200 characters → `promptbook_evidence` cites a rule ID that actually exists in the promptbook
+in force → `confidence` in [0,1] and not constant across papers → the blinded token echoes back.
+Failures go to a retry ledger (`paper_id`, attempt, failure kind), which is DC24's reportable number.
+
+### Reproducible procedure, not reproducible bytes
+
+Never pass `--resume`, `--continue`, or a reused `--session-id`; each invocation must be a fresh
+process with no shared history. Pin the full model ID, `--strict-mcp-config` with no servers, and a
+committed `--settings` file. Point `CLAUDE_CONFIG_DIR` somewhere empty so no user-level CLAUDE.md or
+memory loads.
+
+**The CLI exposes neither temperature nor seed**, so identical bytes are not achievable and claiming
+otherwise would be false. What is achievable is a reproducible *procedure*: log the model ID, CLI
+version, promptbook version (the git commit), and the verbatim raw response before parsing. That is
+what a reader needs to re-run it, and it is what the run log already records.
+
+### Verified three ways
+
+1. `--output-format stream-json` logs every `tool_use` block. Assert zero per paper; discard any run
+   with one.
+2. **Canary run**: ~20 papers against a decoy `ground_truth.csv` with flipped labels, tools
+   deliberately *on*. If accuracy tracks the decoy, it is reading rather than reasoning.
+3. The holdout, run once through the Batch API, which does not depend on trusting the loop at all.
 
 ## Batch run log
 
