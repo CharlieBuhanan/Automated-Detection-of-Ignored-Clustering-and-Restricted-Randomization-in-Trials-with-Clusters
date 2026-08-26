@@ -38,11 +38,12 @@ Corpus prep is **done**: 1814 active papers (1284 US + 530 HLS), all extracted a
       flavors of incorrect — but they are *not* the SAS `ignored_data_c` strata, which split the same
       65 papers 14/26/25 rather than 19/33/13. Until the letters are defined,
       `db.expected_decision()` cannot map them: it currently returns the raw letter as the expected
-      answer for `inclusion`, where the model returns yes/no, so the two can never agree.
+      answer for a task the model would answer yes/no. With `inclusion` dropped this no longer blocks
+      anything; it is now only a question of whether A/B/C/D adds a usable cross-check on data_analysis.
 - [ ] **Decide the HLS/build batching scheme.** Earlier drafts assumed round numbers
       (350 / 150) that predate counting what is actually on disk. Settle, in this order: how the 523
       labeled papers divide into build and holdout; whether the split is stratified on gate-survivor
-      status (open question 2 — a flat 30% holdout leaves only ~29 survivors to score power and data
+      status (open question 2 — a flat 30% holdout leaves only ~53 survivors to score power and data
       analysis on, which is thin for a headline number); and what per-round sample size the promptbook loop
       draws from the build split (CLAUDE.md currently says under 100). All three have to be fixed
       before `--assign-split`, because it only runs once.
@@ -93,7 +94,7 @@ skips pairs already merged.
 ## Goal
 
 Rate scientific papers on **power_analysis** and **data_analysis** correctness, after filtering the
-corpus with **exclusion** and **inclusion** criteria. **1287 study papers** to classify; a separate
+corpus with **exclusion** criteria. **1287 study papers** to classify; a separate
 human-labeled Human Labelled Set (HLS).
 
 **The corpus is 1287 papers.** 2115 counted *collection placements*, not papers — 483 papers are filed
@@ -126,9 +127,13 @@ analysis." The promptbooks are built empirically from Human Labelled Set misses 
 
 Three decisions shape everything below.
 
-**The corpus is gated, not classified wholesale.** Exclusion and inclusion run first, on all 1287. Only
-survivors go to power_analysis and data_analysis. A paper proceeds only if exclusion says *keep* **and**
-inclusion says *include* — either one dropping it is enough to drop it.
+**The corpus is gated, not classified wholesale.** Exclusion runs first, on all 1287. Only survivors go
+to power_analysis and data_analysis. A paper proceeds if exclusion says *keep*.
+
+**`inclusion` was dropped as a fourth task — nothing in the human labels encodes it.** NCI's
+`Review Category` covers only 95 of the 176 kept papers and no NHLBI paper at all, so there is no human
+answer an inclusion call could be scored against. Exclusion alone is the gate. `review_category` stays
+in the database as NCI-only context, mapped to no task.
 
 **Power/data correctness is only meaningful for papers that pass the gate.** A dropped paper gets no
 power_analysis or data_analysis row at all — not a null, not an "N/A" decision, no row. This applies to
@@ -136,11 +141,11 @@ the Human Labelled Set too: build the power/data promptbooks only on HLS papers 
 compute their accuracy over that subset. Scoring a paper the study would have thrown out measures
 nothing.
 
-This is **not** the flat `2115 x 4 = 8460` figure that earlier drafts used — wrong on both counts, the
-paper count and the gating. The real shape is two sequential batch jobs:
+This is **not** the flat `2115 x 4 = 8460` figure that earlier drafts used — wrong on every count: the
+paper count, the task count, and the gating. The real shape is two sequential batch jobs:
 
 ```
-job 1:  1287 x 2 (exclusion, inclusion)      = 2574 calls
+job 1:  1287 x 1 (exclusion)                 = 1287 calls
         + Opus review of low-confidence gate calls
 job 2:  <survivors> x 2 (power, data)        = 2 x however many survive
 ```
@@ -148,7 +153,7 @@ job 2:  <survivors> x 2 (power, data)        = 2 x however many survive
 Survivor count is unknown until job 1 finishes; it determines job 2's size and cost.
 
 **The gate gets a second pass, the other tasks get one too — but the gate's matters more.** There are no
-human labels for the 1287, so a paper's fate rests on the model's own exclusion/inclusion call, and a
+human labels for the 1287, so a paper's fate rests on the model's own exclusion call, and a
 false exclusion is unrecoverable: the paper never reaches power/data analysis and silently leaves the
 study. Low-confidence gate calls go to Opus **before** gating, not after.
 
@@ -184,7 +189,6 @@ All four tasks return the same object via forced `tool_choice`, validated by pyd
 | task | `yes` means | `no` means |
 |---|---|---|
 | exclusion | exclude this paper | keep it |
-| inclusion | include this paper | do not include |
 | power_analysis | power analysis is correct | incorrect |
 | data_analysis | data analysis is correct | incorrect |
 
@@ -432,12 +436,13 @@ scored as misses.
    a wrong label silently corrupts every accuracy number computed afterwards, so unresolved citations go
    to a human and stay out of the database.
 
-   Label columns map one-to-one onto the four tasks: `Reason excluded` → exclusion, `Review Category` →
-   inclusion, `Power` → power_analysis, `Stats` → data_analysis. The 134/96 shape confirms the gate — only
+   Label columns map onto the three tasks: `Reason excluded` → exclusion, `Power` → power_analysis,
+   `Stats` → data_analysis. `Review Category` maps to nothing — see the dropped `inclusion` task above.
+   The 347/176 split across all 523 labels confirms the gate (136/96 on NCI alone) — only
    papers the humans kept carry power/stats labels, exactly as `expected_decision()` assumes.
 
-5. **Promptbooks** — four independent markdown files in `promptbooks/`, versioned by git commit. Never merged,
-   never cross-referenced.
+5. **Promptbooks** — three independent markdown files in `promptbooks/`, versioned by git commit. Never
+   merged, never cross-referenced.
 
 6. **Promptbook loop** — `src/promptbook_builder.py`, one task at a time, using **Opus** via forced tool-use:
    load promptbook -> sample <100 unreviewed papers **from the build split** -> judge -> compare to the SQLite label
@@ -454,6 +459,14 @@ scored as misses.
    (see the standing rule). Two trade-offs to accept if we go this way: no forced `tool_choice`, so the
    prompt has to ask for JSON and the wrapper validates with pydantic and re-prompts on a parse failure;
    and one process per paper, so no prompt caching and it runs slower. Fine at <100 papers a round.
+
+   **Decided: the CLI carries the promptbook loop's scored numbers too, not just its drafts.** The cost
+   is a known one — **log every parse failure and retry, with paper_id and attempt count.** Retries are
+   not randomly distributed: a paper that makes the model hedge or wrap its JSON in prose is usually a
+   genuinely borderline paper, so retries land on exactly the cases the accuracy number is most
+   sensitive to. Logged, that is a measurable rate to report beside accuracy; unlogged, it is an
+   invisible bias in the direction of the study's own subject matter. Report the retry rate in the
+   methods section.
 
    **Label leakage must be blocked structurally — `claude -p` is agentic, not a completion endpoint.**
    Run inside the repo it has file tools, and `data/ground_truth.csv`, `data/review.db`, and an
@@ -480,7 +493,11 @@ scored as misses.
    accuracy/precision/recall, appends to `results/promptbook_accuracy_history.csv` with the commit hash.
 
    **Plateau = two consecutive rounds each improving accuracy by less than 1 percentage point.** Then
-   stop and move to step 7. Track the `undecidable` rate alongside accuracy: a rate that climbs while
+   stop and move to step 7.
+
+   **A new rule needs a pattern, not a paper.** A new promptbook rule needs a **pattern** behind it — several similar misses, never a single paper. A promptbook rewritten hard against one disagreement encodes noise from that sample instead of a general rule, and the rounds are under 100 papers. Collect the
+   round's misses, find the repeated shape, write the rule against that; log a one-off rather than
+   generalizing it. Track the `undecidable` rate alongside accuracy: a rate that climbs while
    accuracy holds means the promptbook is teaching the model to abstain rather than to judge.
 
 8. **Sonnet check** — once a promptbook plateaus on Opus, re-run the build split with **Sonnet** and record that
@@ -492,8 +509,8 @@ scored as misses.
    routes to Opus. Tune the threshold **on the build split**, once all four promptbooks have plateaued and passed
    step 7.
 
-10. **Gate run** — batch job 1: exclusion + inclusion across all 1287 (2574 calls), Opus second pass on
-   low-confidence calls, then apply the gate (`keep AND include`). Record the survivor count and the
+10. **Gate run** — batch job 1: exclusion across all 1287 (1287 calls), Opus second pass on
+   low-confidence calls, then apply the gate (`keep`). Record the survivor count and the
    drop reason per paper — this is a study result in its own right, not just plumbing.
 
 11. **Analysis run** — batch job 2: power_analysis + data_analysis across the survivors only, same
@@ -503,8 +520,8 @@ scored as misses.
 
 ## Phase order
 
-**Do not parallelize across tasks.** Take `exclusion` to a plateau before touching `inclusion`,
-then `power_analysis`, then `data_analysis`.
+**Do not parallelize across tasks.** Take `exclusion` to a plateau before touching `power_analysis`,
+then `data_analysis`.
 
 - [x] Repo, `requirements.txt`, `.env`, git init
 - [x] `src/pdf_extract.py` — two-stage: `extract_head_text()` for identity, `extract_pdf_text()` for the full pass
@@ -552,7 +569,7 @@ then `power_analysis`, then `data_analysis`.
       who decided; reconciles 2063 fetched → 1814 active
 - [ ] `promptbooks/exclusion.md` v0 — literally just "exclude if secondary analysis"
 - [ ] Promptbook loop on exclusion against the build split until plateau; Sonnet check
-- [ ] Same for inclusion, then power_analysis, then data_analysis
+- [ ] Same for power_analysis, then data_analysis
 - [ ] Tune the two-pass confidence threshold on the build split
 - [ ] Gate run (job 1), record survivors
 - [ ] Analysis run (job 2) on survivors
@@ -700,7 +717,7 @@ humans excluded never got scored on power or stats — and `db.expected_decision
 those, so they drop out of the denominator rather than counting as misses.
 
 The consequence for the split is real though: a single 30% holdout drawn over *all* labeled papers
-leaves only ~29 gate survivors to score power_analysis and data_analysis on, which is thin for a
+leaves only ~53 gate survivors to score power_analysis and data_analysis on, which is thin for a
 headline accuracy number. Two options when the NHLBI labels arrive: stratify the split on
 gate-survivor status so both tasks get a proportional holdout, or accept the wide interval and report
 it. Decide before calling `--assign-split`, because it only runs once.

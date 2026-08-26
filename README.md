@@ -1,13 +1,14 @@
 # Automated Ignore
 
-Classifies papers with Claude on four independent tasks — **exclusion**, **inclusion**,
-**power_analysis**, **data_analysis** — and scores that against human labels.
+Classifies papers with Claude on three independent tasks — **exclusion**, **power_analysis**,
+**data_analysis** — and scores that against human labels.
 
-The corpus is gated, not classified wholesale: exclusion and inclusion run on all 1,287 study
-papers, and only survivors are scored on power and data analysis. Promptbooks are built empirically
+The corpus is gated, not classified wholesale: exclusion runs on all 1,287 study papers, and only
+survivors are scored on power and data analysis. Promptbooks are built empirically
 against the Human Labelled Set until accuracy plateaus.
 
-[PLAN.md](research%20design/PLAN.md) — roadmap and schemas · [CLAUDE.md](.claude/CLAUDE.md) — project rules ·
+[PLAN.md](research%20design/PLAN.md) — roadmap and schemas · [DESIGN_CHOICES.md](research%20design/DESIGN_CHOICES.md) — every decision, and what is still open ·
+[CLAUDE.md](.claude/CLAUDE.md) — project rules ·
 [Deb.md](research%20design/Deb.md) — open questions · [promptbooks/](promptbooks/) — the four codebooks
 
 ## Status

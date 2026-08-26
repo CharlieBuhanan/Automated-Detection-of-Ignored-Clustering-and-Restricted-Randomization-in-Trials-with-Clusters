@@ -40,11 +40,16 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-# The four tasks, fixed. A CHECK constraint on this list is the storage-layer
+# The three tasks, fixed. A CHECK constraint on this list is the storage-layer
 # half of the "never conflate tasks" rule: a typo'd task name fails loudly at
-# insert instead of quietly creating a fifth task nobody notices until the
+# insert instead of quietly creating a fourth task nobody notices until the
 # accuracy numbers do not add up.
-TASKS = ("exclusion", "inclusion", "power_analysis", "data_analysis")
+#
+# "inclusion" was dropped as a task: nothing in the human labels encodes it.
+# NCI's `review_category` covers only 95 of the 176 kept papers and no NHLBI
+# paper at all, so there is no answer to score an inclusion call against.
+# Exclusion alone is the gate.
+TASKS = ("exclusion", "power_analysis", "data_analysis")
 
 PASS_PRIMARY = "primary"
 PASS_REVIEW = "review"
@@ -310,14 +315,18 @@ def accuracy_against_labels(conn: sqlite3.Connection, task: str, split: str = SP
 def expected_decision(label: sqlite3.Row | dict, task: str) -> str | None:
     """The human answer for one task, or None if this paper carries no label
     for it -- which is normal: a paper the humans excluded never received
-    power/stats labels, exactly as the gate intends."""
+    power/stats labels, exactly as the gate intends.
+
+    Every task answers in the same vocabulary the Decision schema uses --
+    "yes" / "no" -- so accuracy_against_labels() can compare without knowing
+    which task it is looking at. For exclusion, "yes" means exclude the paper.
+    An earlier version returned "exclude"/"keep" here, which no model output
+    could ever equal: exclusion scored 0% however good the answers were.
+    """
     get = label.__getitem__ if isinstance(label, sqlite3.Row) else label.get
 
     if task == "exclusion":
-        reason = get("exclusion_reason")
-        return "exclude" if reason else "keep"
-    if task == "inclusion":
-        category = get("review_category")
-        return category or None
+        # A recorded reason is what "the humans excluded this" looks like.
+        return "yes" if get("exclusion_reason") else "no"
     value = get("power" if task == "power_analysis" else "stats")
     return value.strip().lower() if value else None
