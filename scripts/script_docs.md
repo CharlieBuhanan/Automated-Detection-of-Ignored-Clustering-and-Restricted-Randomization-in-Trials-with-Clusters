@@ -30,3 +30,26 @@
 - Append decision to log
 - Update manifest verdict
 - Clear stale cached text
+
+## Script 13 — logical steps
+
+Read-only. Asks whether the HLS has stopped shrinking, so the DC42 restore is safe.
+
+- Load manifest, labels, review logs
+- C1-C2: label parity, verdict closure
+- C3-C5: queue drained, text present and clean
+- C6-C8: label categories and vocabulary
+- C9-C12: duplicates, disagreements, unjoined citations
+- C13-C14: split unassigned, ledger agrees
+- Preview DC42 restore candidates, restore nothing
+
+## Script 14 — logical steps
+
+Read-only. The US has no labels, so every check asks about *inputs* instead.
+
+- Load manifest, cache, review logs
+- U1-U2: cached text present, verdicts resolved
+- U3-U5: queue drained, no bad parse, no correction notice
+- U6-U7: no duplicate inside the US, none shared with the HLS
+- U8-U9: removals still justified (U9 fails until DC42 restore runs)
+- U10-U12: ledger agrees, PDFs accounted for, count matches the published figure

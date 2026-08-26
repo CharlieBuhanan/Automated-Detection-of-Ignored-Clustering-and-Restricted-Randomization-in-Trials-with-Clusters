@@ -5,15 +5,14 @@ Standing rules live in [.claude/CLAUDE.md](../.claude/CLAUDE.md).
 
 ## TODO now
 
-- [ ] **Restore US papers whose HLS twin was later dropped.** 207 Unlabelled Set papers were removed
-      as cross-set duplicates because an identical HLS copy already had a usable label (DC2). Some of
-      those HLS copies have since been dropped themselves (institutional disagreement, nonjudgeable
-      exclusion, NHLBI unreviewed) — for those, the reason to drop the US twin no longer holds, and the
-      paper should re-enter the classification pool rather than being lost from the study entirely. Not
-      yet swept for existing cases. See DC42.
-- [ ] **Decide the HLS/build batching scheme's remaining piece:** the split is settled (30% holdout,
-      stratified on gate-survivor status, 50 papers/round — see below), but `db.assign_split()` still
-      needs the stratification implemented before it is run.
+- [ ] **Restore the 23 US papers whose HLS twin was later dropped (DC42).** 207 Unlabelled Set papers
+      were removed as cross-set duplicates because an HLS copy already had a usable label (DC2). 23 of
+      those HLS copies have since been dropped themselves (12 coin-flip, 7 NHLBI-unreviewed, 3
+      institutional disagreement, 1 protocol_paper), so the reason to drop their US twins no longer
+      holds. **Swept, not yet restored** — `scripts/13_check_hls_clean.py` lists them and confirms the
+      HLS is closed (all 14 checks pass). The restore sweep itself still needs writing.
+- [ ] **Run `db.assign_split()`.** Gate-survivor stratification is implemented (DC30); the dry run
+      gives 123/53 survivors and 215/92 excluded. Run it **after** the DC42 restore — it runs once.
 - [ ] Deb's sign-off on the rest of `promptbooks/exclusion.md` v0 (E3, E5, E12/E17) — see O1 and
       `Deb.md`.
 
@@ -64,10 +63,11 @@ Three decisions shape everything below.
 **The corpus is gated, not classified wholesale.** Exclusion runs first, on all 1287. Only survivors go
 to power_analysis and data_analysis. A paper proceeds if exclusion says *keep*.
 
-**`inclusion` was dropped as a fourth task — nothing in the human labels encodes it.** NCI's
-`Review Category` covers only 95 of the 176 kept papers and no NHLBI paper at all, so there is no human
-answer an inclusion call could be scored against. Exclusion alone is the gate. `review_category` stays
-in the database as NCI-only context, mapped to no task.
+**`inclusion` was dropped as a fourth task — nothing in the human labels encodes it.** The only
+candidate column, NCI's `review_category`, covers 96 of the 176 kept papers, carries no NHLBI paper
+at all, and restates `stats` exactly where it is present (DC31). There is no human answer an
+inclusion call could be scored against. Exclusion alone is the gate. `review_category` stays in the
+database as a transcription of the source file, mapped to no task and read by nothing.
 
 **Power/data correctness is only meaningful for papers that pass the gate.** A dropped paper gets no
 power_analysis or data_analysis row at all — not a null, not an "N/A" decision, no row. This applies to
@@ -410,7 +410,7 @@ scored as misses.
    to a human and stay out of the database.
 
    Label columns map onto the three tasks: `Reason excluded` → exclusion, `Power` → power_analysis,
-   `Stats` → data_analysis. `Review Category` maps to nothing — see the dropped `inclusion` task above.
+   `Stats` → data_analysis. `Review Category` maps to nothing and is read by nothing (DC31).
    The 347/176 split across all 523 labels confirms the gate (136/96 on NCI alone) — only
    papers the humans kept carry power/stats labels, exactly as `expected_decision()` assumes.
 
@@ -737,8 +737,8 @@ equivalent lands, 337 of the 569 HLS papers have PDFs but no human answer, so th
 neither scored nor split. This is what blocks `--assign-split`.
 
 **2. Do all HLS papers carry labels for all four tasks?** **No — and by design.** Measured on
-NCI01: of 232 rows, 136 carry an exclusion reason and nothing else, and 96 carry Power / Stats /
-Review Category. That is the gate showing up in the ground truth exactly as intended — a paper the
+NCI01: of 232 rows, 136 carry an exclusion reason and nothing else, and 96 carry Power and Stats.
+That is the gate showing up in the ground truth exactly as intended — a paper the
 humans excluded never got scored on power or stats — and `db.expected_decision()` returns `None` for
 those, so they drop out of the denominator rather than counting as misses.
 

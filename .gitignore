@@ -27,6 +27,9 @@ data/zotero_meta.jsonl
 data/zotero_manifest.csv
 *.sqlite
 *.db
+# WAL mode (db.connect) leaves these beside the database; they are not matched by *.db
+*.db-shm
+*.db-wal
 
 # --- Tooling / scratch ---
 .claude/
