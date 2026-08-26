@@ -63,7 +63,7 @@ def read_csv(path: Path) -> list[dict]:
 def cross_set_duplicates(titles: dict) -> list[dict]:
     """Unlabelled Set papers removed because the same paper sits in the Human Labelled Set."""
     rows = []
-    for row in read_csv(REVIEW_DIR / "02_removed_testing_duplicates.csv"):
+    for row in read_csv(REVIEW_DIR / "02_removed_us_duplicates.csv"):
         paper_id = row["removed_paper_id"]
         rows.append({
             "paper_id": paper_id,
@@ -76,7 +76,7 @@ def cross_set_duplicates(titles: dict) -> list[dict]:
                         + (", PDF bytes identical" if row.get("pdf_bytes_identical") == "True" else ""),
             "decided_by": BY_RULE,
             "decided_at": "",
-            "source_record": "results/review/02_removed_testing_duplicates.csv",
+            "source_record": "results/review/02_removed_us_duplicates.csv",
             "title": titles.get(paper_id, row.get("title", "")),
         })
     return rows
@@ -91,7 +91,7 @@ def merged_validation_duplicates() -> list[dict]:
     nothing to explain where they went.
     """
     rows = []
-    for row in read_csv(REVIEW_DIR / "06_merged_validation_duplicates.csv"):
+    for row in read_csv(REVIEW_DIR / "06_merged_hls_duplicates.csv"):
         rows.append({
             "paper_id": row["removed_paper_id"],
             "set": SET_HUMAN_LABELLED,
@@ -105,7 +105,7 @@ def merged_validation_duplicates() -> list[dict]:
                            else ", different PDF bytes"),
             "decided_by": BY_RULE,
             "decided_at": row.get("merged_at", ""),
-            "source_record": "results/review/06_merged_validation_duplicates.csv",
+            "source_record": "results/review/06_merged_hls_duplicates.csv",
             "title": row["title"],
         })
     return rows
@@ -339,7 +339,7 @@ def main():
     print("        the manifest and is not enumerable per-paper here. It is documented in")
     print("        results/01_corpus_build/unvalidated_set_summary.tex and must be cited separately.")
 
-    pending = read_csv(REVIEW_DIR / "03_validation_internal_duplicates.csv")
+    pending = read_csv(REVIEW_DIR / "03_hls_internal_duplicates.csv")
     if pending:
         print(f"\n  PENDING: {len(pending)} HLS rows ({len(pending)//2} pairs) are flagged as")
         print("           internal duplicates and not yet decided; none are excluded yet.")

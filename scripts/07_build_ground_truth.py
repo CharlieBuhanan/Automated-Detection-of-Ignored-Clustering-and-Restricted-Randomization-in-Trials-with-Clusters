@@ -27,7 +27,7 @@ WHY THIS EXISTS
 
     A PAPER CAN HAVE MORE THAN ONE ROW. 15 papers were fetched into both the NCI
     and NHLBI Zotero groups and independently reviewed by both institutes --
-    `06_merge_validation_duplicates.py` already collapsed their *manifest* entries
+    `06_merge_hls_duplicates.py` already collapsed their *manifest* entries
     to one paper_id (the NCI side), but each institute's citation still resolves
     to its own row here, both correctly pointing at the surviving paper_id (see
     `remap_merged_duplicates` below). 8 of the 15 pairs agree on every label; 7
@@ -79,7 +79,7 @@ SOURCE_FOLDERS = {
     "NCI": "FinalCollectionFor Publication",
     "NHLBI": "Locked_26_01_08_337",
 }
-# 06_merge_validation_duplicates.py rewrites a merged pair's folder to "Both NCI
+# 06_merge_hls_duplicates.py rewrites a merged pair's folder to "Both NCI
 # and NHLBI" -- but only in data/zotero_manifest.csv. zotero_meta.jsonl, which
 # candidate_pool() below actually reads, is the fetch's untouched output: every
 # Human Labelled Set record there still carries exactly the one folder it was fetched
@@ -444,11 +444,11 @@ def join_by_identifier(row: dict, doi_idx: dict, pmid_idx: dict) -> tuple[str, s
     return "", "", ""
 
 
-MERGED_DUPLICATES = ROOT / "results" / "review" / "06_merged_validation_duplicates.csv"
+MERGED_DUPLICATES = ROOT / "results" / "review" / "06_merged_hls_duplicates.csv"
 
 
 def load_duplicate_remap() -> dict:
-    """removed_paper_id -> kept_paper_id, from 06_merge_validation_duplicates.py's log.
+    """removed_paper_id -> kept_paper_id, from 06_merge_hls_duplicates.py's log.
 
     `zotero_meta.jsonl` is the fetch's raw output and was never pruned when 06
     collapsed 15 NCI/NHLBI duplicate pairs down to one manifest row each -- it
@@ -664,7 +664,7 @@ def main() -> None:
         row["paper_id_note"] = ""
 
     # 15 papers were fetched into both Zotero groups and reviewed by both
-    # institutes. 06_merge_validation_duplicates.py already retired the NHLBI
+    # institutes. 06_merge_hls_duplicates.py already retired the NHLBI
     # half's manifest row, but zotero_meta.jsonl -- which the join above reads --
     # was never pruned, so an NHLBI citation can resolve to that retired paper_id.
     # Remap it to the survivor so every row points at a paper_id that actually
@@ -740,7 +740,7 @@ def active_validation_paper_ids() -> set:
 
     Deliberately not the raw per-institute meta pools -- those still contain
     both halves of every NCI/NHLBI duplicate pair, one of which no longer has a
-    PDF, a manifest row, or extracted text once 06_merge_validation_duplicates.py
+    PDF, a manifest row, or extracted text once 06_merge_hls_duplicates.py
     has run. Diffing against that stale, larger set undercounts real coverage.
     """
     with open(MANIFEST, encoding="utf-8") as handle:

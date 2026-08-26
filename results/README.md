@@ -48,11 +48,11 @@ The human queue. Numbered by the script that writes each file, not by date.
 | file | what a human decides |
 |---|---|
 | `01_papers_to_review.csv` | PDFs whose identity failed verification. Worked in `03_review_mismatches.py`. |
-| `02_removed_testing_duplicates.csv` | 207 US papers also present in the HLS. Rule-decided, logged. |
-| `03_validation_internal_duplicates.csv` | 15 HLS pairs fetched from both NCI and NHLBI. |
+| `02_removed_us_duplicates.csv` | 207 US papers also present in the HLS. Rule-decided, logged. |
+| `03_hls_internal_duplicates.csv` | 15 HLS pairs fetched from both NCI and NHLBI. |
 | `04_papers_reviewed_results.csv` | Audit trail of every hand decision: who decided what, and why. |
 | `05_label_match_review.csv` | **Open.** 6 institutional disagreements + 1 unresolved citation, held out of the labels until a human reads the paper. |
-| `06_merged_validation_duplicates.csv` | Which duplicate merged into which. |
+| `06_merged_hls_duplicates.csv` | Which duplicate merged into which. |
 | `07_ground_truth_unjoined.csv` | Citations that could not be matched to a `paper_id`. Never guessed. |
 | `09_nhlbi_unreviewed_dropped.csv` | 23 NHLBI papers cited but never judged. |
 | `10_nonjudgeable_exclusions_dropped.csv` | 41 HLS papers excluded for a cross-paper reason the promptbook forbids (protocol paper, random drop). |

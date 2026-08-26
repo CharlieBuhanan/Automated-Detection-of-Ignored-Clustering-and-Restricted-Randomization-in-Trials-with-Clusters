@@ -45,7 +45,7 @@ Corpus prep is **done**: 1814 active papers (1284 US + 530 HLS), all extracted a
       decides it, and `07_build_ground_truth.py` leaves both in
       `results/review/07_ground_truth_unjoined.csv` rather than guessing. The reason it still can't be
       resolved automatically is that the join reads `zotero_meta.jsonl`, which still lists `JBUFJCLU` as
-      a live candidate — `06_merge_validation_duplicates.py`'s DROPPED verdict lives only in the
+      a live candidate — `06_merge_hls_duplicates.py`'s DROPPED verdict lives only in the
       manifest and was never propagated back to the metadata the join actually searches.
 
       **Both label rows carry identical labels** — `excluded`, reason `random` ("second study by same
@@ -77,7 +77,7 @@ Corpus prep is **done**: 1814 active papers (1284 US + 530 HLS), all extracted a
 
 **Re-running `00_fetch_zotero.py --set human_labelled` undoes the duplicate merge** — the 15 removed NHLBI
 rows are gone from the manifest and their PDFs are moved aside, so `completed_ids()` no longer skips them
-and they come back. Re-run `scripts/06_merge_validation_duplicates.py` afterwards; it is idempotent and
+and they come back. Re-run `scripts/06_merge_hls_duplicates.py` afterwards; it is idempotent and
 skips pairs already merged.
 
 ## Goal
@@ -549,7 +549,7 @@ then `data_analysis`.
       user before proceeding
 - [x] Identity verification (`01_verify_identity.py`) — thresholds calibrated, verdicts in the manifest
 - [x] Cross-set duplicate check — 207 US papers also in the HLS; removed from the US
-      (1494 → 1287), logged in `results/review/02_removed_testing_duplicates.csv`
+      (1494 → 1287), logged in `results/review/02_removed_us_duplicates.csv`
 - [x] **Decide the 15 NCI↔NHLBI duplicate pairs inside the HLS.** Resolved by
       `scripts/04_load_ground_truth.py`, not by a manual decision: 9 pairs agree on every label and are
       collapsed to one `validation_labels` row automatically; 6 disagree — sometimes completely (one
@@ -573,7 +573,7 @@ then `data_analysis`.
       the same policy question below: whether `Correction to:` notices belong in the corpus at all.
 - [x] Merge every label file into `data/ground_truth.csv` (`scripts/07_build_ground_truth.py`) —
       569 rows, 567 joined to paper_ids; NCI 2×2 reproduces the published 20/11/5/60. Also fixed here:
-      15 NHLBI citations were resolving to a paper_id `06_merge_validation_duplicates.py` had already
+      15 NHLBI citations were resolving to a paper_id `06_merge_hls_duplicates.py` had already
       retired (the join reads `zotero_meta.jsonl`, which the merge script never prunes) — now remapped
       to the surviving paper_id, logged in the `paper_id_note` column.
 - [x] **The 23 unlabeled NHLBI papers are dropped, not chased.** `scripts/09_drop_unreviewed_nhlbi.py` —
@@ -648,10 +648,10 @@ evidence is scattered across five files that share no schema:
 | Stage | Where it lives now | Papers |
 |---|---|---|
 | Collection placements → unique papers | `results/01_corpus_build/unvalidated_set_summary.tex` | 2115 → 1494 |
-| Cross-set duplicates (kept in the HLS) | `results/review/02_removed_testing_duplicates.csv` | 207 |
+| Cross-set duplicates (kept in the HLS) | `results/review/02_removed_us_duplicates.csv` | 207 |
 | Wrong document / unreadable, dropped by hand | manifest `verdict=DROPPED` + `04_papers_reviewed_results.csv` | 2 so far |
 | Correction notices | same route, `CORRECTION_NOTICE` in the review queue | 4 found |
-| HLS internal duplicates | `results/review/03_validation_internal_duplicates.csv` | 15 pairs, undecided |
+| HLS internal duplicates | `results/review/03_hls_internal_duplicates.csv` | 15 pairs, undecided |
 | Unjoinable labels | `results/review/05_label_match_review.csv` | 2 |
 | Gate exclusions (model) | SQLite `judgments`, once the gate runs | unknown |
 

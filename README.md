@@ -72,7 +72,7 @@ changed ones, `05` and `07` rebuild from scratch.
 | `09_drop_unreviewed_nhlbi.py` | Drops NHLBI papers cited but never judged. Nothing deleted — files move to `data/removed_pdfs/`. Re-run `07` after. | 23 dropped; 553 → 530 |
 | `04_load_ground_truth.py` | Loads the CSV into SQLite, collapsing source rows to one per paper. Agreeing NCI/NHLBI pairs merge; disagreeing ones are held out, never resolved by picking a side. | 523 loaded, 7 held out |
 | `05_build_exclusions.py` | Every departed paper with `stage`, `reason`, `evidence`, `decided_by`. Rebuilt each run, never hand-edited. | reconciles 2,063 → 1,814 |
-| `06_merge_validation_duplicates.py` | Collapses papers in both Human Labelled Set collections, so none is split across the holdout. Idempotent. | 15 pairs merged |
+| `06_merge_hls_duplicates.py` | Collapses papers in both Human Labelled Set collections, so none is split across the holdout. Idempotent. | 15 pairs merged |
 | `08_tex_to_xlsx.py` | tex → `.xlsx` for visual review, reusing `07`'s parser so the two cannot drift. | `crt_review_table_112.xlsx` |
 
 ## Library modules

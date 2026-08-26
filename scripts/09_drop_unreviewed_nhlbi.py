@@ -19,7 +19,7 @@ WHAT IT DOES
 
     Nothing is deleted. Both the PDF and its cached extracted text are moved
     to data/removed_pdfs/nhlbi_unreviewed/, mirroring how 03_review_mismatches.py
-    and 06_merge_validation_duplicates.py handle every other drop -- except
+    and 06_merge_hls_duplicates.py handle every other drop -- except
     those two delete the cached text once a paper leaves; this one does not,
     because the full text is exactly what a later review would need if the
     NHLBI team ever does reach these papers.

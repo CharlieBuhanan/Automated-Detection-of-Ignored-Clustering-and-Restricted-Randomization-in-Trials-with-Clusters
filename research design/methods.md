@@ -33,7 +33,7 @@ bullets; the full rationale for every decision is in [PLAN.md](PLAN.md).
 
 **8. Human Labelled Set duplicate merge**
 - Merged 15 NCI/NHLBI pairs into one row.
-- Folder marked "Both Validation Institutes"; NHLBI copy removed.
+- Folder marked "Both HLS Institutes"; NHLBI copy removed.
 
 **9. Exclusion ledger**
 - Every removed paper logged with reason and decider.

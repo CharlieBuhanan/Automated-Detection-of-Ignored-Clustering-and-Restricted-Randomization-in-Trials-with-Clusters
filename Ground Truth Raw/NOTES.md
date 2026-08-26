@@ -33,7 +33,7 @@ reproduces exactly — the check that the NCI parse is faithful.
 
 ## Coverage
 
-569 validation PDFs were fetched in total. 530 are active in the corpus today; the rest left for
+569 HLS PDFs were fetched in total. 530 are active in the corpus today; the rest left for
 one of two reasons, both logged rather than silently removed:
 
 | Left the corpus | Papers | Where |
@@ -186,7 +186,7 @@ Worth asking for.
 ## Fifteen papers, two reviews each
 
 15 papers were fetched into both Zotero groups and independently reviewed by both institutes —
-`06_merge_validation_duplicates.py` already collapsed their *manifest* rows to one paper_id
+`06_merge_hls_duplicates.py` already collapsed their *manifest* rows to one paper_id
 apiece (the NCI side), but the fetch's raw metadata (`zotero_meta.jsonl`) was never pruned to
 match, so an NHLBI citation could still resolve to the retired paper_id. `07_build_ground_truth.py`
 now remaps those 15 rows to the surviving paper_id (visible in the `paper_id_note` column), so

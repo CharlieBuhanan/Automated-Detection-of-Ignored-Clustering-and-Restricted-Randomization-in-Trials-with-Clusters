@@ -254,7 +254,7 @@ class ReviewApp:
         removed_reason = {
             r["removed_paper_id"]: f"removed as a cross-set duplicate of "
                                     f"{r['matched_validation_paper_id']} (kept in the Human Labelled Set)"
-            for r in read_csv(REVIEW_LIST.parent / "02_removed_testing_duplicates.csv")
+            for r in read_csv(REVIEW_LIST.parent / "02_removed_us_duplicates.csv")
         }
 
         kept, skipped = [], []

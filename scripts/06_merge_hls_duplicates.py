@@ -1,11 +1,11 @@
-"""Merge the NCI/NHLBI duplicate pairs inside the validation set into one row.
+"""Merge the NCI/NHLBI duplicate pairs inside the Human Labelled Set into one row.
 
 HOW TO RUN
-    python scripts/06_merge_validation_duplicates.py --dry-run   # report only
-    python scripts/06_merge_validation_duplicates.py             # do the merge
+    python scripts/06_merge_hls_duplicates.py --dry-run   # report only
+    python scripts/06_merge_hls_duplicates.py             # do the merge
 
 WHAT IT DOES
-    The validation set was fetched from two Zotero groups, NCI and NHLBI, and
+    The Human Labelled Set was fetched from two Zotero groups, NCI and NHLBI, and
     15 papers sit in both. They arrived with different item keys, so paper_id
     cannot see that they are the same paper -- only the shared DOI/PMID can.
 
@@ -25,7 +25,7 @@ WHAT IT DOES
 
 OUTPUTS
     data/zotero_manifest.csv                             15 rows fewer
-    results/review/06_merged_validation_duplicates.csv   what merged into what
+    results/review/06_merged_hls_duplicates.csv   what merged into what
     data/removed_pdfs/hls_internal_duplicates/           the moved PDFs
 """
 
@@ -43,8 +43,8 @@ from zotero_fetch import MANIFEST_COLUMNS, SET_HUMAN_LABELLED, set_dir
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
-DUPLICATES = ROOT / "results" / "review" / "03_validation_internal_duplicates.csv"
-LOG = ROOT / "results" / "review" / "06_merged_validation_duplicates.csv"
+DUPLICATES = ROOT / "results" / "review" / "03_hls_internal_duplicates.csv"
+LOG = ROOT / "results" / "review" / "06_merged_hls_duplicates.csv"
 MOVED_DIR = ROOT / "data" / "removed_pdfs" / "hls_internal_duplicates"
 CACHE_DIR = ROOT / "data" / "extracted_text"
 
