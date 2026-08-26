@@ -160,22 +160,58 @@ def label_counts(conn: sqlite3.Connection) -> dict:
     return {k: (row[k] or 0) for k in row.keys()}
 
 
+def _split_rank(paper_id: str, seed: str) -> float:
+    """A paper's position in the shuffle: a uniform fraction in [0, 1).
+
+    Hashed from `seed + paper_id` alone, so it depends on nothing but the
+    paper's identity -- not row order, not insertion time, not how many labels
+    existed when it ran.
+    """
+    import hashlib
+
+    digest = hashlib.sha256(f"{seed}:{paper_id}".encode()).hexdigest()
+    return int(digest[:8], 16) / 0x100000000
+
+
+def _gate_stratum(label: sqlite3.Row | dict) -> str:
+    """Which stratum a paper belongs to: did the humans keep it or exclude it?
+
+    This is the same question expected_decision() answers for the exclusion
+    task, phrased as a stratum name so the counts read plainly in the log.
+    """
+    return "excluded" if expected_decision(label, "exclusion") == "yes" else "survivor"
+
+
 def assign_split(conn: sqlite3.Connection, holdout_frac: float = 0.3,
                  seed: str = "automated-ignore", force: bool = False) -> dict:
-    """Fix the build/holdout split, once, deterministically.
+    """Fix the build/holdout split, once, deterministically, stratified on the gate.
 
     Refuses to re-run once any paper has a split, because the holdout is only
     worth reporting if it was chosen before anyone saw how the promptbooks perform
     on it. Reshuffling after a disappointing holdout number is the single
     easiest way to publish an inflated one, so it takes an explicit force.
 
-    Assignment hashes `seed + paper_id`, so it depends on nothing but the
-    paper's identity -- not row order, not insertion time, not the label count
-    at the time it ran. Adding more label files later and re-running leaves
-    every existing assignment exactly where it was.
-    """
-    import hashlib
+    **Stratified on gate-survivor status.** Papers the humans excluded carry no
+    power/stats label, so an unstratified 30% draw over all labels leaves
+    whatever number of survivors the hash happens to deal into the holdout --
+    and survivors are the only papers power_analysis and data_analysis can be
+    scored on. Drawing 30% from each stratum separately makes that count a
+    guarantee (~53 of 176) instead of a coin flip, and costs nothing: the
+    exclusion task is scored over both strata either way.
 
+    Within a stratum, papers are ranked by `_split_rank()` and the lowest
+    `holdout_frac` of them are held out. Ranking rather than thresholding is
+    what makes the per-stratum count exact.
+
+    **The trade-off ranking buys:** a paper's assignment now depends on which
+    other papers are in its stratum, so this is no longer stable under adding
+    labels later -- loading a new label file and re-running would reshuffle.
+    That is guarded twice over: the function refuses to re-run at all, and
+    `scripts/04_load_ground_truth.py --assign-split` refuses to call it while
+    any active HLS paper still lacks a label.
+
+    Returns the two split counts plus a per-stratum breakdown under "strata".
+    """
     existing = conn.execute(
         "SELECT COUNT(*) FROM validation_labels WHERE split IS NOT NULL").fetchone()[0]
     if existing and not force:
@@ -183,16 +219,24 @@ def assign_split(conn: sqlite3.Connection, holdout_frac: float = 0.3,
             f"{existing} paper(s) already have a split. The holdout is fixed once, "
             "on purpose -- pass force=True only if you are deliberately rebuilding it.")
 
-    paper_ids = [r[0] for r in conn.execute(
-        "SELECT paper_id FROM validation_labels ORDER BY paper_id")]
+    strata: dict[str, list[str]] = {"survivor": [], "excluded": []}
+    for row in conn.execute("SELECT * FROM validation_labels ORDER BY paper_id"):
+        strata[_gate_stratum(row)].append(row["paper_id"])
 
     assignments = []
-    for paper_id in paper_ids:
-        digest = hashlib.sha256(f"{seed}:{paper_id}".encode()).hexdigest()
-        # Top 8 hex digits as a uniform fraction in [0, 1).
-        fraction = int(digest[:8], 16) / 0x100000000
-        assignments.append(
-            (SPLIT_HOLDOUT if fraction < holdout_frac else SPLIT_BUILD, paper_id))
+    breakdown = {}
+    for stratum, paper_ids in strata.items():
+        # Sort by rank, then paper_id: paper_id breaks a hash tie the same way
+        # on every machine, so the boundary paper is never decided by row order.
+        ranked = sorted(paper_ids, key=lambda p: (_split_rank(p, seed), p))
+        n_holdout = round(holdout_frac * len(ranked))
+        for position, paper_id in enumerate(ranked):
+            assignments.append(
+                (SPLIT_HOLDOUT if position < n_holdout else SPLIT_BUILD, paper_id))
+        breakdown[stratum] = {
+            SPLIT_BUILD: len(ranked) - n_holdout,
+            SPLIT_HOLDOUT: n_holdout,
+        }
 
     conn.executemany("UPDATE validation_labels SET split = ? WHERE paper_id = ?", assignments)
     conn.commit()
@@ -200,6 +244,7 @@ def assign_split(conn: sqlite3.Connection, holdout_frac: float = 0.3,
     counts = {SPLIT_BUILD: 0, SPLIT_HOLDOUT: 0}
     for split, _ in assignments:
         counts[split] += 1
+    counts["strata"] = breakdown
     return counts
 
 

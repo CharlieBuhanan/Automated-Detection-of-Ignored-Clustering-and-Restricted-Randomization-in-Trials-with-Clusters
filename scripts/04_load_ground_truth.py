@@ -299,6 +299,9 @@ def main():
                 f"{', ...' if len(missing) > 10 else ''}")
         counts = db.assign_split(conn, holdout_frac=args.holdout_frac, force=args.force_split)
         print(f"split fixed: {counts[db.SPLIT_BUILD]} build / {counts[db.SPLIT_HOLDOUT]} holdout")
+        for stratum, split_counts in counts["strata"].items():
+            print(f"  {stratum:10} {split_counts[db.SPLIT_BUILD]:4} build / "
+                  f"{split_counts[db.SPLIT_HOLDOUT]:4} holdout")
     else:
         print("split not assigned. Run --assign-split once every label is loaded.")
 
