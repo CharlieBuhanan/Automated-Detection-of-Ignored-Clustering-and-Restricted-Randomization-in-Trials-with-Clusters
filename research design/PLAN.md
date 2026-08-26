@@ -595,16 +595,25 @@ saying what was attempted.
 
 ## Erratum pass
 
-**Correction notices get their own small request after the main run, not a place in it.** Four exist,
-all already `DROPPED`: `A3H3NDHF`, `NBBD4EVE`, `AT7F9XWR` (Unlabelled Set) and `JBUFJCLU` (Human
-Labelled Set — the one exception to "errata are US-only"). Their parents are `J9F7U6CX`, *unknown*,
-`MPSTWIIE` and `IT2B87LL`, all still active.
+**The erratum pass is Unlabelled-Set-only.** Four correction notices exist, all `DROPPED`:
 
-Run them as a separate pass over the notice **plus its parent's full text**, so the question "does
-this correction change the power or data analysis being scored?" is asked with both documents in
-context. Three or four papers does not justify a batch job, and folding them into the main 1287 would
-ask the model to judge a correction notice as if it were a trial. Blocked on O4 (whether correction
-notices belong in the corpus at all); `NBBD4EVE`'s parent must be found first (O6).
+| notice | set | parent | parent status |
+|---|---|---|---|
+| `A3H3NDHF` | US | `J9F7U6CX` | active |
+| `AT7F9XWR` | US | `MPSTWIIE` | active |
+| `NBBD4EVE` | US | *unknown* | **not found — see O6** |
+| `JBUFJCLU` | HLS | `IT2B87LL` | **dropped, out of the study** |
+
+The one Human-Labelled-Set notice no longer needs handling. Its parent `IT2B87LL` was the
+`(Patterson et al., 2022a/b)` paper, and the humans had excluded that by random coin flip — a
+`duplicate_group_random_drop`, which the promptbook forbids the model to reproduce (E17). So
+`IT2B87LL` left the scored set with the other 41 nonjudgeable exclusions, and the whole pair is out.
+Nothing in the HLS depends on a correction notice any more.
+
+Run the remaining two as a small pass over the notice **plus its parent's full text**, so the
+question "does this correction change the power or data analysis being scored?" is asked with both
+documents in context. Two papers does not justify a batch job, and folding them into the main 1287
+would ask the model to judge a correction notice as if it were a trial. `NBBD4EVE` waits on O6.
 
 ## Exclusion ledger
 

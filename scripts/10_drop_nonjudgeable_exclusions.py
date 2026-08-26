@@ -77,7 +77,13 @@ def main():
     missing_id = [r for r in candidates if not r["paper_id"]]
     for r in missing_id:
         print(f"!! no paper_id, cannot drop: entry {r['source_row']} {r['citation_raw']}")
-    candidates = [r for r in candidates if r["paper_id"]]
+    # One paper can carry several label rows (Patterson 2022a/b both resolve to
+    # IT2B87LL). Drop the paper once, not once per citation.
+    seen, deduped = set(), []
+    for r in candidates:
+        if r["paper_id"] not in seen:
+            seen.add(r["paper_id"]); deduped.append(r)
+    candidates = [r for r in deduped if r["paper_id"]]
 
     manifest = read_csv(MANIFEST)
     by_id = {r["paper_id"]: r for r in manifest}
@@ -138,10 +144,21 @@ def main():
         w = csv.DictWriter(handle, fieldnames=MANIFEST_COLUMNS, extrasaction="ignore")
         w.writeheader(); w.writerows(manifest)
 
+    # The log states the record for *every* paper dropped under this reason, not
+    # just the ones this run touched -- a re-run skips papers already DROPPED, so
+    # a per-run overwrite would silently erase every earlier drop from the ledger.
     LOG.parent.mkdir(parents=True, exist_ok=True)
+    merged = {r["paper_id"]: r for r in (read_csv(LOG) if LOG.exists() else [])}
+    merged.update({r["paper_id"]: r for r in log_rows})
+    dropped_now = {r["paper_id"] for r in manifest
+                   if r.get("verdict_reason") == VERDICT_REASON}
+    merged = {k: v for k, v in merged.items() if k in dropped_now}
+    if missing_from_log := dropped_now - set(merged):
+        print(f"!! {len(missing_from_log)} paper(s) marked {VERDICT_REASON} in the manifest "
+              f"have no log row: {sorted(missing_from_log)[:5]}")
     with LOG.open("w", newline="", encoding="utf-8") as handle:
         w = csv.DictWriter(handle, fieldnames=LOG_COLUMNS, extrasaction="ignore")
-        w.writeheader(); w.writerows(log_rows)
+        w.writeheader(); w.writerows(merged.values())
 
     print(f"\n{'='*74}\nDONE\n{'='*74}")
     print(f"  {len(plan)} paper(s) marked verdict=DROPPED, verdict_reason={VERDICT_REASON}")

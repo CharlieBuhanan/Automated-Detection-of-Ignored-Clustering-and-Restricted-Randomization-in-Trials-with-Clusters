@@ -464,10 +464,35 @@ def load_duplicate_remap() -> dict:
     return dict(zip(frame["removed_paper_id"], frame["kept_paper_id"]))
 
 
+# Papers dropped for not being a study at all. Only these leave the match pool:
+# a paper dropped *because of its label* (NHLBI_UNREVIEWED, NONJUDGEABLE_EXCLUSION)
+# must still join, or the drop and the join become circular -- the label that
+# caused the drop could never be matched to the paper again.
+NOT_A_STUDY = {"MANUAL_DROPPED"}
+
+
+def dropped_paper_ids() -> set:
+    """paper_ids retired from the corpus for not being studies.
+
+    The join searches zotero_meta.jsonl, which is never pruned when a paper is
+    dropped -- so without this a retired record stays a live match candidate.
+    That is what made `(Patterson et al., 2022a/b)` unresolvable: the article
+    and its own `Correction to:` notice both answered to the same author-year,
+    so the join could not choose and sent both to a human. The notice is
+    DROPPED; skipping it leaves exactly one candidate and the pair resolves.
+    """
+    with open(MANIFEST, encoding="utf-8") as handle:
+        return {r["paper_id"] for r in csv.DictReader(handle)
+                if r["verdict"] == "DROPPED" and r["verdict_reason"] in NOT_A_STUDY}
+
+
 def candidate_pool(meta: dict, institute: str) -> dict:
     folder = SOURCE_FOLDERS[institute]
+    dropped = dropped_paper_ids()
     return {pid: rec for pid, rec in meta.items()
-            if rec.get("set") == SET_HUMAN_LABELLED and folder in rec.get("folders", [])}
+            if rec.get("set") == SET_HUMAN_LABELLED
+            and folder in rec.get("folders", [])
+            and pid not in dropped}
 
 
 def join_nhlbi(row: dict, pool: dict) -> tuple[str, str, str]:
@@ -541,10 +566,19 @@ def join_nci(row: dict, pool: dict, index: dict) -> tuple[str, str, str]:
     if not parts:
         return "", "", ""
     first, extras, year, suffix = surname(parts[0]), [surname(p) for p in parts[1:]], match.group(3), match.group(4)
-    if suffix:  # "2022a" means the labeller could not tell two papers apart
+    hits = index.get((first, year), [])
+
+    if suffix:
+        # "2022a" means the labeller hit two references sharing author and year
+        # and could not separate them either -- so the suffix carries no
+        # information about which is which. Accept it only when the pool has
+        # exactly one candidate left, which is no longer a choice at all.
+        # (Patterson 2022a/b: the rival was that same article's `Correction to:`
+        # notice, now DROPPED and out of the pool.) More than one, still a human's.
+        if len(hits) == 1:
+            return hits[0], "author_year_suffix_sole_candidate", "100"
         return "", "", ""
 
-    hits = index.get((first, year), [])
     if len(hits) == 1:
         return hits[0], "author_year", "100"
     for pid in hits:
