@@ -29,17 +29,6 @@ of the conflict (reading the actual paper is only needed to decide it).
 
 Corpus prep is **done**: 1814 active papers (1284 US + 530 HLS), all extracted and cached.
 
-- [ ] **Request `Ignore03_NHLBI.bib` from the NHLBI team.** The extraction table cites it, but the
-      bundle shipped `references.bib` instead — the manuscript's own bibliography, which contains none
-      of the 159 cite keys. The right file carries DOIs and would make the NHLBI join exact instead of
-      fuzzy. Not blocking (all 337 NHLBI rows already resolve), but it would remove the fuzzy step.
-- [ ] **Get the definition of NCI's `Review Category` A/B/C/D.** `A` is provably "data analysis
-      correct" (all 31 `A` rows have `Stats = YES`, no other category does), and B/C/D are three
-      flavors of incorrect — but they are *not* the SAS `ignored_data_c` strata, which split the same
-      65 papers 14/26/25 rather than 19/33/13. Until the letters are defined,
-      `db.expected_decision()` cannot map them: it currently returns the raw letter as the expected
-      answer for a task the model would answer yes/no. With `inclusion` dropped this no longer blocks
-      anything; it is now only a question of whether A/B/C/D adds a usable cross-check on data_analysis.
 - [ ] **Decide the HLS/build batching scheme.** Earlier drafts assumed round numbers
       (350 / 150) that predate counting what is actually on disk. Settle, in this order: how the 523
       labeled papers divide into build and holdout; whether the split is stratified on gate-survivor
@@ -99,7 +88,7 @@ human-labeled Human Labelled Set (HLS).
 
 **The corpus is 1287 papers.** 2115 counted *collection placements*, not papers — 483 papers are filed
 under two or more NIH institutes. Full reconciliation (2115 raw → 2113 paper-placements → 1494 unique)
-is in `results/unvalidated_set_summary.tex`. Also excluded: `sample NCI-new` (104 papers, disjoint from
+is in `results/01_corpus_build/unvalidated_set_summary.tex`. Also excluded: `sample NCI-new` (104 papers, disjoint from
 every other collection) and one non-article item (a `videoRecording`). The last 207 came off in the
 cross-set duplicate check — papers already sitting in the Human Labelled Set with a human label
 (1494 → 1287).
@@ -191,6 +180,10 @@ All four tasks return the same object via forced `tool_choice`, validated by pyd
 | exclusion | exclude this paper | keep it |
 | power_analysis | power analysis is correct | incorrect |
 | data_analysis | data analysis is correct | incorrect |
+
+**`reasoning` is capped at 60 words.** Long enough to name the deciding evidence, short enough that
+a human can scan 1287 of them. The cap is stated in every promptbook's prompt block; anything longer
+is the model narrating rather than deciding, and it costs output tokens on every paper.
 
 **A paper that reports no power analysis at all is `no` (incorrect)** — absent and wrong collapse into
 one label. Say this explicitly in `promptbooks/power_analysis.md`; it is the most likely place for the model
@@ -294,7 +287,7 @@ scored as misses.
 
    **Measured on the corpus (2026-08-10): 2041 VERIFIED (98.9%), 3 WEAK, 18 MISMATCH, 1 unreadable.**
    Of the VERIFIED, 1989 passed on DOI and 52 on title+author (accepted manuscripts carry no DOI).
-   Full per-signal detail in `results/identity_report.csv`; verdicts also land in the manifest's
+   Full per-signal detail in `results/01_corpus_build/identity_report.csv`; verdicts also land in the manifest's
    `verdict` / `verdict_reason` / `title_score` columns.
 
    **A title match is not proof on its own — check `title_pos`.** Title similarity searches all of
@@ -356,7 +349,7 @@ scored as misses.
    failures, zero pages without a text layer. 100,245,032 characters (~25M tokens), median 51,713 per
    paper. Only two fall under 3,000 characters and both are genuinely short documents rather than broken
    extractions — `NBBD4EVE` is a Corrigendum, `A3H3NDHF` an Erratum. Per-paper detail in
-   `results/extraction_report.csv`.
+   `results/01_corpus_build/extraction_report.csv`.
 
    **OCR is dead code here, and that is worth knowing.** Not one PDF in the corpus needs it; Tesseract is
    not installed on the build machine. The rung stays for future fetches, but it now records *why* it
@@ -490,7 +483,7 @@ scored as misses.
    or a reused `--session-id` is passed. Don't.
 
 7. **Regression** — `src/evaluate.py` re-runs the current promptbook against the whole build split, computes
-   accuracy/precision/recall, appends to `results/promptbook_accuracy_history.csv` with the commit hash.
+   accuracy/precision/recall, appends to `results/04_classification/promptbook_accuracy_history.csv` with the commit hash.
 
    **Plateau = two consecutive rounds each improving accuracy by less than 1 percentage point.** Then
    stop and move to step 7.
@@ -575,6 +568,44 @@ then `data_analysis`.
 - [ ] Analysis run (job 2) on survivors
 - [ ] Holdout run — report this number
 
+## Batch run log
+
+**Every batch run writes a header row to `results/04_classification/run_log.csv` before it starts, and closes it when
+it finishes.** A run nobody can date, price, or attribute to a model is not reproducible, and this is
+the cheapest possible insurance against having to re-run 1287 papers to answer a reviewer.
+
+```
+run_id, task, started_at, finished_at, duration_s,
+processing_type,        # api_batch | api_sync | cli
+model,                  # claude-sonnet-5, claude-opus-5, ...
+promptbook_version,     # git commit of the promptbook in force
+n_papers, n_ok, n_undecidable, n_parse_retries, n_failed,
+input_tokens, output_tokens, cost_usd,
+split,                  # build | holdout | none (full corpus)
+git_commit,             # of the repo, not just the promptbook
+notes
+```
+
+`cost_usd` is null on a CLI run (subscription quota, not billed per call) — record
+`processing_type` so a null reads as "not applicable" rather than "we forgot".
+`n_parse_retries` is DC24's number and belongs here, not in a side file.
+
+`started_at` is written **before** the first call, so an interrupted run still leaves a dated row
+saying what was attempted.
+
+## Erratum pass
+
+**Correction notices get their own small request after the main run, not a place in it.** Four exist,
+all already `DROPPED`: `A3H3NDHF`, `NBBD4EVE`, `AT7F9XWR` (Unlabelled Set) and `JBUFJCLU` (Human
+Labelled Set — the one exception to "errata are US-only"). Their parents are `J9F7U6CX`, *unknown*,
+`MPSTWIIE` and `IT2B87LL`, all still active.
+
+Run them as a separate pass over the notice **plus its parent's full text**, so the question "does
+this correction change the power or data analysis being scored?" is asked with both documents in
+context. Three or four papers does not justify a batch job, and folding them into the main 1287 would
+ask the model to judge a correction notice as if it were a trial. Blocked on O4 (whether correction
+notices belong in the corpus at all); `NBBD4EVE`'s parent must be found first (O6).
+
 ## Exclusion ledger
 
 **Every paper that leaves the corpus must be recoverable with its reason.** The methods section has to
@@ -583,7 +614,7 @@ evidence is scattered across five files that share no schema:
 
 | Stage | Where it lives now | Papers |
 |---|---|---|
-| Collection placements → unique papers | `results/unvalidated_set_summary.tex` | 2115 → 1494 |
+| Collection placements → unique papers | `results/01_corpus_build/unvalidated_set_summary.tex` | 2115 → 1494 |
 | Cross-set duplicates (kept in the HLS) | `results/review/02_removed_testing_duplicates.csv` | 207 |
 | Wrong document / unreadable, dropped by hand | manifest `verdict=DROPPED` + `04_papers_reviewed_results.csv` | 2 so far |
 | Correction notices | same route, `CORRECTION_NOTICE` in the review queue | 4 found |
@@ -591,7 +622,7 @@ evidence is scattered across five files that share no schema:
 | Unjoinable labels | `results/review/05_label_match_review.csv` | 2 |
 | Gate exclusions (model) | SQLite `judgments`, once the gate runs | unknown |
 
-**Consolidate these into `results/exclusions.csv`**, one row per departed paper:
+**Consolidate these into `results/01_corpus_build/exclusions.csv`**, one row per departed paper:
 `paper_id, set, stage, reason, evidence, decided_by (rule/human/model), decided_at, source_record`.
 Built by a script that reads the files above rather than maintained by hand — a ledger someone has to
 remember to update is a ledger that is wrong by the time it matters.
@@ -651,7 +682,7 @@ different source and share this file, so a study re-fetch must not delete them.
 
 `verdict` / `verdict_reason` / `title_score` are filled by step 1
 (`scripts/01_verify_identity.py`); the full per-signal detail behind them lives in
-`results/identity_report.csv`. `set` is `unlabelled` (the study papers to classify) or `human_labelled` (the
+`results/01_corpus_build/identity_report.csv`. `set` is `unlabelled` (the study papers to classify) or `human_labelled` (the
 human-labeled papers), set by the fetch's `--set` flag.
 
 ## Zotero metadata

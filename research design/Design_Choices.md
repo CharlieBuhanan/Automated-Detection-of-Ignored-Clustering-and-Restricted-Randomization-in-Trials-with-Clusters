@@ -19,6 +19,8 @@ Nothing below is blocked on code. Each needs a human answer before the phase it 
 | **O6** | **Find `NBBD4EVE`'s parent paper**, or record why it is absent. | Ledger completeness |
 | **O7** | **Promptbook edits on a miss: hand-written or Opus-proposed?** Model-assisted is faster but every rule needs a spot-check. | Promptbook loop mechanics |
 | **O8** | **Extracted-text integrity scan?** 100M characters have only ever been checked for length — mojibake, multi-article PDFs and truncation are unmeasured. | Confidence in the inputs |
+| **O10** | **Revise the promptbooks for both API and CLI.** One prompt block currently serves both. The API path forces `tool_choice` (the answer-format table becomes a tool schema); the CLI path must ask for JSON in prose and re-prompt on failure. They need separate wording, and the ISO-ScreenPrompt repeat-after-article step needs building into whichever wrapper sends them. | Promptbook loop |
+| **O11** | **Deb to review `promptbooks/exclusion.md` v0** — in particular E13 (pilot/feasibility), which Ignore02 is silent on and which is ON by decision, not by reproduction. | v1 promptbook |
 | **O9** | **Three leftovers from the US/HLS rename** (all cosmetic, all safe to defer): the `assign_split()` seed is still the string `"cluster-paper-review"`; `"Both Validation Institutes"` is still a live value in 15 manifest rows; `zotero_fetch_draft.md` still describes a superseded scheme. | Nothing |
 
 ---
@@ -111,10 +113,35 @@ Nothing below is blocked on code. Each needs a human answer before the phase it 
   overwrites. `UNIQUE(paper_id, task, judgment_index)` makes a double-write impossible, so an
   interrupted batch can be replayed safely.
 - **DC20 — No paper leaves silently.** Every departure is recoverable with its reason and who decided
-  it, in `results/exclusions.csv`. `DROPPED` is a verdict, not a deletion. `decided_by` distinguishes
+  it, in `results/01_corpus_build/exclusions.csv`. `DROPPED` is a verdict, not a deletion. `decided_by` distinguishes
   rule / human / model — they carry very different weight in a methods section.
 - **DC21 — Nothing is ever guessed on a label join.** An unresolvable citation goes to a human and stays
   out of the database; a wrong label silently corrupts every accuracy number computed afterwards.
+- **DC25 — Promptbooks are markdown, deliberately.** One file is read by two audiences: a human
+  editing a rule and a model being handed it as a prompt. Markdown is the only format both parse
+  well — headings and numbered lists give the model the structured input it follows best (Cao et al.
+  2024 label sub-criteria numerically for exactly this reason), while staying diffable in git so a
+  rule change shows up as a reviewable line. JSON or YAML would be machine-clean and miserable to
+  edit; prose would be readable and unstructured.
+- **DC26 — Each promptbook opens with its own prompt block**, structured after ISO-ScreenPrompt
+  (Cao et al. 2024): objective → numbered criteria → article → **instructions repeated after the
+  article**. The repeat is the point of the method: instructions placed only before a full text get
+  lost in long context. Includes a zero-shot chain-of-thought instruction ("think it through step by
+  step") and the answer format.
+- **DC27 — `reasoning` is capped at 60 words.** Enough to name the deciding evidence, short enough
+  to scan across 1287 papers. Beyond that the model is narrating, not deciding, and it costs output
+  tokens on every paper.
+- **DC28 — Cross-paper reasons are never exclusion criteria.** A paper is judged on its own text.
+  "Its outcomes paper exists elsewhere" (protocol) and "we kept a different paper by the same group"
+  (random drop) are facts about the corpus, not the paper, and the model cannot see the corpus.
+  Duplicate authors and superseded papers are cleaned up post-hoc. The 41 labelled rows carrying
+  those two reasons left the scored set (`scripts/10_drop_nonjudgeable_exclusions.py`) rather than
+  counting as misses. E5 secondary-analysis was rewritten the same way: self-declared only.
+- **DC29 — Every batch run writes a dated row to `results/04_classification/run_log.csv`** — model, processing type
+  (API or CLI), promptbook version, git commit, token counts, cost, duration, retry count. Written
+  before the first call, so an interrupted run still leaves a record of what was attempted. See
+  PLAN.md's Batch run log.
+
 - **DC22 — Message Batches API for the full run; `claude -p` CLI for the promptbook loop.** The full
   run is batch classification, not agentic tool use — Batches API, not sync calls, no MCP. The
   promptbook-refinement rounds run through the CLI instead, on subscription quota, **including their

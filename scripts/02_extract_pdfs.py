@@ -41,7 +41,7 @@ WHAT IT DOES
 
 OUTPUTS
     data/extracted_text/<paper_id>.json   full text + method/page/char counts
-    results/extraction_report.csv         one row per paper, for diagnosis
+    results/01_corpus_build/extraction_report.csv  one row per paper, for diagnosis
     results/review/01_papers_to_review.csv  thin extractions, appended
     Terminal                              method counts, then anything thin
 
@@ -67,7 +67,7 @@ from zotero_fetch import SET_HUMAN_LABELLED, SET_UNLABELLED, set_dir
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
 CACHE_DIR = ROOT / "data" / "extracted_text"
-REPORT = ROOT / "results" / "extraction_report.csv"
+REPORT = ROOT / "results" / "01_corpus_build" / "extraction_report.csv"
 REVIEW_LIST = ROOT / "results" / "review" / "01_papers_to_review.csv"
 
 # Verdicts that enter the corpus. WEAK is included on purpose: research design/PLAN.md step 1

@@ -5,6 +5,37 @@ Criteria only. Source: Glueck & Muller (`Ignore02.pdf`), Methods p.3-4.
 `yes` = correct, `no` = incorrect. Only gate survivors get a row. Cite the deciding number in
 `promptbook_evidence`.
 
+## Prompt
+
+> Everything in this block is sent to the model verbatim, before the paper text.
+> Structure follows ISO-ScreenPrompt (Cao et al. 2024): objective → numbered criteria →
+> article → instructions repeated *after* the article. The repeat is not optional — Cao
+> found instructions placed only before a full text get lost in long context.
+
+**Objective.** You are reviewing a cluster-randomised trial that has already passed screening. You decide whether its power analysis correctly accounted for clustering, and for restricted randomisation if present.
+
+**Task.** Read the paper below and return one decision for **power analysis** only. Judge nothing else.
+Judge only the manuscript in hand: you cannot see any other paper, and no other paper's existence
+is ever a reason for your answer.
+
+**Criteria.** Test the numbered criteria below in order. The first one that matches decides.
+
+**Think it through step by step** before answering: work through the criteria in order, say what
+the paper shows for each, then commit.
+
+**Answer format.** Return exactly these four fields:
+
+| field | value |
+|---|---|
+| `decision` | `yes` = the power analysis is correct · `no` = it is incorrect or absent · `undecidable` = text missing, truncated, or unreadable |
+| `reasoning` | why, in your own words. **60 words maximum.** |
+| `promptbook_evidence` | the criterion number that decided it, e.g. `P3` |
+| `confidence` | 0.0-1.0 |
+
+`undecidable` is an abstention for genuinely unreadable text, **not** for a hard call. A difficult
+paper still gets a `yes` or a `no`.
+
+---
 ## Scope
 
 1. **P1. Primary outcomes only** — the sample-size justification for the treatment effect on the

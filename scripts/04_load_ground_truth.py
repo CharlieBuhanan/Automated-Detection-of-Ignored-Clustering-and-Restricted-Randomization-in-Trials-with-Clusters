@@ -163,7 +163,11 @@ def build(rows: list[dict], active: set) -> tuple[list[dict], list[dict], int, i
     backlog.
     """
     unjoined = [r for r in rows if not r["paper_id"] and r["labeled"] == "1"]
-    joined = [r for r in rows if r["paper_id"] and r["labeled"] == "1"]
+    # A paper the manifest marks DROPPED is out of the corpus, so its label is
+    # out of the scored set too -- otherwise a paper we deliberately removed
+    # still sits in the accuracy denominator waiting to be counted as a miss.
+    joined = [r for r in rows
+              if r["paper_id"] and r["labeled"] == "1" and r["paper_id"] in active]
     unreviewed = [r for r in rows if r["labeled"] == "0"]
     pending = sum(1 for r in unreviewed if not r["paper_id"] or r["paper_id"] in active)
     dropped = len(unreviewed) - pending

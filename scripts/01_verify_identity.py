@@ -21,7 +21,7 @@ WHAT IT DOES
 
 OUTPUTS
     data/zotero_manifest.csv    verdict, verdict_reason, title_score per paper
-    results/identity_report.csv every signal per paper, for diagnosis
+    results/01_corpus_build/identity_report.csv  every signal per paper, for diagnosis
     Terminal                    verdict counts, then anything needing a human
 
 Nothing is deleted and no paper is dropped here. MISMATCH papers stay in the
@@ -57,7 +57,7 @@ from zotero_fetch import (
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
 META = ROOT / "data" / "zotero_meta.jsonl"
-REPORT = ROOT / "results" / "identity_report.csv"
+REPORT = ROOT / "results" / "01_corpus_build" / "identity_report.csv"
 
 REPORT_COLUMNS = [
     "paper_id", "set", "folder", "verdict", "verdict_reason", "explanation",

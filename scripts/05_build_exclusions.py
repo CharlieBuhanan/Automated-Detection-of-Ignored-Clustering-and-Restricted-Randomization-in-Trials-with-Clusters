@@ -19,7 +19,7 @@ WHY THIS EXISTS
     a methods section, and conflating them is a fair criticism to invite.
 
 OUTPUTS
-    results/exclusions.csv   one row per excluded paper
+    results/01_corpus_build/exclusions.csv   one row per excluded paper
     Terminal                 reconciliation from fetched down to active
 """
 
@@ -37,7 +37,7 @@ from zotero_fetch import SET_HUMAN_LABELLED, SET_UNLABELLED
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
 REVIEW_DIR = ROOT / "results" / "review"
-LEDGER = ROOT / "results" / "exclusions.csv"
+LEDGER = ROOT / "results" / "01_corpus_build" / "exclusions.csv"
 
 COLUMNS = [
     "paper_id", "set", "stage", "removed_from", "reason", "evidence",
@@ -215,6 +215,36 @@ def nhlbi_unreviewed_drops(titles: dict) -> list[dict]:
     return rows
 
 
+def nonjudgeable_exclusion_drops(titles: dict) -> list[dict]:
+    """HLS papers whose exclusion reason the promptbook forbids the model to use.
+
+    protocol_paper and duplicate_group_random_drop are cross-paper judgments, so
+    a model judging each paper alone can never reproduce them. Scoring against
+    them would charge the model for obeying its own rules; they leave the scored
+    set instead. See scripts/10_drop_nonjudgeable_exclusions.py.
+    """
+    log = REVIEW_DIR / "10_nonjudgeable_exclusions_dropped.csv"
+    if not log.exists():
+        return []
+    rows = []
+    for row in read_csv(log):
+        paper_id = row["paper_id"]
+        rows.append({
+            "paper_id": paper_id,
+            "set": SET_HUMAN_LABELLED,
+            "stage": "nonjudgeable_exclusion",
+            "removed_from": "corpus",
+            "reason": row["reason"],
+            "evidence": f"human exclusion_reason={row['exclusion_reason']!r} "
+                        f"({row.get('source_institute', '')})",
+            "decided_by": BY_HUMAN,
+            "decided_at": row.get("dropped_at", ""),
+            "source_record": "results/review/10_nonjudgeable_exclusions_dropped.csv",
+            "title": titles.get(paper_id, ""),
+        })
+    return rows
+
+
 def unjoinable_labels(titles: dict) -> list[dict]:
     """Human labels that could not be turned into one trustworthy answer.
 
@@ -265,6 +295,7 @@ def main():
               + merged_validation_duplicates()
               + manual_drops(manifest)
               + nhlbi_unreviewed_drops(titles)
+              + nonjudgeable_exclusion_drops(titles)
               + unjoinable_labels(titles))
 
     # Two different kinds of removal, and conflating them makes the arithmetic
@@ -303,7 +334,7 @@ def main():
     # assume the ledger is the whole story.
     print("\n  NOTE: the 2115 collection placements -> 1494 unique papers reduction predates")
     print("        the manifest and is not enumerable per-paper here. It is documented in")
-    print("        results/unvalidated_set_summary.tex and must be cited separately.")
+    print("        results/01_corpus_build/unvalidated_set_summary.tex and must be cited separately.")
 
     pending = read_csv(REVIEW_DIR / "03_validation_internal_duplicates.csv")
     if pending:
