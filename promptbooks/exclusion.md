@@ -71,9 +71,8 @@ The seven reasons Ignore02's reviewers recorded.
 
 ## NHLBI additions
 
-12. **E13. Pilot or feasibility study** — exclude. Ignore02 is **silent** on pilots: they are not
-    among its eight PRISMA exclusion reasons, so this is an NHLBI addition kept deliberately, not a
-    reproduction. Pending Deb's review of v0.
+12. **E13. Pilot or feasibility study** — exclude. Ignore02 is **silent** on pilots (not among its
+    eight PRISMA reasons); this is an NHLBI addition. **Confirmed by Deb.**
 13. **E14. Cohort study** — E9/E10 renamed.
 14. **E15. Review article** — E8 renamed.
 15. **E16. Comment, letter, or editorial.**
@@ -103,8 +102,6 @@ The 41 labelled rows carrying these two reasons were removed from the scored set
 
 - **E3** cuts both ways: NHLBI excluded 9 stepped-wedge papers but kept and fully scored 5 others.
   On costs 5 unrecoverable false exclusions to gain 9 correct ones.
-- **E13** is now the only active NHLBI-only criterion. Ignore02 is silent on pilots, and pilots
-  select for papers unlikely to report good power — so this inflates the incorrect-power rate
-  relative to Ignore02. On by decision, pending Deb's review of v0.
 - **E12** was retired to *Not a criterion* above: excluding a protocol paper requires knowing its
-  outcomes paper exists, which the model cannot see.
+  outcomes paper exists, which the model cannot see. **Confirmed by Deb**: the outcomes paper is
+  instead marked incorrect if it cites the protocol for its power or data analysis — see P2/D3.

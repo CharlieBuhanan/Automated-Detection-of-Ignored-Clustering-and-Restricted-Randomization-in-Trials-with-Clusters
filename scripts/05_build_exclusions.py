@@ -266,7 +266,10 @@ def unjoinable_labels(titles: dict) -> list[dict]:
             "set": SET_HUMAN_LABELLED,
             "stage": "institutional_disagreement" if is_disagreement else "label_unjoinable",
             "removed_from": "validation_labels",
-            "reason": row["problem"],
+            "reason": row["problem"] + (
+                " -- held out of the scored set pending adjudication by the study lead; "
+                "neither institute is preferred and the two are never averaged. May be "
+                "restored once decided." if is_disagreement else ""),
             "evidence": (f"NCI: {row.get('nci_answer', '')}; NHLBI: {row.get('nhlbi_answer', '')}"
                         if is_disagreement else
                         f"citation {row['citation_raw']!r}"

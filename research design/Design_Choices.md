@@ -7,21 +7,14 @@ this is the index. Standing rules are in [CLAUDE.md](../.claude/CLAUDE.md).
 
 ## Open — still need a decision
 
-Nothing below is blocked on code. Each needs a human answer before the phase it gates can run.
+Everything else has been settled; the decisions are recorded as DC1-DC40 below.
 
 | | Question | Blocks |
 |---|---|---|
-| **O1** | **Exclusion criteria breakdown.** What actually makes a paper excludable, rule by rule. `promptbooks/exclusion.md` is a v0 stub. | The whole promptbook loop |
-| **O2** | **Is NCI's `Review Category` A/B/C/D worth defining at all?** `A` is provably "data analysis correct"; B/C/D are three flavours of incorrect, but which is which is unknown. It covers only 95 of the 176 kept papers and no NHLBI paper. Now that `inclusion` is dropped (DC9) it blocks nothing — the only question is whether it adds a usable cross-check on data_analysis. | Nothing — optional |
-| **O3** | **Build/holdout batching.** Three sub-questions: how the 523 labelled papers split; whether to stratify on gate-survivor status (a flat 30% holdout leaves only ~29 survivors to score power/data on); and the per-round sample size. | `--assign-split`, which runs **once** |
-| **O4** | **Do correction notices belong in the corpus?** An erratum that fixes a sample size or a p-value makes the *uncorrected* paper wrong on exactly what this study scores. Now **2 parents affected, both Unlabelled Set** — the Patterson pair resolved and left the study (see PLAN.md's Erratum pass), so no labelled paper depends on this any more. Lower stakes than it was. | Corpus definition |
-| **O5** | **Adjudicate 6 institutional disagreements** (NCI vs NHLBI on the same paper; one is a complete flip). No automated way to pick a side — the paper has to be read. See `results/review/05_label_match_review.csv`. | 7 papers held out of the labels |
-| **O6** | **Find `NBBD4EVE`'s parent paper**, or record why it is absent. | Ledger completeness |
-| **O7** | **Promptbook edits on a miss: hand-written or Opus-proposed?** Model-assisted is faster but every rule needs a spot-check. | Promptbook loop mechanics |
-| **O8** | **Extracted-text integrity scan?** 100M characters have only ever been checked for length — mojibake, multi-article PDFs and truncation are unmeasured. | Confidence in the inputs |
-| **O10** | **Revise the promptbooks for both API and CLI.** One prompt block currently serves both. The API path forces `tool_choice` (the answer-format table becomes a tool schema); the CLI path must ask for JSON in prose and re-prompt on failure. They need separate wording, and the ISO-ScreenPrompt repeat-after-article step needs building into whichever wrapper sends them. | Promptbook loop |
-| **O11** | **Deb to review `promptbooks/exclusion.md` v0** — in particular E13 (pilot/feasibility), which Ignore02 is silent on and which is ON by decision, not by reproduction. | v1 promptbook |
-| **O9** | **Three leftovers from the US/HLS rename** (all cosmetic, all safe to defer): the `assign_split()` seed is still the string `"cluster-paper-review"`; `"Both Validation Institutes"` is still a live value in 15 manifest rows; `zotero_fetch_draft.md` still describes a superseded scheme. | Nothing |
+| **O1** | **Deb's sign-off, partial.** Confirmed: E13 pilot exclusion ON (DC39); a paper citing its protocol for power/data analysis is `no`, not `undecidable` (DC40). Still open: E3 wedge OFF, E12/E17 retired as cross-paper, E5 rewritten self-declared, and adjudicating the 5 institutional disagreements. See [Deb.md](Deb.md). | v1 promptbook |
+| **O2** | **Replace or drop the 4 wrong documents** in `results/review/11_text_integrity_flagged.csv` — 1 conference-abstract form, 3 CONSORT-EHEALTH Google Forms, all in the Unlabelled Set. | 4 papers |
+| **O3** | **Inter-rater statistic for the 15 dual-reviewed pairs.** Deferred, not declined: raw agreement is 12/15 = 80%. Decide before writing the methods section whether Cohen's kappa is reported alongside it. | Methods section |
+| **O4** | **What NCI's B/C/D categories mean.** `A` is provably data-correct and is used as a cross-check (DC31); B/C/D stay undefined. Ask Deb only if a finer error taxonomy is wanted for the paper. | Nothing — optional |
 
 ---
 
@@ -141,6 +134,50 @@ Nothing below is blocked on code. Each needs a human answer before the phase it 
   (API or CLI), promptbook version, git commit, token counts, cost, duration, retry count. Written
   before the first call, so an interrupted run still leaves a record of what was attempted. See
   PLAN.md's Batch run log.
+
+- **DC30 — The build/holdout split is stratified on gate-survivor status.** 30% holdout, drawn
+  separately from survivors and non-survivors, so power_analysis and data_analysis get a
+  *guaranteed* ~53-survivor holdout rather than whatever the hash happens to produce. Without
+  stratification the survivor count in the holdout is left to chance, and it is the number the two
+  hardest tasks are scored on.
+- **DC31 — NCI's `review_category` is a cross-check, not a task.** `A` provably means "data analysis
+  correct" (all 30 A rows have `stats = yes`; no other letter does), so `A ⟺ stats == yes` is asserted
+  as a consistency check on the 95 NCI survivors that carry a letter. If it ever breaks, the label
+  join broke. B/C/D stay undefined and unused — they are not the SAS strata and cover no NHLBI paper.
+- **DC32 — Each promptbook round samples 50 papers from the build split.** Small enough to read every
+  miss, large enough for a repeated failure shape to be visible — which DC23 requires before any rule
+  is written. At 25 a single paper moves accuracy 4pp and the plateau rule fires on noise; at 100
+  nobody reads the misses carefully.
+- **DC33 — Opus proposes promptbook rules, a human approves before commit.** The miss plus the current
+  promptbook go to Opus, which drafts the rule; nothing enters the promptbook unapproved. DC23's
+  pattern requirement and the approval step are the two guards against overfitting to one paper.
+- **DC34 — Corrections are appended to the prompt, never to the cache.** At the very end of the
+  project, the 2 remaining erratum parents are re-judged with the correction notice appended after
+  the article text, behind an explicit flag telling the model it is seeing a paper *and* a correction.
+  The cached extraction is never modified, so DC6 and DC7 hold: the cache still records exactly what
+  was parsed, and the concatenation happens at prompt-assembly time.
+- **DC35 — One promptbook file per task; the wrapper adapts it per route.** The file is the single
+  source of truth. For an API run the answer-format table becomes the forced `tool_choice` schema;
+  for a CLI run it is rendered as a JSON instruction and repeated after the article text. The
+  criteria are byte-identical either way, so the two routes cannot drift.
+- **DC36 — Extracted text is scanned for bad parses before any classification spend.** Seven offline
+  checks (`scripts/11_scan_text_integrity.py`, PLAN.md step 2b). Thresholds were tuned against their
+  own false positives, which outnumbered true positives 11:1 on the first pass — the report records
+  what each rejected rule cost.
+- **DC37 — Irreducible human disagreement leaves the scored set.** Where NCI and NHLBI reviewed the
+  same paper and reached different answers, neither side is preferred and neither is averaged. The
+  papers are dropped with the reason recorded, pending Deb's adjudication; they may be restored later.
+  A label two trained reviewers split on is not ground truth.
+- **DC38 — A missing parent that would not survive the gate is recorded absent, not chased.**
+  `NBBD4EVE`'s parent ("Analysis of cluster-randomized test-negative designs: cluster-level methods")
+  is an estimator paper — E8 would exclude it even if found. The ledger records why it is absent and
+  the search stops there.
+- **DC39 — Pilot/feasibility studies are excluded (E13). Confirmed by Deb.** No longer contested.
+- **DC40 — Citing a protocol paper for power or data analysis is `no`, confirmed by Deb.** Applies to
+  both tasks (P2, D3): DC12 already made "absent or unclear" incorrect rather than `undecidable`;
+  this settles the specific case of a manuscript that names its protocol instead of describing its
+  own analysis. Consistent with dropping E12 (DC28) — the paper is still judged on its own text, it
+  just fails P2/D3 rather than being excluded outright.
 
 - **DC22 — Message Batches API for the full run; `claude -p` CLI for the promptbook loop.** The full
   run is batch classification, not agentic tool use — Batches API, not sync calls, no MCP. The

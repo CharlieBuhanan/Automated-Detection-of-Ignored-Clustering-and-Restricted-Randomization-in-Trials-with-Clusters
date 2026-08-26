@@ -52,7 +52,7 @@ CACHE_DIR = ROOT / "data" / "extracted_text"
 # reader scanning the manifest can tell at a glance that this row is not a
 # plain NCI paper -- it stands for a paper both institutes filed.
 MERGED_FOLDER = "Both NCI and NHLBI"
-MERGED_FOLDER_PATH = "Both Validation Institutes"
+MERGED_FOLDER_PATH = "Both HLS Institutes"
 
 KEEP_GROUP = "NCI"
 

@@ -161,7 +161,7 @@ def label_counts(conn: sqlite3.Connection) -> dict:
 
 
 def assign_split(conn: sqlite3.Connection, holdout_frac: float = 0.3,
-                 seed: str = "cluster-paper-review", force: bool = False) -> dict:
+                 seed: str = "automated-ignore", force: bool = False) -> dict:
     """Fix the build/holdout split, once, deterministically.
 
     Refuses to re-run once any paper has a split, because the holdout is only

@@ -41,7 +41,9 @@ paper still gets a `yes` or a `no`.
 1. **P1. Primary outcomes only** — the sample-size justification for the treatment effect on the
    primary outcome(s). Ignore secondary outcomes, subgroups, safety endpoints.
 2. **P2. This manuscript only** — its text plus its own supplement. A calculation described in a
-   protocol paper, registry record, or prior report does not count, however confidently cited.
+   protocol paper, registry record, or prior report does not count, however confidently cited: if
+   this manuscript's power justification is "see our protocol paper," that is `no`, full stop —
+   not `undecidable`. **Confirmed by Deb.**
 3. **P3. Correct requires all three:** the approach is ascertainable (P4-P6); clustering is
    accounted for at every level (P7-P9); restricted randomization, if present, is too (P10-P13).
 

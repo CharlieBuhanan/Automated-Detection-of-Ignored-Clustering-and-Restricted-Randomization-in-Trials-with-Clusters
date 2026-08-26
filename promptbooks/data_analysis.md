@@ -43,7 +43,9 @@ paper still gets a `yes` or a `no`.
 2. **D2. Conjunctive — every one must be correct.** All reported primary-outcome analyses must pass
    D5-D12, including sensitivity, per-protocol, and unadjusted re-analyses; one failure decides the
    paper. *Anchor:* `4B9BMDV7` — a correct mixed model, then t-tests at the end — is `no`.
-3. **D3. This manuscript only** — its text plus its own supplement.
+3. **D3. This manuscript only** — its text plus its own supplement. An analysis described in a
+   protocol paper, registry record, or prior report does not count, however confidently cited: if
+   this manuscript points to its protocol for the analysis, that is `no`. **Confirmed by Deb.**
 4. **D4. Absent or undescribed is `no`** — including "outcomes were compared between arms."
 
 ## Clustering

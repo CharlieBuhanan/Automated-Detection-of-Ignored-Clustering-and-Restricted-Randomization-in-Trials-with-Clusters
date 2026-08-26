@@ -382,6 +382,29 @@ scored as misses.
    20 papers with multi-arm Table 1s: all 20 keep arm labels. If power/data_analysis later turn out to
    miss table content, the move is `pymupdf4llm`, not pdfplumber grids.
 
+2b. **Scan the cached text for bad parses** — `scripts/11_scan_text_integrity.py`. Offline, no
+   re-parsing. Seven checks, in report order: **F1** mojibake, **F2** a second `Abstract` heading
+   *after* the first reference list (two articles in one PDF), **F3** no reference marker anywhere
+   (extraction stopped early), **F4** chars-per-page under 40% of the corpus median, **F5** full text
+   shorter than 3x the Zotero abstract, **F6** under 60% letters (font-encoding failure), **F7** over
+   30% duplicate lines (headers swamping the body).
+
+   **Measured 2026-08-25: 48 of 1772 flagged, 4 genuinely wrong documents.** All 4 are Unlabelled Set
+   and all passed identity on `TITLE_AUTHOR_MATCH` — a submission form carries the paper's own title
+   and first author, so title+author matching cannot catch it. `J2RUD3YQ` is a conference-abstract
+   submission; `FRIPQN6I`, `GY63DGR9`, `Y2SLUV8T` are CONSORT-EHEALTH forms printed from Google Forms.
+   Listed in `results/review/11_text_integrity_flagged.csv` for replacement or drop.
+
+   The other 44 are false positives, and the thresholds were tuned against them: counting `Abstract`
+   twice flagged 70 papers (journals print "Abstract (continued)"; reference lists cite conference
+   abstracts; "to abstract data" is a verb), and "ends without a full stop" flagged 257 (papers end on
+   a Wiley licence footer). The 12 remaining F4 papers are accepted manuscripts in double-spaced
+   repository layout — legitimately thin per page.
+
+   **This vindicates a rule step 1 rejected.** `consort-ehealth` was tested as a header phrase and
+   dropped for hitting 6 papers of which 3 were real. Those 3 false positives cost 3 true positives —
+   exactly the documents found here.
+
 3. **Review the flagged PDFs by hand** — `scripts/03_review_mismatches.py`, a small tkinter window that
    walks `results/review/01_papers_to_review.csv` one paper at a time. Each screen shows what step 1
    found, opens the PDF, the DOI, PubMed, and the Zotero record, and offers four choices: **No Issue**
@@ -556,8 +579,9 @@ then `data_analysis`.
 - [x] **The 23 unlabeled NHLBI papers are dropped, not chased.** `scripts/09_drop_unreviewed_nhlbi.py` —
       manifest verdict `DROPPED`, files moved to `data/removed_pdfs/nhlbi_unreviewed/`, logged in
       `results/review/09_nhlbi_unreviewed_dropped.csv`. Active Human Labelled Set: 553 → 530.
-- [ ] **Fix the batching scheme before `--assign-split`** — build/holdout sizes, whether to stratify on
-      gate-survivor status, and the promptbook-loop round size
+- [x] **Batching scheme settled** — 30% holdout **stratified on gate-survivor status** (~53 survivors
+      held out, guaranteed rather than left to the hash); promptbook rounds sample 50 from the build
+      split. `assign_split()` still needs the stratification implemented before it is run.
 - [x] Exclusion ledger (`scripts/05_build_exclusions.py`) — every departed paper with its reason and
       who decided; reconciles 2063 fetched → 1814 active
 - [ ] `promptbooks/exclusion.md` v0 — literally just "exclude if secondary analysis"
