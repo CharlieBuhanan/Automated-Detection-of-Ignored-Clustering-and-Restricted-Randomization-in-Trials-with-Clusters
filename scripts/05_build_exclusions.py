@@ -61,10 +61,19 @@ def read_csv(path: Path) -> list[dict]:
 
 
 def cross_set_duplicates(titles: dict) -> list[dict]:
-    """Unlabelled Set papers removed because the same paper sits in the Human Labelled Set."""
+    """Unlabelled Set papers removed because the same paper sits in the Human Labelled Set.
+
+    DC42: the removal is conditional on the HLS twin surviving. A paper restored
+    by scripts/15_restore_dc42_duplicates.py is back in the corpus and is not an
+    exclusion any more, so it is skipped here -- leaving it in would count the
+    same paper as both active and excluded, and the reconciliation would fail.
+    """
+    restored = {r["paper_id"] for r in read_csv(REVIEW_DIR / "15_dc42_restored.csv")}
     rows = []
     for row in read_csv(REVIEW_DIR / "02_removed_us_duplicates.csv"):
         paper_id = row["removed_paper_id"]
+        if paper_id in restored:
+            continue
         rows.append({
             "paper_id": paper_id,
             "set": SET_UNLABELLED,
@@ -363,10 +372,15 @@ def main():
     print("        the manifest and is not enumerable per-paper here. It is documented in")
     print("        results/01_corpus_build/unvalidated_set_summary.tex and must be cited separately.")
 
-    pending = read_csv(REVIEW_DIR / "03_hls_internal_duplicates.csv")
-    if pending:
-        print(f"\n  PENDING: {len(pending)} HLS rows ({len(pending)//2} pairs) are flagged as")
-        print("           internal duplicates and not yet decided; none are excluded yet.")
+    # Only pairs 06_merge_hls_duplicates.py has not yet folded together are
+    # pending. Counting the whole flagged file kept reporting all 15 pairs as
+    # undecided long after the merge resolved them.
+    merged = {r["removed_paper_id"] for r in read_csv(REVIEW_DIR / "06_merged_hls_duplicates.csv")}
+    pending = [r for r in read_csv(REVIEW_DIR / "03_hls_internal_duplicates.csv")
+               if r["paper_id"] not in merged]
+    if len(pending) > len(merged):
+        print(f"\n  PENDING: {len(pending) - len(merged)} HLS row(s) are flagged as")
+        print("           internal duplicates and not yet merged.")
 
     if args.check:
         print("\n--check: nothing written.")

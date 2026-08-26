@@ -489,6 +489,39 @@ def collect_items(zot: zotero.Zotero, subtree: list[dict]) -> dict:
     return records, list(skipped.values())
 
 
+def collect_items_by_key(zot: zotero.Zotero, paper_ids: list[str],
+                         folders: dict | None = None) -> tuple[dict, list]:
+    """Gather specific records by Zotero item key, skipping the collection walk.
+
+    The walk in collect_items() costs ~3 minutes and returns the whole
+    collection, which is the wrong shape when a handful of named papers need
+    restoring (DC42): it would resurrect every previously-removed row, not the
+    few whose reason for leaving has expired.
+
+    `folders` supplies the collection names for each paper, since fetching an
+    item by key gives its collection *keys* but not their names, and resolving
+    those would mean the walk this function exists to avoid. Pass
+    {paper_id: (folders, folder_paths)}; a paper with no entry gets blanks.
+
+    Returns the same (records, skipped) shape as collect_items(), so the rest
+    of the fetch pipeline is reused unchanged.
+    """
+    records = {}
+    skipped = []
+    folders = folders or {}
+
+    for paper_id in paper_ids:
+        item = zot.item(paper_id)
+        item_type = item["data"].get("itemType")
+        if item_type not in PAPER_ITEM_TYPES:
+            skipped.append((paper_id, item_type, item["data"].get("title", ""), ""))
+            continue
+        names, paths = folders.get(paper_id, ([], []))
+        records[paper_id] = {"item": item, "folders": list(names), "paths": list(paths)}
+
+    return records, skipped
+
+
 def iter_fetch_records(
     zot: zotero.Zotero,
     records: dict,

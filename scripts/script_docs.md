@@ -51,5 +51,26 @@ Read-only. The US has no labels, so every check asks about *inputs* instead.
 - U1-U2: cached text present, verdicts resolved
 - U3-U5: queue drained, no bad parse, no correction notice
 - U6-U7: no duplicate inside the US, none shared with the HLS
-- U8-U9: removals still justified (U9 fails until DC42 restore runs)
+- U8-U9: removals still justified, restores recorded (DC42)
 - U10-U12: ledger agrees, PDFs accounted for, count matches the published figure
+
+## Script 15 — logical steps
+
+DC42: US papers whose HLS twin was later dropped are no longer duplicates.
+
+- Find removed US papers whose twin lost its label
+- Skip any already back in the manifest
+- Fetch those item keys directly, no collection walk
+- Download PDFs, merge manifest + meta rows
+- Compare fresh md5 against the archived copy
+- Log what came back and why
+
+## Script 16 — logical steps
+
+Replays human decisions that `01_verify_identity.py` overwrites (DC44).
+
+- Read every drop log and the manual review log
+- Sort all decisions by timestamp, newest wins
+- Skip rows already matching the manifest
+- Write verdict + verdict_reason back
+- Idempotent; run after every identity re-run

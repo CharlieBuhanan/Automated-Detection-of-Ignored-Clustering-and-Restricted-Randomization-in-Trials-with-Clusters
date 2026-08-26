@@ -3,6 +3,7 @@ paper_id,set,flags,n_flags,chars,pages,chars_per_page,abstract_chars,title
 3D94JQV3,unlabelled,F2_MULTI_ARTICLE,1,81506,23,3544,2165,Health care providers' perspectives on delivering gender equity focused family planning pr
 3L7C4W4M,unlabelled,F3_NO_REFERENCES,1,47407,8,5926,2374,Index participant characteristics and HIV assisted partner services efficacy in Kenya: res
 3QSZDDKM,unlabelled,F3_NO_REFERENCES,1,45658,7,6523,2219,The efficacy and cost-effectiveness of a family-based economic empowerment intervention (S
+4GPSLLBZ,unlabelled,F3_NO_REFERENCES,1,53685,14,3835,2014,Cluster-Randomized Trial Comparing Ambulatory Decision Support Tools to Improve Heart Fail
 537XY6CJ,unlabelled,F4_THIN_PER_PAGE,1,48770,31,1573,1420,Competing Effects of Indirect Protection and Clustering on the Power of Cluster-Randomized
 67P4RDC7,unlabelled,F3_NO_REFERENCES,1,72128,13,5548,2373,"Spinning plates: livelihood mobility, household responsibility and anti-retroviral treatme"
 6BGC43UM,unlabelled,F4_THIN_PER_PAGE,1,61164,41,1492,2936,"Effect of an Intervention to Promote Breastfeeding on Asthma, Lung Function, and Atopic Ec"
@@ -27,6 +28,7 @@ IL7BHWT6,unlabelled,F4_THIN_PER_PAGE,1,64980,37,1756,2033,"Effect of a mindfulne
 KCV63L9X,human_labelled,F3_NO_REFERENCES,1,42170,10,4217,1983,Impact of Visit Volume on the Effectiveness of Electronic Tools to Improve Heart Failure C
 KMKSIU5U,human_labelled,F4_THIN_PER_PAGE,1,56321,35,1609,1866,School-supervised use of a once-daily inhaled corticosteroid regimen: A cluster randomized
 L7B87JQG,unlabelled,F2_MULTI_ARTICLE,1,70059,23,3046,2185,Economic outcomes among microfinance group members receiving community-based chronic disea
+LTKIP9MK,unlabelled,F3_NO_REFERENCES,1,41331,10,4133,2024,Community Health Workers Improve Linkage to Hypertension Care in Western Kenya.
 LU33978L,human_labelled,F3_NO_REFERENCES,1,54250,11,4932,1956,Improving Communication in Heart Failure Patient Care
 ME2XJGEW,human_labelled,F4_THIN_PER_PAGE,1,40681,26,1565,1720,Does prior coronary angioplasty affect outcomes of surgical coronary revascularization? In
 MQC52PL5,unlabelled,F3_NO_REFERENCES,1,63494,11,5772,2603,Effectiveness of a psychological intervention delivered by general nurses for alcohol use 
@@ -109,6 +111,7 @@ ZVIZFQCJ,human_labelled,F4_THIN_PER_PAGE,1,46534,29,1605,1890,Association of CPR
 3A9HMGYL,unlabelled,,0,70057,15,4670,2494,"Body, Soul and Spirit, an adaptation of two evidence-based interventions to promote physic"
 3B8K39D8,human_labelled,,0,63428,15,4229,2843,Effect of Clinical Decision Support at Community Health Centers on the Risk of Cardiovascu
 3BDHTNBA,unlabelled,,0,56671,25,2267,2418,Universal Sexual Violence Intervention Effects in a Cluster-Randomized Trial: Moderation b
+3BRBKRE4,unlabelled,,0,75764,26,2914,1867,"Workplace health and safety intervention for child care staff: Rationale, design, and base"
 3DBTDWCG,unlabelled,,0,74890,22,3404,4343,"Effectiveness of Group Problem Management Plus, a brief psychological intervention for adu"
 3DSAACUW,human_labelled,,0,34423,8,4303,1986,A systematic review and meta-analysis of enrollment into ARDS and sepsis trials published 
 3E6TGDWS,unlabelled,,0,60158,15,4011,3145,Effect of Clinical Decision Support on Cardiovascular Risk Among Adults With Bipolar Disor
@@ -273,6 +276,7 @@ ZVIZFQCJ,human_labelled,F4_THIN_PER_PAGE,1,46534,29,1605,1890,Association of CPR
 67AFTHV2,unlabelled,,0,33845,7,4835,2256,Effects of Including Epidemiologic Data in Lumbar Spine Imaging Reports on Prescribing Non
 69EXRVY7,unlabelled,,0,86471,16,5404,2874,"Community-Based, Cluster-Randomized Pilot Trial of a Cardiovascular Mobile Health Interven"
 69KLSK53,human_labelled,,0,50977,12,4248,1839,Communication About Fall Risk in Community Oncology Practice: The Role of Geriatric Assess
+6AUXHCLQ,unlabelled,,0,47690,10,4769,1473,Evaluating a child care-based social marketing approach for improving children's diet and 
 6BN6G6DB,unlabelled,,0,51087,11,4644,2867,Methodological challenges in pragmatic trials in Alzheimer's disease and related dementias
 6CEJB5CI,human_labelled,,0,58131,13,4472,2911,"Microeconomic Costs, Insurance, and Catastrophic Health Spending Among Patients With Acute"
 6CGYTE67,unlabelled,,0,73172,13,5629,2441,Design and rationale for evaluating the impact of salad bars on elementary school students
@@ -341,6 +345,7 @@ ZVIZFQCJ,human_labelled,F4_THIN_PER_PAGE,1,46534,29,1605,1890,Association of CPR
 7J243NU9,unlabelled,,0,34348,15,2290,1419,Time to care-seeking for TB symptoms.
 7JHMUXBM,unlabelled,,0,54067,9,6007,2885,Effect of a Ward-Based Program on Hospital-Associated Complications and Length of Stay for
 7JLBGBF2,unlabelled,,0,35451,13,2727,2211,Perceptions of Family Decision-makers of Nursing Home Residents With Advanced Dementia Reg
+7KFKZX8A,unlabelled,,0,55804,10,5580,2243,A multilevel approach for promoting physical activity in rural communities: a cluster rand
 7KTF6M73,human_labelled,,0,55130,12,4594,1892,Implementation of Multifaceted Patient-Centered Treatment Strategies for Intensive Blood P
 7LMAP35D,unlabelled,,0,57005,16,3563,1999,Leveraging family-based assets for Black men who have sex with men in House Ball Communiti
 7LYGSSK9,unlabelled,,0,68738,18,3819,2522,The effect of supervision on community health workers' effectiveness with households in ru
@@ -405,6 +410,7 @@ ZVIZFQCJ,human_labelled,F4_THIN_PER_PAGE,1,46534,29,1605,1890,Association of CPR
 8X3V8X64,human_labelled,,0,43432,10,4343,1117,An evaluation of stakeholder engagement in comparative effectiveness research: lessons lea
 8X8VAVS2,unlabelled,,0,31091,5,6218,2484,A cluster randomized controlled trial to test the feasibility and preliminary effectivenes
 8YD6VXVA,unlabelled,,0,56700,13,4362,2571,Integrated Care Delivery for HIV Prevention and Treatment in Adolescent Girls and Young Wo
+8YQN99UA,unlabelled,,0,51702,11,4700,2157,Study protocol: a cluster randomized trial to evaluate the effectiveness and implementatio
 92AATY27,unlabelled,,0,33468,7,4781,2191,Effect of Electronic Nicotine Delivery Systems on Cigarette Abstinence in Smokers With No 
 92NWTTEZ,unlabelled,,0,65662,13,5051,3344,Comparing the Effectiveness of Clinicians and Paraprofessionals to Reduce Disparities in P
 935WEI86,unlabelled,,0,55878,9,6209,2413,"""I felt special!"": a qualitative study of peer-delivered HIV self-tests, STI self-sampling"
@@ -598,6 +604,7 @@ CKWBYHEN,human_labelled,,0,74357,34,2187,945,Change in GPS-assessed walking loca
 CLPMXINX,unlabelled,,0,105586,22,4799,3369,Enhancing the Cardiovascular Safety of Hemodialysis Care Using Multimodal Provider Educati
 CM3N743Z,unlabelled,,0,35593,14,2542,1330,Factors Associated With Sleep Quality in Hospitalized Persons With Dementia.
 CM3NFQQ4,unlabelled,,0,47584,10,4758,1751,Engagement and Weight Loss in a Web and Mobile Program for Low-Income Postpartum Women: Fi
+CM3Z8D7D,unlabelled,,0,52745,17,3103,1863,A Group Randomized Trial to Reduce Obesity among Appalachian Church Members: The Walk by F
 CM8Z2WWM,unlabelled,,0,93241,29,3215,2094,Community coalition and key stakeholder perceptions of the community opioid epidemic befor
 CMD8N46A,human_labelled,,0,56752,12,4729,2465,Developing an evidence-based program sustainability training curriculum: a group randomize
 CMPRYFNK,unlabelled,,0,47796,9,5311,1919,"Cost-effectiveness analysis of a cluster-randomized, culturally tailored, community health"
@@ -652,6 +659,7 @@ DFJE8ALD,human_labelled,,0,49870,10,4987,1854,Two-year outcomes of Faith in Acti
 DG93HVAX,human_labelled,,0,47029,10,4703,1754,The mixed model for repeated measures for cluster randomized trials: a simulation study in
 DGEX5HE7,human_labelled,,0,55303,14,3950,2874,Impact of Vaping Prevention Advertisements on US Adolescents: A Randomized Clinical Trial
 DGN43CXD,unlabelled,,0,44569,10,4457,2198,Population-Based Pragmatic Trial of Advance Care Planning in Primary Care in the Universit
+DH6IG7JY,unlabelled,,0,44741,11,4067,1941,A Cluster-Randomized Trial of Blood-Pressure Reduction in Black Barbershops.
 DHM24KUP,unlabelled,,0,49678,11,4516,1015,Intimate Partner Violence and Food Insecurity Predict Early Behavior Problems Among South 
 DHSYLQCG,human_labelled,,0,35062,6,5844,1453,Economic evaluation of a group randomized controlled trial on healthy eating and physical 
 DIJHZ9NB,unlabelled,,0,67858,21,3231,1803,Intervention to promote physical activation and improve sleep and response feeding in infa
@@ -670,6 +678,7 @@ DQG9L8F9,unlabelled,,0,72486,12,6040,3186,Nurse Care Management for Opioid Use D
 DS3N5HLD,unlabelled,,0,56870,10,5687,2196,"Study protocol testing toolkit versus usual care for implementation of screening, brief in"
 DSB4NKC5,human_labelled,,0,58360,13,4489,2819,"Effects of a School-Based Nutrition, Gardening, and Cooking Intervention on Metabolic Para"
 DSCI2YQI,unlabelled,,0,69882,21,3328,1672,Testing Function Focused Care for Acute Care using the Evidence Integration Triangle: Prot
+DVTPLYEC,unlabelled,,0,43541,9,4838,1968,Process of Engaging Community and Scientific Partners in the Development of the CIRCL-Chic
 DWAYIJCK,unlabelled,,0,84011,17,4942,2339,Effects of lipid-based nutrient supplements and infant and young child feeding counseling 
 DWDRZGCT,unlabelled,,0,72665,12,6055,2850,User centered clinical decision support to implement initiation of buprenorphine for opioi
 DWQ7WBBU,unlabelled,,0,45141,8,5643,1517,Organizational Acceptability of Implementing SBIRT for Adolescents in Primary Care.
@@ -718,6 +727,7 @@ EL68RXI7,unlabelled,,0,114782,14,8199,951,Impact of community masking on COVID-1
 ELFE9TR6,unlabelled,,0,62357,14,4454,2749,Feasibility of a Smartphone App with Mindfulness Training for Adolescent Smoking Cessation
 EMIFV3K7,unlabelled,,0,25806,5,5161,1659,The ring vaccination trial design for the estimation of vaccine efficacy and effectiveness
 EMLJCXF7,unlabelled,,0,40135,9,4459,2148,Mobile Mental Health in Women's Community-Based Organizations: Protocol for a Pilot Random
+EMQMPLJ5,unlabelled,,0,71984,14,5142,2641,Disseminating and implementing a lifestyle-based healthy weight program for mothers in a n
 ENRGULMN,unlabelled,,0,58131,11,5285,2348,Clinical Effectiveness of Cognitively Enhanced Tai Ji Quan Training on Global Cognition an
 EQFXGLNL,unlabelled,,0,25566,5,5113,1592,Effect of Remediating Blighted Vacant Land on Shootings: A Citywide Cluster Randomized Tri
 ER2TALDD,human_labelled,,0,67220,12,5602,2291,Protocol for a randomised trial of an interprofessional team-delivered intervention to sup
@@ -774,6 +784,7 @@ FJXKFL9F,unlabelled,,0,53957,18,2998,2145,Home Visiting and Antenatal Depression
 FKIWIE6C,unlabelled,,0,47840,13,3680,1307,Evaluating the Role of Corrals and Insects in the Transmission of Porcine Cysticercosis: A
 FMXPAUEI,human_labelled,,0,46327,10,4633,1774,Web-based versus in-person methods for training lay community health advisors to implement
 FNXTTHPU,unlabelled,,0,47668,9,5296,1897,Understanding Perinatal Depression Care Gaps by Examining Care Access and Barriers in Peri
+FP3HZHGS,unlabelled,,0,51956,11,4723,1886,Use of Asthma APGAR Tools in Primary Care Practices: A Cluster-Randomized Controlled Trial
 FPA2W97J,unlabelled,,0,59534,16,3721,1826,Attrition in serum anti-DENV antibodies correlates with high anti-SARS-CoV-2 IgG levels an
 FPX2G3LA,human_labelled,,0,57988,10,5799,2063,Examining local smoke-free coalitions in Armenia and Georgia: context and outcomes of a ma
 FR7ETLVC,unlabelled,,0,43424,9,4825,2461,Evaluating the integration of HIV self-testing into low-resource health systems: study pro
@@ -1046,6 +1057,7 @@ KTSBA77P,unlabelled,,0,71284,14,5092,1792,Collaborative care for child and youth
 KUF4LFG6,unlabelled,,0,89547,14,6396,1631,Cluster randomized trial of the classroom SCERTS intervention for elementary students with
 KV28CSXV,unlabelled,,0,44129,11,4012,1851,Concordance Between Proxy Level of Care Preference and Advance Directives Among Nursing Ho
 KV2ZVEL8,unlabelled,,0,51375,9,5708,1727,Patterns of and Factors Associated With Mental Health Service Utilization Among School-Goi
+KVYE5RWF,unlabelled,,0,46952,17,2762,1927,Balanced Crystalloids versus Saline in Critically Ill Adults.
 KWP6MN8U,unlabelled,,0,46144,11,4195,1274,The Impact of an Economic Strengthening Intervention on Academic Achievement Among Adolesc
 KXCHSFHC,unlabelled,,0,41753,15,2784,1574,Early Sweet Tooth: Juice Introduction During Early Infancy is Related to Toddler Juice Int
 KXK8TLEV,unlabelled,,0,105841,32,3308,1832,Protocol for the Imagine HEALTH Study: Guided imagery lifestyle intervention to improve ob
@@ -1144,6 +1156,7 @@ MZ3T9PWI,human_labelled,,0,42851,18,2381,1763,Seriously Ill Patients' Prioritize
 N284SIAR,unlabelled,,0,48608,11,4419,2503,Incentivizing appropriate malaria case management in the private sector: a study protocol 
 N2CPTK4J,unlabelled,,0,25956,5,5191,1692,Feasibility of Delivering a Tailored Intervention for Advance Care Planning in Primary Car
 N2QZPD9W,unlabelled,,0,68813,12,5734,1620,Implementation Strategy Fidelity and Organizational Outcomes in a Randomized Trial: Implic
+N35XJ5YV,unlabelled,,0,48734,19,2565,1950,Oxygen-Saturation Targets for Critically Ill Adults Receiving Mechanical Ventilation.
 N38GNG6A,unlabelled,,0,52546,11,4777,2151,The effects of financial incentives on diabetes prevention program attendance and weight l
 N3LGTHJT,unlabelled,,0,57926,10,5793,3405,Coordinated Care to Optimize Cardiovascular Preventive Therapies in Type 2 Diabetes: A Ran
 N4NS7WMN,unlabelled,,0,34845,8,4356,2195,The impact of integrated nutrition-sensitive interventions on nutrition and health of chil
@@ -1181,6 +1194,7 @@ NML3VQY6,unlabelled,,0,63189,12,5266,2517,A comparison of different community mo
 NMNK2UJG,human_labelled,,0,63009,14,4501,2877,Assessing the effectiveness of training models for national scale-up of an evidence-based 
 NMYAF58A,unlabelled,,0,26651,6,4442,1812,Temporal Trends in Phenotypic Macrolide and Nonmacrolide Resistance for Streptococcus pneu
 NPL23U9B,unlabelled,,0,43320,10,4332,1783,A Structural Equation Model of the Impact of a Family-Based Economic Intervention on Antir
+NPU43H6S,unlabelled,,0,77245,15,5150,2682,The impact of basic vs. enhanced Go NAPSACC on child care centers' healthy eating and phys
 NQ4Y7FIA,human_labelled,,0,113178,38,2978,1903,Caring for the elderly at work and home: Can a randomized organizational intervention impr
 NRHYD9J5,unlabelled,,0,46004,10,4600,2530,"De-Implementing Opioids for Dental Extractions (DIODE): a multi-clinic, cluster-randomized"
 NRWI3Y77,unlabelled,,0,36147,8,4518,1928,Improving Tuberculosis Preventive Therapy Uptake: A Cluster-randomized Trial of Symptom-ba
@@ -1215,6 +1229,7 @@ P8WBH993,unlabelled,,0,84827,15,5655,1196,Geographic pair matching in large-scal
 P9AJZFPI,unlabelled,,0,47151,10,4715,2527,Effects of a Community Health Worker-Led Health Literacy Intervention on Lifestyle Modific
 PDP273K4,human_labelled,,0,55878,12,4656,2663,Behavioral economic implementation strategies to improve serious illness communication bet
 PDRJNTJE,unlabelled,,0,74277,14,5306,2041,Design of the Focus on Restaurant Engagement to Strengthen Health (FRESH) study: leveragin
+PDUGS7DP,unlabelled,,0,75104,15,5007,2527,"A cluster randomized controlled trial for a multi-level, clinic-based smoking cessation pr"
 PE7QLEQX,unlabelled,,0,64811,12,5401,1413,Parent-Focused Sexual Abuse Prevention: Results From a Cluster Randomized Trial.
 PF926P8I,unlabelled,,0,39885,12,3324,2638,"Cluster identification, selection, and description in cluster randomized crossover trials:"
 PG83SQ3X,human_labelled,,0,81892,22,3722,1357,Demystifying estimands in cluster-randomised trials
@@ -1259,6 +1274,7 @@ PYNT6GFJ,unlabelled,,0,49301,11,4482,1896,Randomized double-masked controlled tr
 PZ4KVRPV,unlabelled,,0,58160,10,5816,2462,Breaking down relationship barriers to increase PrEP uptake and adherence among adolescent
 Q2QTV5U4,unlabelled,,0,47103,10,4710,1756,Care Optimization Through Patient and Hospital Engagement Clinical Trial for Heart Failure
 Q2S96SJ9,human_labelled,,0,29342,5,5868,1850,Strategies to improve the recruitment and retention of underserved children and families i
+Q472RUI9,unlabelled,,0,52980,10,5298,2475,Efficacy of a community-based participatory and multilevel intervention to enhance hepatit
 Q4Y3ER3R,unlabelled,,0,43264,9,4807,1466,Prospective Cohort study of Predictors of Follow-Up Diagnostic Colonoscopy from a Pragmati
 Q5KYTZM8,human_labelled,,0,43643,11,3968,2115,"Heterogeneity in Health Outcomes in the Strong Hearts, Healthy Communities-2.0 Multilevel "
 Q5UBAJFB,human_labelled,,0,46297,8,5787,2722,Assessment of Inpatient Time Allocation Among First-Year Internal Medicine Residents Using
@@ -1353,6 +1369,7 @@ RU6SUGKN,unlabelled,,0,51915,10,5192,2438,Use of a Decision Aid for Patients Con
 RUYVCGHY,human_labelled,,0,50366,10,5037,2205,Targeting Sedentary Behavior in CKD: A Pilot and Feasibility Randomized Controlled Trial
 RWIH5PP3,unlabelled,,0,44503,9,4945,1917,Peer-Delivered Cognitive Behavioral Training to Improve Functioning in Patients With Diabe
 RWMD4Q74,unlabelled,,0,50391,10,5039,1043,"The Effects of Cooperative Learning on Peer Relations, Academic Support, and Engagement in"
+RXFQY4XC,unlabelled,,0,103016,31,3323,1658,Testing the effectiveness of community-engaged citizen science to promote physical activit
 RYA7FGYI,unlabelled,,0,86693,11,7881,1755,The Church Challenge: A community-based multilevel cluster randomized controlled trial to 
 S26WZS8D,human_labelled,,0,55353,12,4613,2607,A prospective cohort study of the SEARCH integrated HIV/hypertension community health work
 S2ZQHQ7S,unlabelled,,0,97025,20,4851,2562,"Study protocol for comparing Screening, Brief Intervention, and Referral to Treatment (SBI"
@@ -1394,6 +1411,7 @@ SPGKN8GS,unlabelled,,0,55198,9,6133,1052,25 Years of Complex Intervention Trials
 SR4PYGAT,unlabelled,,0,56250,19,2961,1790,Design of a hybrid implementation effectiveness cluster randomized controlled trial of del
 SRGFMEL6,human_labelled,,0,30167,12,2514,1984,Identifying Which Urban Children With Asthma Benefit Most From Clinician Prompting: Subgro
 SSATX3WX,unlabelled,,0,52108,10,5211,1700,The association between HIV stigma and HIV incidence in the context of universal testing a
+STH5NWUN,unlabelled,,0,65697,12,5475,2022,A Cluster-Randomized Trial of a Mobile Produce Market Program in 12 Communities in North C
 SU8TVFGH,human_labelled,,0,59750,12,4979,1984,Cost and cost-effectiveness of the 'Stand and Move at Work' multicomponent intervention to
 SUANA8ET,human_labelled,,0,45801,12,3817,2360,Moderators of the effectiveness of an intervention to increase colorectal cancer screening
 SUMBGHKJ,unlabelled,,0,24279,5,4856,682,Continued impact of COVID-19 pandemic on clinical and translational science early-career r
@@ -1418,7 +1436,9 @@ TB7DEJ83,human_labelled,,0,50180,12,4182,1873,Toward Understanding the Relations
 TBFRUAMD,human_labelled,,0,74621,15,4975,2543,Mailed fecal testing and patient navigation versus usual care to improve rates of colorect
 TC2FHAH5,unlabelled,,0,68866,14,4919,1914,Improved Child Feces Management Mediates Reductions in Childhood Diarrhea from an On-Site 
 TC6MJCXW,unlabelled,,0,52353,11,4759,2019,"""I desire to have an HIV-free baby"": pregnant and breastfeeding mothers' perceptions of Vi"
+TCS56FZY,unlabelled,,0,49723,9,5525,3377,Training Models for Implementing Evidence-Based Psychological Treatment: A Cluster-Randomi
 TCYY9IAN,unlabelled,,0,50213,17,2954,2612,The longitudinal impact of an evidence-based multiple family group intervention (Amaka Ama
+TDLGKW2I,unlabelled,,0,44130,16,2758,2029,Design and pilot implementation for the BETTER CARE-HF trial: A pragmatic cluster-randomiz
 TEXI6CQZ,unlabelled,,0,58313,12,4859,1721,Effects of a Multilevel Resilience-Based Intervention on Mental Health for Children Affect
 TEXLFQSL,human_labelled,,0,63992,17,3764,3435,Mobile Application-Based Communication Facilitation Platform for Family Members of Critica
 TFGQKUCF,human_labelled,,0,39964,7,5709,1823,Challenges in assessing population reach in a pragmatic trial
@@ -1447,6 +1467,7 @@ TUYKW32A,human_labelled,,0,29507,10,2951,1904,Moderators and mediators of a digi
 TY3QXSVL,unlabelled,,0,50754,10,5075,1939,Independent Community Pharmacists' Experience in Offering Pharmacogenetic Testing.
 TYUTRABV,human_labelled,,0,59166,12,4930,2379,The impact of text message reminders on cryotherapy uptake among women testing positive fo
 TZ8BIHD2,human_labelled,,0,39455,11,3587,3066,Temporal Trends in End-Tidal Capnography and Outcomes in Out-of-Hospital Cardiac Arrest: A
+TZAGY4NU,unlabelled,,0,43841,18,2436,1791,A randomized study to prevent lymphedema in women treated for breast cancer: CALGB 70305 (
 TZCEGIPS,unlabelled,,0,21732,4,5433,1495,Does Medication Sampling Improve Compliance with Brief Advice? Results from a Pragmatic Ra
 TZW76NJB,human_labelled,,0,23840,6,3973,1870,Heterogeneity of Treatment Effect in a Randomized Trial of a Communication Intervention
 U2EYTRVS,unlabelled,,0,70154,24,2923,2152,"Maternal depression, alcohol use, and transient effects of perinatal paraprofessional home"
@@ -1518,6 +1539,7 @@ VG586LG9,unlabelled,,0,49148,10,4915,1455,Impact of a Family Economic Interventi
 VGHM75AE,unlabelled,,0,87139,16,5446,2676,Power and resistance in schools: Implementing institutional change to promote health equit
 VGZFSIYN,human_labelled,,0,25981,6,4330,1452,Impact of COVID-19 on childhood obesity: Data from a paediatric weight management trial
 VH5MJZ7U,unlabelled,,0,32724,8,4090,1907,Frequency of Mass Azithromycin Distribution for Ocular Chlamydia in a Trachoma Endemic Reg
+VH6KS89D,unlabelled,,0,55653,21,2650,1948,Keys to healthy family child care homes: Results from a cluster randomized trial.
 VIFXB2GP,unlabelled,,0,59111,17,3477,2040,The impact of insecticide treated curtains on dengue virus transmission: A cluster randomi
 VIWU5HNY,unlabelled,,0,37195,8,4649,1838,"Advanced HIV disease in the Botswana combination prevention project: prevalence, risk fact"
 VIYWFDG9,human_labelled,,0,59724,22,2715,1833,Fear of cancer recurrence in lymphoma survivors: A descriptive study
@@ -1671,6 +1693,7 @@ Y9EY4XQ8,human_labelled,,0,48788,10,4879,1918,"Reducing ethnic and racial dispar
 Y9GMXF6J,unlabelled,,0,30942,6,5157,1386,"Are evidence-based, community-engaged energy balance interventions enough for extremely vu"
 YAIMEWET,human_labelled,,0,53854,11,4896,2159,Network characteristics of a referral system for patients with hypertension in Western Ken
 YB76TMBC,unlabelled,,0,50172,10,5017,1406,"Asthma, Airflow Obstruction, and Eosinophilic Airway Inflammation Prevalence in Western Ke"
+YBR6NA98,unlabelled,,0,42937,8,5367,1493,Objective Measures of Physical Activity in Rural Communities: Factors Associated With a Va
 YCBXQNZJ,unlabelled,,0,77223,17,4543,2322,Study protocol: cluster randomized trial of consultation strategies for the sustainment of
 YCFJFHMC,human_labelled,,0,47711,9,5301,2127,Contributions of Early Care and Education Programs to Diet Quality in Children Aged 3 to 4
 YCYESWU8,human_labelled,,0,67369,15,4491,2583,Pre-implementation adaptation of primary care cancer prevention clinical decision support 

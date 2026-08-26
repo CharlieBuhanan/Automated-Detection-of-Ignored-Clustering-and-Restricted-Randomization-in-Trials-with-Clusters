@@ -46,7 +46,7 @@ MIN_TEXT_CHARS = 3000
 
 # The count PLAN.md and the methods section both cite. If this moves, one of
 # them is now wrong -- which is the point of asserting it.
-EXPECTED_ACTIVE_US = 1283
+EXPECTED_ACTIVE_US = 1306
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
@@ -152,13 +152,17 @@ def main():
 
     # -- U4 ---------------------------------------------------------------
     # The integrity scan found 4 genuinely wrong documents that identity
-    # verification could not catch. Any still active is one of those.
-    flagged = {r["paper_id"] for r in read_csv(REVIEW_DIR / "11_text_integrity_flagged.csv")
-               if r.get("set") == SET_UNLABELLED} & active_ids
-    cl.check("U4", "no active US paper is flagged by the text-integrity scan",
+    # verification could not catch. Three had the correct PDF swapped in and one
+    # was dropped, so the flag file is a record of what was *found*, not what is
+    # outstanding -- a flagged paper is only a problem if no decision followed.
+    resolved = {r["paper_id"] for r in read_csv(REVIEW_DIR / "04_papers_reviewed_results.csv")
+                if r.get("decision") in ("replaced", "dropped")}
+    flagged = ({r["paper_id"] for r in read_csv(REVIEW_DIR / "11_text_integrity_flagged.csv")
+                if r.get("set") == SET_UNLABELLED} & active_ids) - resolved
+    cl.check("U4", "every text-integrity flag on an active US paper is resolved",
              not flagged,
-             (f"flagged and still active: {sample(flagged)}" if flagged
-              else "no active US row flagged (re-run scripts/11 to refresh)"))
+             (f"flagged, active, and undecided: {sample(flagged)}" if flagged
+              else "no unresolved flags (re-run scripts/11 to refresh)"))
 
     # -- U5 ---------------------------------------------------------------
     # A correction notice passes identity verification -- the PDF really is the
@@ -195,13 +199,16 @@ def main():
 
     # -- U8 ---------------------------------------------------------------
     # Cross-set duplicates were removed from the manifest, not marked DROPPED.
-    # One that came back means a re-fetch undid the removal (PLAN.md's warning).
+    # One that came back *unrecorded* means a re-fetch undid the removal
+    # (PLAN.md's warning); one restored under DC42 came back on purpose.
     removed = read_csv(REVIEW_DIR / "02_removed_us_duplicates.csv")
-    resurrected = {r["removed_paper_id"] for r in removed} & manifest_ids
-    cl.check("U8", "no removed cross-set duplicate has reappeared in the manifest",
+    restored = {r["paper_id"] for r in read_csv(REVIEW_DIR / "15_dc42_restored.csv")}
+    resurrected = ({r["removed_paper_id"] for r in removed} & manifest_ids) - restored
+    cl.check("U8", "no removed cross-set duplicate has reappeared unrecorded",
              not resurrected,
-             (f"back in the manifest: {sample(resurrected)}" if resurrected
-              else f"all {len(removed)} still removed"))
+             (f"back in the manifest with no restore record: {sample(resurrected)}"
+              if resurrected
+              else f"{len(removed) - len(restored)} still removed, {len(restored)} restored (DC42)"))
 
     # -- U9 ---------------------------------------------------------------
     # DC42. This is the check that is *supposed* to fail until the restore
@@ -209,13 +216,19 @@ def main():
     conn = sqlite3.connect(f"file:{db.DEFAULT_PATH}?mode=ro", uri=True)
     labelled = {r[0] for r in conn.execute("SELECT paper_id FROM validation_labels")}
     conn.close()
-    orphaned = [r for r in removed if r["matched_validation_paper_id"] not in labelled]
+    # A paper already back in the manifest has been restored; only one still
+    # absent is an outstanding candidate.
+    orphaned = [r for r in removed
+                if r["matched_validation_paper_id"] not in labelled
+                and r["removed_paper_id"] not in manifest_ids]
     cl.check("U9", "no US paper is still removed for a twin that lost its label (DC42)",
              not orphaned,
              (f"{len(orphaned)} restore candidate(s): "
               f"{sample(r['removed_paper_id'] for r in orphaned)}\n"
-              f"run the DC42 restore sweep, then re-run this checklist"
-              if orphaned else f"all {len(removed)} removals still justified"))
+              f"run scripts/15_restore_dc42_duplicates.py, then re-run this checklist"
+              if orphaned
+              else f"{len(restored)} restored; the other {len(removed) - len(restored)} "
+                   f"removals still justified"))
 
     # -- U10 --------------------------------------------------------------
     # The ledger is what the methods section cites. Disagreement with the

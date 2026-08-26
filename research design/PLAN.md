@@ -5,16 +5,22 @@ Standing rules live in [.claude/CLAUDE.md](../.claude/CLAUDE.md).
 
 ## TODO now
 
-- [ ] **Restore the 23 US papers whose HLS twin was later dropped (DC42).** 207 Unlabelled Set papers
-      were removed as cross-set duplicates because an HLS copy already had a usable label (DC2). 23 of
-      those HLS copies have since been dropped themselves (12 coin-flip, 7 NHLBI-unreviewed, 3
-      institutional disagreement, 1 protocol_paper), so the reason to drop their US twins no longer
-      holds. **Swept, not yet restored** — `scripts/13_check_hls_clean.py` lists them and confirms the
-      HLS is closed (all 14 checks pass). The restore sweep itself still needs writing.
 - [ ] **Run `db.assign_split()`.** Gate-survivor stratification is implemented (DC30); the dry run
-      gives 123/53 survivors and 215/92 excluded. Run it **after** the DC42 restore — it runs once.
+      gives 123/53 survivors and 215/92 excluded. It runs once. Nothing blocks it now.
 - [ ] Deb's sign-off on the rest of `promptbooks/exclusion.md` v0 (E3, E5, E12/E17) — see O1 and
       `Deb.md`.
+- [ ] `src/schemas.py` does not exist. Neither do `promptbook_builder.py`, `evaluate.py`,
+      `two_pass.py`, or anything in `results/04_classification/`. The classification half of this
+      plan is documented and unwritten.
+
+### Two ways to lose work, both real, both now guarded
+
+**Re-running `01_verify_identity.py` silently undoes every human verdict** (DC44). It rewrites
+`verdict` for every manifest row from what the identity ladder can see in a PDF, so a `DROPPED`
+paper whose PDF was moved aside comes back `PDF_UNREADABLE`, a `DROPPED` paper whose PDF stayed
+comes back `VERIFIED` and re-enters the corpus, and a `WEAK` paper a human cleared scores `WEAK`
+again. **Always run `scripts/16_reapply_drops.py` straight afterwards** — it replays every recorded
+decision, newest wins.
 
 **Re-running `00_fetch_zotero.py --set human_labelled` undoes the duplicate merge** — the 15 removed NHLBI
 rows are gone from the manifest and their PDFs are moved aside, so `completed_ids()` no longer skips them
@@ -24,15 +30,17 @@ skips pairs already merged.
 ## Goal
 
 Rate scientific papers on **power_analysis** and **data_analysis** correctness, after filtering the
-corpus with **exclusion** criteria. **1287 study papers** to classify; a separate
+corpus with **exclusion** criteria. **1306 study papers** to classify; a separate
 human-labeled Human Labelled Set (HLS).
 
-**The corpus is 1287 papers.** 2115 counted *collection placements*, not papers — 483 papers are filed
+**The corpus is 1306 papers.** 2115 counted *collection placements*, not papers — 483 papers are filed
 under two or more NIH institutes. Full reconciliation (2115 raw → 2113 paper-placements → 1494 unique)
 is in `results/01_corpus_build/unvalidated_set_summary.tex`. Also excluded: `sample NCI-new` (104 papers, disjoint from
-every other collection) and one non-article item (a `videoRecording`). The last 207 came off in the
-cross-set duplicate check — papers already sitting in the Human Labelled Set with a human label
-(1494 → 1287).
+every other collection) and one non-article item (a `videoRecording`). 207 came off in the
+cross-set duplicate check — papers already sitting in the Human Labelled Set with a human label —
+and 23 of those came back when their HLS twin was itself dropped (DC42,
+`scripts/15_restore_dc42_duplicates.py`), leaving 184 removed (1494 → 1310, minus 4 later drops
+→ **1306 active**).
 
 **569 HLS PDFs were fetched; 530 are active in the corpus and 523 carry one clean label.**
 `FinalCollectionFor Publication` (NCI) held 232 and `Locked_26_01_08_337` (NHLBI) held 337. NCI's
@@ -60,7 +68,7 @@ analysis." The promptbooks are built empirically from Human Labelled Set misses 
 
 Three decisions shape everything below.
 
-**The corpus is gated, not classified wholesale.** Exclusion runs first, on all 1287. Only survivors go
+**The corpus is gated, not classified wholesale.** Exclusion runs first, on all 1306. Only survivors go
 to power_analysis and data_analysis. A paper proceeds if exclusion says *keep*.
 
 **`inclusion` was dropped as a fourth task — nothing in the human labels encodes it.** The only
@@ -79,7 +87,7 @@ This is **not** the flat `2115 x 4 = 8460` figure that earlier drafts used — w
 paper count, the task count, and the gating. The real shape is two sequential batch jobs:
 
 ```
-job 1:  1287 x 1 (exclusion)                 = 1287 calls
+job 1:  1306 x 1 (exclusion)                 = 1306 calls
         + Opus review of low-confidence gate calls
 job 2:  <survivors> x 2 (power, data)        = 2 x however many survive
 ```
@@ -87,7 +95,7 @@ job 2:  <survivors> x 2 (power, data)        = 2 x however many survive
 Survivor count is unknown until job 1 finishes; it determines job 2's size and cost.
 
 **The gate gets a second pass, the other tasks get one too — but the gate's matters more.** There are no
-human labels for the 1287, so a paper's fate rests on the model's own exclusion call, and a
+human labels for the 1306, so a paper's fate rests on the model's own exclusion call, and a
 false exclusion is unrecoverable: the paper never reaches power/data analysis and silently leaves the
 study. Low-confidence gate calls go to Opus **before** gating, not after.
 
@@ -138,7 +146,7 @@ one — exactly the CONSORT-EHEALTH submission forms that scan later learned to 
 | data_analysis | data analysis is correct | incorrect |
 
 **`reasoning` is capped at 60 words.** Long enough to name the deciding evidence, short enough that
-a human can scan 1287 of them. The cap is stated in every promptbook's prompt block; anything longer
+a human can scan 1306 of them. The cap is stated in every promptbook's prompt block; anything longer
 is the model narrating rather than deciding, and it costs output tokens on every paper.
 
 **A paper that reports no power analysis at all is `no` (incorrect)** — absent and wrong collapse into
@@ -191,7 +199,7 @@ scored as misses.
    A re-run skips any paper whose manifest row is `OK` and whose PDF matches its recorded md5 — verified
    locally, no API call. `--refresh` forces a full re-check; without it, a PDF swapped in Zotero after
    the first fetch goes unnoticed. A no-op re-run still costs ~3 minutes, since the collection walk has
-   to happen regardless; it is the ~1287 per-paper round trips that the skip avoids.
+   to happen regardless; it is the ~1306 per-paper round trips that the skip avoids.
 
    **Folder metadata.** Two columns record where a paper came from: `folder` is the immediate collection
    name (`NCI`), `folder_path` is the full path from the root (`Boring Task / NCI`). Depth is not
@@ -283,7 +291,7 @@ scored as misses.
      ```
    A valid DOI in the text that differs from the Zotero DOI is a hard `MISMATCH` regardless of title
    score — that is the signature of the wrong PDF on the right record. Thresholds are provisional;
-   calibrate them on the Human Labelled Set before trusting them on the 1287.
+   calibrate them on the Human Labelled Set before trusting them on the 1306.
 
    `author_frac` needs **every** author surname, so it reads from `data/zotero_meta.jsonl` via
    `load_meta()` — the manifest only carries `first_author`.
@@ -482,7 +490,7 @@ scored as misses.
    routes to Opus. Tune the threshold **on the build split**, once all four promptbooks have plateaued and passed
    step 7.
 
-10. **Gate run** — batch job 1: exclusion across all 1287 (1287 calls), Opus second pass on
+10. **Gate run** — batch job 1: exclusion across all 1306 (1306 calls), Opus second pass on
    low-confidence calls, then apply the gate (`keep`). Record the survivor count and the
    drop reason per paper — this is a study result in its own right, not just plumbing.
 
@@ -506,7 +514,7 @@ then `data_analysis`.
       user before proceeding
 - [x] Identity verification (`01_verify_identity.py`) — thresholds calibrated, verdicts in the manifest
 - [x] Cross-set duplicate check — 207 US papers also in the HLS; removed from the US
-      (1494 → 1287), logged in `results/review/02_removed_us_duplicates.csv`
+      (1494 → 1306), logged in `results/review/02_removed_us_duplicates.csv`
 - [x] **Decide the 15 NCI↔NHLBI duplicate pairs inside the HLS.** Resolved by
       `scripts/04_load_ground_truth.py`, not by a manual decision: 9 pairs agree on every label and are
       collapsed to one `validation_labels` row automatically; 6 disagree — one pair a complete flip
@@ -558,7 +566,7 @@ then `data_analysis`.
 
 **Every batch run writes a header row to `results/04_classification/run_log.csv` before it starts, and closes it when
 it finishes.** A run nobody can date, price, or attribute to a model is not reproducible, and this is
-the cheapest possible insurance against having to re-run 1287 papers to answer a reviewer.
+the cheapest possible insurance against having to re-run 1306 papers to answer a reviewer.
 
 ```
 run_id, task, started_at, finished_at, duration_s,
@@ -598,7 +606,7 @@ Nothing in the HLS depends on a correction notice any more.
 
 Run the remaining two as a small pass over the notice **plus its parent's full text**, so the
 question "does this correction change the power or data analysis being scored?" is asked with both
-documents in context. Two papers does not justify a batch job, and folding them into the main 1287
+documents in context. Two papers does not justify a batch job, and folding them into the main 1306
 would ask the model to judge a correction notice as if it were a trial. `NBBD4EVE` waits on O6.
 
 ## Exclusion ledger

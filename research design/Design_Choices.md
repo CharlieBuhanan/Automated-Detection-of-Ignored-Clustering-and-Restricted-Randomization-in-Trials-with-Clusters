@@ -7,7 +7,7 @@ this is the index. Standing rules are in [CLAUDE.md](../.claude/CLAUDE.md).
 
 ## Open — still need a decision
 
-Everything else has been settled; the decisions are recorded as DC1-DC43 below.
+Everything else has been settled; the decisions are recorded as DC1-DC46 below.
 
 | | Question | Blocks |
 |---|---|---|
@@ -57,7 +57,7 @@ Everything else has been settled; the decisions are recorded as DC1-DC43 below.
   cross-contamination invalidates the study. **A fourth task, `inclusion`, was dropped: nothing in
   the human labels encodes it** (DC31), so an inclusion call would have no answer to score against.
   Exclusion alone is the gate.
-- **DC10 — The corpus is gated, not classified wholesale.** Exclusion runs on all 1287; only papers
+- **DC10 — The corpus is gated, not classified wholesale.** Exclusion runs on all 1306; only papers
   it *keeps* reach power/data analysis. A dropped paper gets **no row at all** — not a null, not
   "N/A". Same rule for the HLS, so power/data accuracy is computed only over gate survivors. In the
   labels this shows as 176 kept papers of 483, and only those 176 carry power/stats answers.
@@ -113,7 +113,7 @@ Everything else has been settled; the decisions are recorded as DC1-DC43 below.
   lost in long context. Includes a zero-shot chain-of-thought instruction ("think it through step by
   step") and the answer format.
 - **DC27 — `reasoning` is capped at 60 words.** Enough to name the deciding evidence, short enough
-  to scan across 1287 papers. Beyond that the model is narrating, not deciding, and it costs output
+  to scan across 1306 papers. Beyond that the model is narrating, not deciding, and it costs output
   tokens on every paper.
 - **DC28 — Cross-paper reasons are never exclusion criteria.** A paper is judged on its own text.
   "Its outcomes paper exists elsewhere" and "we kept a different paper by the same group" are facts
@@ -178,14 +178,44 @@ Everything else has been settled; the decisions are recorded as DC1-DC43 below.
 - **DC42 — A US paper's cross-set-duplicate removal is conditional on its HLS twin surviving.** 207
   US papers were dropped because an HLS copy already carried a usable answer (DC2). When that copy is
   itself dropped later, the reason no longer holds and the paper should re-enter the pool rather than
-  leave the study. **Swept: 23 candidates**, listed by `scripts/13_check_hls_clean.py`. The restore
-  waits on that script passing all 14 checks first, so the HLS stops shrinking before anything is
-  added back.
+  leave the study. **Done: 23 restored** by `scripts/15_restore_dc42_duplicates.py`, gated on
+  `13_check_hls_clean.py` passing all 14 checks first so the HLS had stopped shrinking. It fetches
+  those 23 item keys directly rather than re-walking the collection, which would resurrect all 207.
+  184 removals stand.
 - **DC43 — `J2RUD3YQ` dropped: no full text exists.** Its DOI resolves to an *Annals of Family
   Medicine* conference-abstract supplement, not an article — every download returned the same 2-page
   abstract. One paper, so the established manual-drop trail applied directly rather than a dedicated
   script: `verdict_reason = MANUAL_DROPPED`, logged in `04_papers_reviewed_results.csv`, cached text
   cleared, removed from the review queue.
+
+- **DC44 — The manifest's `verdict` column is derived, and every human decision is replayed onto
+  it.** `01_verify_identity.py` rescores every row from what the identity ladder can see in a PDF,
+  so a re-run silently reverses two things a human already settled: a `DROPPED` paper comes back
+  (`PDF_UNREADABLE` if its PDF was moved aside, `VERIFIED` if it was not — and that one re-enters
+  the active corpus), and a `WEAK` paper cleared by hand scores `WEAK` again, because what resolved
+  it was a person reading the PDF and that is not in the file. `scripts/16_reapply_drops.py` replays
+  every recorded decision afterwards, ordered by timestamp so the newest wins — a paper cleared in
+  script 03 and *later* dropped by script 09 stays dropped. This is DC20 paying off: because no
+  paper ever left silently, a clobbered manifest is fully rebuildable from the logs.
+- **DC45 — The promptbook's E-numbers are the canonical exclusion taxonomy.** NCI used 8 reason
+  strings and NHLBI 13, a union of 15 that mixes genuinely new criteria with renamings of the same
+  idea. Rather than invent a third vocabulary, exclusion reasons map onto E1-E16 — already the
+  vocabulary the model emits, and already explicit about the renamings (E14 cohort and E15 review
+  are E9/E10 and E8 under other names). Institute strings stay in the `*_raw` columns as the source
+  record. The payoff is that a human reason and a model `promptbook_evidence` become directly
+  comparable, which is what makes a miss diagnosable at all (DC13). Three reasons map to no active
+  rule and that is the point: `stepped_wedge_design` → E3, contested and default OFF;
+  `protocol_paper` → E12 and `duplicate_group_random_drop` → E17, both retired as cross-paper
+  (DC28), which is exactly why their papers left the scored set.
+- **DC46 — The human labels are two reviewers' opinion, and the paper says so.** Ignore02 describes
+  them as "the opinion of two knowledgeable reviewers," not ground truth, and this project's own
+  data agrees: 5 papers had NCI and NHLBI reach different answers (DC37) and raw agreement on the 15
+  dual-reviewed pairs is 12/15. So model-vs-human disagreement is not automatically model error, and
+  raw accuracy against these labels is bounded by how much the humans agree with each other. The
+  labels are still the best available comparator and the study uses them as such — the commitment
+  here is only that the write-up states what they are rather than calling them truth. Exactly how
+  that is reported (raw accuracy, κ against a human-agreement ceiling, or both) is O2, decided when
+  the results exist.
 
 - **DC22 — Message Batches API for the full run; `claude -p` CLI for the promptbook loop.** The full
   run is batch classification, not agentic tool use — Batches API, not sync calls, no MCP. The
