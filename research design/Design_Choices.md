@@ -7,12 +7,13 @@ this is the index. Standing rules are in [CLAUDE.md](../.claude/CLAUDE.md).
 
 ## Open — still need a decision
 
-Everything else has been settled; the decisions are recorded as DC1-DC47 below.
+Everything else has been settled; the decisions are recorded as DC1-DC51 below.
 
 | | Question | Blocks |
 |---|---|---|
-| **O1** | **Deb's sign-off, partial.** Confirmed: E13 pilot exclusion ON (DC39); a paper citing its protocol for power/data analysis is `no`, not `undecidable` (DC40). Still open: E3 wedge OFF, E12/E17 retired as cross-paper, E5 rewritten self-declared. The 5 institutional disagreements are dropped and assumed unresolved (DC37) — no longer blocking; Deb's read may restore them later. See [Deb.md](Deb.md). | v1 promptbook |
+| **O1** | **The 5 stepped-wedge papers NHLBI kept and scored — revisit after 2026-09-02.** Decided for now (2026-08-27): **kept in the scored set as accepted misses**, not dropped. See DC51. Deb ruled the criterion, not these rows, and she and Keith may yet re-score them as excluded — the outcome that loses no data. | Nothing; the floor is documented |
 | **O2** | **Inter-rater statistic for the 15 dual-reviewed pairs.** Deferred, not declined: raw agreement is 12/15 = 80%. Decide before writing the methods section whether Cohen's kappa is reported alongside it. | Methods section |
+| **O3** | **E17 random duplicate-drop.** Retired as cross-paper (DC28) and its 34 rows already left the scored set; Deb has not explicitly ruled on it, unlike E3/E5/E12/D14. Low stakes — confirm at the next pass rather than blocking on it. | Nothing |
 
 ---
 
@@ -125,7 +126,11 @@ Everything else has been settled; the decisions are recorded as DC1-DC47 below.
   "Its outcomes paper exists elsewhere" and "we kept a different paper by the same group" are facts
   about the corpus, which the model cannot see, so the 41 rows carrying them left the scored set
   (`scripts/10_drop_nonjudgeable_exclusions.py`) rather than counting as misses. Duplicates and
-  superseded papers are cleaned up post-hoc. E5 was rewritten the same way: self-declared only.
+  superseded papers are cleaned up post-hoc. E5 was rewritten the same way: self-declared only —
+  **confirmed by Deb, 2026-08-27**, with the caveat that it is knowingly incomplete. Papers are
+  *supposed* to declare a secondary analysis and often do not; the human reviewers frequently only
+  catch one when it names its protocol or primary-outcomes paper, which is already E5's second
+  clause. Provisional by agreement, to be refined once the rounds show what it misses.
 - **DC29 — Every batch run writes a dated row to `results/04_classification/run_log.csv`** — model, processing type
   (API or CLI), promptbook version, git commit, token counts, cost, duration, retry count. Written
   before the first call, so an interrupted run still leaves a record of what was attempted. See
@@ -137,7 +142,9 @@ Everything else has been settled; the decisions are recorded as DC1-DC47 below.
   `db.assign_split()`: papers are **ranked** by hash within a stratum and the lowest 30% held out —
   thresholding cannot guarantee a count. The cost is that assignment now depends on stratum
   membership, so it is not stable under adding labels later; the run-once guard is what makes that
-  safe. Not yet run.
+  safe. **Run 2026-08-26 and now permanent:** 338 build / 145 holdout, 123/53 survivors, 215/92
+  excluded. Papers dropped after this point shrink their split rather than triggering a re-cut
+  (DC47).
 - **DC31 — NCI's `review_category` is dropped, not used.** Measured over the 96 NCI rows that carry
   it, the letter agrees with `stats` perfectly in both directions, so it restates a column the study
   already has. No NHLBI paper carries one. Transcribed as a raw record of the source file; nothing
@@ -213,10 +220,11 @@ Everything else has been settled; the decisions are recorded as DC1-DC47 below.
   vocabulary the model emits, and already explicit about the renamings (E14 cohort and E15 review
   are E9/E10 and E8 under other names). Institute strings stay in the `*_raw` columns as the source
   record. The payoff is that a human reason and a model `promptbook_evidence` become directly
-  comparable, which is what makes a miss diagnosable at all (DC13). Three reasons map to no active
-  rule and that is the point: `stepped_wedge_design` → E3, contested and default OFF;
-  `protocol_paper` → E12 and `duplicate_group_random_drop` → E17, both retired as cross-paper
-  (DC28), which is exactly why their papers left the scored set.
+  comparable, which is what makes a miss diagnosable at all (DC13). `stepped_wedge_design` → E3 is
+  now an **active** rule (DC48), so its 9 rows are scored like any other exclusion. Two reasons
+  still map to no active rule and that is the point: `protocol_paper` → E12 and
+  `duplicate_group_random_drop` → E17, both retired as cross-paper (DC28), which is exactly why
+  their papers left the scored set.
 - **DC46 — The human labels are two reviewers' opinion, and the paper says so.** Ignore02 describes
   them as "the opinion of two knowledgeable reviewers," not ground truth, and this project's own
   data agrees: 5 papers had NCI and NHLBI reach different answers (DC37) and raw agreement on the 15
@@ -237,6 +245,56 @@ Everything else has been settled; the decisions are recorded as DC1-DC47 below.
   round is **stratified** at the build split's own 36% survivor rate (18/32 per round): an
   unstratified round could come out 80% excluded, and comparability across rounds is the only thing
   rounds are for.
+  **A paper dropped after the cut shrinks its round; it does not trigger a re-cut** (Deb,
+  2026-08-27). Rounds exist to be comparable to each other, and a 49-paper round is comparable to a
+  50-paper one — where a re-cut reshuffles every round's membership and makes *all* of them
+  incomparable to anything already run. So round sizes are allowed to vary, and the round a paper
+  left is recorded with the drop. This holds for a handful of papers, not a wave: if drops ever
+  reach a size where a round's stratum balance visibly moves off 18/32, re-cut instead and say so.
+
+- **DC48 — E3 stepped-wedge trials ARE excluded. Ruled by Deb, 2026-08-27.** This reverses v0's
+  *contested, default OFF*. The v0 reasoning was that NHLBI applied the criterion inconsistently —
+  9 papers excluded for it, 5 others kept and fully scored — and that under DC11 a wrong exclusion
+  is unrecoverable, so the safer default was to keep them all. Deb settled the criterion rather
+  than the inconsistency: stepped wedge excludes. What that buys and costs is asymmetric and worth
+  stating, because the promptbook is now expected to disagree with 5 labels **by construction**:
+  the 9 excluded rows become scorable hits, and the 5 kept rows become guaranteed misses (O1)
+  unless they join the expert-review pile. DC11 still applies with more force than before — E3 is
+  a search-stage rule that fires early and cheaply, so a stepped-wedge call landing under the
+  confidence threshold should get its Opus second pass before the gate closes, not after.
+- **DC49 — Longitudinality does not make a data analysis incorrect. Ruled by Deb, 2026-08-27.**
+  Ignore02 rule 6 counts exactly two things — clustering and restricted randomization — and
+  explicitly forgives every other statistical flaw. NHLBI departed from that on at least one paper,
+  scoring `MQF2Y5AM` (Altinger 2024) incorrect for assuming exchangeability across repeated
+  measures. Deb's ruling is to follow the published rule: D14 stops being contested and folds into
+  D13's *what must not count* list. `MQF2Y5AM` is therefore a **known, accepted expected miss** —
+  it sits in the holdout, so it costs a holdout point and is not available to tune against, which
+  is the right place for it. Provisional by agreement, like E5: refine if the rounds show a pattern.
+- **DC50 — A label the reviewers now believe is wrong is dropped to an expert-review pile, never
+  silently corrected.** First member: `XHFTHUCG` (Cattamanchi 2021), which carries restricted
+  randomization unaccounted for yet was scored `data_correct = yes`, where ~40 papers of that shape
+  were scored `no`. Deb's call is that the label is wrong. Editing it in place would make the
+  labels partly *our* opinion rather than the reviewers', which DC46 says the write-up must not
+  claim; scoring against a label two people now disagree with reproduces DC37's problem. So the
+  paper leaves the scored set the same way the 5 institutional disagreements did — moved, logged,
+  reversible — and Keith and Deb adjudicate the pile after **2026-09-02**. The pile is a growing
+  list, not a one-off: O1's 5 stepped-wedge rows and Deb.md's 7 restricted-randomization rows are
+  candidates for it.
+- **DC51 — A label contradicted by a *rule* stays in the scored set as an accepted miss; only a
+  label contradicted by a *reviewer* leaves.** The line between DC50 and this one is who says the
+  label is wrong. Deb read `XHFTHUCG` and judged that row wrong, so it leaves (DC50). Nobody has
+  re-read the 5 stepped-wedge papers NHLBI kept — all that changed is a criterion, and inferring
+  five bad labels from one ruling is a conclusion the reviewers have not drawn. Dropping them would
+  also set the worse precedent: a test set curated by removing whatever disagrees with the current
+  promptbook is one that can no longer measure it, and DC46 already commits the write-up to
+  reporting real human disagreement rather than hiding it. So they stay, scored, and wrong on
+  purpose. The cost is made explicit instead: a **−0.9pp build / −1.4pp holdout floor** on exclusion
+  accuracy, documented in `v0 doc.md`'s *Known expected misses* and reported by `evaluate.py` as its
+  own line rather than folded into `miss`. Two guards follow from it — a round's Δ is compared
+  against the floor, not 0 (it is most of one plateau step, DC17), and an `E3` miss can never drive
+  a promptbook rule without being checked against the five first, or the loop will learn its way
+  back to E3 OFF from five known-bad labels (DC23, DC33). Revisit after 2026-09-02: re-scoring them
+  as excluded erases the floor and loses nothing, and is the outcome to prefer.
 
 - **DC22 — Message Batches API for the full run; `claude -p` CLI for the promptbook loop.** The full
   run is batch classification, not agentic tool use — Batches API, not sync calls, no MCP. The

@@ -1,24 +1,20 @@
-"""NOT READY -- schema is provisional. Do not build on it yet.
+"""SQLite storage: ground-truth labels and append-only judgments.
 
-The ground truth is incomplete: only GroundTruthDataNCI01.xlsx has arrived
-(232 rows, 230 joined), covering 232 of the 569 Human Labelled Set papers. The NHLBI
-labels are still to come, and their columns may not match NCI's -- if they
-carry a different set of fields, `validation_labels` changes shape and
-`expected_decision()` changes with it.
+Status, 2026-08-27. All three label files have arrived and are merged into
+data/ground_truth.csv by scripts/07_build_ground_truth.py (NCI's
+GroundTruthDataNCI01.xlsx, NHLBI's crt_review_table_112.tex and
+NHLBI_exclusions_178.csv). 483 papers carry a clean label in
+`validation_labels`.
 
-So treat everything here as a sketch pending those files:
-  - the `validation_labels` columns are modelled on one spreadsheet
-  - `expected_decision()`'s task mapping is inferred, not confirmed
-  - the rows already in data/review.db are a provisional load, safe to discard
-  - `assign_split()` has never been run, and must not be until every label
-    file is loaded -- it fixes the holdout permanently on the first call
+**The split is assigned and permanent (2026-08-26):** 338 build / 145 holdout,
+stratified on gate-survivor status -- 123/53 survivors, 215/92 excluded.
+`assign_split()` now refuses to re-run without an explicit force, which is the
+point of it (DC18). Build rounds were cut on top of that split by
+scripts/17_assign_build_rounds.py and live in
+results/04_classification/build_rounds.csv, not here.
 
-`judgments` is the more settled half (it comes straight from research design/PLAN.md) but no
-classification code writes to it yet either.
-
----
-
-SQLite storage: ground-truth labels and append-only judgments.
+`judgments` is still empty: the schema comes straight from research design/PLAN.md,
+but no classification code writes to it yet.
 
 Two tables, two very different lifetimes:
 

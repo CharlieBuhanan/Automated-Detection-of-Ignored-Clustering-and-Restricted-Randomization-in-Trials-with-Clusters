@@ -32,8 +32,8 @@ while transcribing Ignore02 into rules, and the ones deliberately left out.
 | Rule | Change | Reason | Papers it corrects | Round |
 |---|---|---|---|---|
 | E1-E16 | added | direct transcription of Ignore02's criteria + NHLBI's additions | — | — |
-| E3 stepped wedge | **added, default OFF** | contested: NHLBI excluded 9 wedges but kept and scored 5. A wrong exclusion is unrecoverable (DC11), so the gate keeps them. Awaiting Deb (O1) | — | — |
-| E5 secondary analysis | rewritten **self-declared only** | largest category (164 papers). "Is a secondary analysis" is a corpus fact; "says it is one" is in the text (DC28) | — | — |
+| E3 stepped wedge | **added, default OFF** | contested: NHLBI excluded 9 wedges but kept and scored 5. A wrong exclusion is unrecoverable (DC11), so the gate keeps them. **Superseded — Deb ruled ON, 2026-08-27 (DC48); v1 flips it.** v0's own rule stays OFF, which is what v0 was | — | — |
+| E5 secondary analysis | rewritten **self-declared only** | largest category (164 papers). "Is a secondary analysis" is a corpus fact; "says it is one" is in the text (DC28). **Confirmed by Deb, 2026-08-27**, knowingly incomplete | — | — |
 | E12 protocol paper | **retired** | requires knowing the outcomes paper exists elsewhere — cross-paper, model cannot see the corpus (DC28). Its 9 papers left the scored set | — | — |
 | E17 random duplicate drop | **retired** | a coin flip among same-first-author papers; unreproducible from text (DC28). Its 34 papers left the scored set | — | — |
 | E13 pilot/feasibility | added | NHLBI addition, not in Ignore02; confirmed by Deb (DC39) | — | — |
@@ -71,13 +71,27 @@ None yet — nothing has been run.
 
 ## Known expected misses
 
-Cases where v0 is *deliberately* wrong against the human labels, so they are not
-mistaken for promptbook faults in round 1.
+Cases where the promptbook is *deliberately* wrong against the human labels, so they are not
+mistaken for promptbook faults.
 
-| Shape | Why v0 disagrees on purpose | Est. papers |
+> **Read this before proposing any promptbook rule from a stepped-wedge miss.** Deb ruled
+> 2026-08-27 that stepped wedge **is** an exclusion (DC48), so from v1 on the model excludes them.
+> NHLBI applied that criterion inconsistently — 9 excluded, **5 kept and fully scored** — and the 5
+> stay in the scored set as accepted misses by decision, *not* dropped (O1). So a miss whose
+> `promptbook_evidence` is `E3` is **presumed correct until checked against the list below**: the
+> label is what is wrong, not the rule. Never write, loosen, or revert a rule off one of these five.
+> They are also not evidence for DC23's pattern requirement — exclude them before counting a shape
+> as repeated, or the loop will "learn" its way back to E3 OFF from five known-bad labels.
+
+| Shape | Why the promptbook disagrees on purpose | Papers |
 |---|---|---|
-| Longitudinality scored incorrect | Ignore02 rule 6 counts only clustering and restricted randomization; NHLBI scored repeated-measures errors as incorrect anyway (`MQF2Y5AM`). Open with Deb | unknown |
-| Stepped-wedge papers kept | E3 OFF; NHLBI excluded 9 | 9 |
+| Stepped-wedge kept and scored by NHLBI | E3 ON from v1 (DC48). These 5 are labelled *keep*; the model excludes them. Accepted misses, kept in the scored set (O1) | 5 — `3JVAWNIE` Bernabe-Ortiz, `TT7PIVLD` Ciccone, `7NYXSVAI` Douin (build); `QMLU4TM8` Courtright, `8H9BUEWH` Fiscella (holdout) |
+| Longitudinality scored incorrect | Settled 2026-08-27 (DC49): follow Ignore02 rule 6 — only clustering and restricted randomization count. NHLBI scored repeated-measures errors incorrect anyway | 1 known — `MQF2Y5AM` Altinger (holdout); more may surface, 41 labelled rows carry `n_long` ≥ 2 |
+| Cattamanchi's data label | `XHFTHUCG`: restricted randomization unaccounted for, scored `data_correct = yes` where ~40 of that shape scored `no`. Deb: the label is wrong. Bound for the expert-review pile (DC50) | 1 (holdout) |
+
+**Cost, if all are kept in the scored set:** exclusion −0.9pp on build (3/338) and −1.4pp on holdout
+(2/145); data analysis loses 2 holdout rows. The exclusion figure eats most of one plateau step, so
+compare Δ against it rather than against 0 (DC17).
 
 ## Plateau check
 

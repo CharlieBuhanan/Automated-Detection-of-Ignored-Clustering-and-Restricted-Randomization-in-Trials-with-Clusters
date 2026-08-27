@@ -26,10 +26,28 @@ have plateaued. Those wait for run 2.
 - [x] **`src/schemas.py` written.** The Decision model, shared by both routes: `parse_decision()`
       for the Reading Room (fence-tolerant, raises `ParseFailure` with the raw text for the retry
       ledger) and `tool_schema(task)` for the Batch API. `wrong_text` is enforced exclusion-only.
-- [ ] **Email Deb the four open exclusion criteria** (E3 stepped wedge, E5 secondary analysis,
-      E12 protocol, E17 random drop) plus the longitudinality question and the seven
-      restricted-randomization label rows. All six are written up as a checklist in
-      [Deb.md](Deb.md) — send that, not a summary. This blocks the v1 promptbook.
+- [x] **Deb replied, 2026-08-27.** E3 stepped wedge **excluded** (DC48); longitudinality **follows
+      Ignore02**, D14 folds into D13 (DC49); E5 stays **self-declared**, knowingly incomplete
+      (DC28); `XHFTHUCG` Cattamanchi's label is wrong and goes to an **expert-review pile**, not a
+      correction (DC50). Round sizes may vary rather than forcing a re-cut (DC47). Still open: the
+      5 stepped-wedge papers NHLBI kept (O1), the 7 restricted-randomization rows, E17 (O3).
+- [ ] **Cut `promptbooks/v1/`** — E3 ON, D14 folded into D13, E5 and D3 marked confirmed. Copy
+      `v0/`, never edit it (DC15). **Not blocked on O1:** Deb's ruling fixes v1's *rules* outright;
+      O1 only decides which *labels* v1 is scored against, and that can settle after v1 is cut.
+- [ ] **Drop `XHFTHUCG` to the expert-review pile** (DC50). Holdout paper, in no build round, so
+      nothing re-cuts and no round size changes: holdout 145 → 144, survivors 53 → 52.
+- [ ] **Factor in the 5 accepted stepped-wedge misses** before reading any exclusion accuracy
+      number (O1, decided 2026-08-27: keep them scored, do not drop). They are wrong **by decision**,
+      so:
+      1. Every exclusion accuracy figure carries a **−0.9pp build / −1.4pp holdout** floor. Compare
+         a round's Δ against that floor, not against 0 — it is most of one plateau step (DC17).
+      2. `evaluate.py` should report them as a named line ("accepted misses: 3") rather than
+         folding them into `miss`, so a real regression is never hidden behind them.
+      3. **Never let an `E3` miss drive a promptbook rule** — check it against the five first. See
+         the preface in [`v0 doc.md`](../promptbooks/v0/v0%20doc.md)'s *Known expected misses*, and
+         carry that preface into every `vN doc.md`.
+      4. Revisit after 2026-09-02 — Deb and Keith may re-score them as excluded, which would erase
+         the floor and is the outcome that loses no data.
 - [ ] **Build the Reading Room** — the isolated CLI harness the promptbook loop runs in. See
       "The Reading Room" below. Nothing in the refinement loop can start without it.
 - [ ] Still unwritten: `promptbook_builder.py`, `evaluate.py`, `two_pass.py`, and the run log /
@@ -420,7 +438,8 @@ scored as misses.
 
 4. **Ground truth** — `src/db.py` + `scripts/04_load_ground_truth.py`. Loads every `GroundTruth*.xlsx`
    into SQLite and records the split as a column, so it is fixed once and cannot drift between runs.
-   **NCI is loaded (230 rows); NHLBI's labels have not arrived yet, so the split is not yet assigned.**
+   **Done: all three label files are loaded (483 papers) and the split was assigned 2026-08-26 —
+   338 build / 145 holdout, 123/53 survivors. It refuses to re-run.**
 
    **The join is the hard part, and it is why this is a script and not a spreadsheet import.** The
    labels identify papers the way a reference list does — `83. (Hershman, Bansal, Barlow, et al., 2023)`
@@ -602,11 +621,12 @@ then `data_analysis`.
       `results/review/09_nhlbi_unreviewed_dropped.csv`. Active Human Labelled Set: 553 → 530.
 - [x] **Batching scheme settled** — 30% holdout **stratified on gate-survivor status** (~53 survivors
       held out, guaranteed rather than left to the hash); promptbook rounds sample 50 from the build
-      split. `assign_split()` still needs the stratification implemented before it is run.
+      split. Stratification implemented and the split run, 2026-08-26.
 - [x] Exclusion ledger (`scripts/05_build_exclusions.py`) — every departed paper with its reason and
       who decided; reconciles 2063 fetched → active corpus (`--check` for the current count)
 - [x] `promptbooks/v0/exclusion.md` — 17 criteria, prompt block, `wrong_text` decision added. Deb has
-      confirmed E13 and the protocol-citation rule; E3/E5/E12/E17 still await her sign-off (O1).
+      confirmed E13, the protocol-citation rule, E3 (now ON, DC48) and E5 (self-declared, DC28);
+      only E17 is unruled, and nothing blocks on it (O3).
 - [x] **Extracted-text integrity scan** (`scripts/11_scan_text_integrity.py`, step 2b) — 45 of 1772
       flagged, 4 genuinely wrong documents found: 3 replaced and re-extracted, 1 dropped
       (`J2RUD3YQ` — no full text exists, only a conference-abstract supplement; DC43).
@@ -884,9 +904,9 @@ Publication", flat, 232 papers, no subcollections), fetched 2026-08-10 with `--s
 multi-attachment warnings. NHLBI: group `6363893`, fetched as `Locked_26_01_08_337`, **337 papers**.
 569 HLS PDFs are on disk and all 569 are VERIFIED.
 
-**Still open: the NHLBI *labels*.** Only `GroundTruthDataNCI01.xlsx` has arrived. Until NHLBI's
-equivalent lands, 337 of the 569 HLS papers have PDFs but no human answer, so they can be
-neither scored nor split. This is what blocks `--assign-split`.
+**Settled: the NHLBI *labels* arrived** in two disjoint files (`crt_review_table_112.tex` and
+`NHLBI_exclusions_178.csv`) rather than one spreadsheet. All three are merged by
+`07_build_ground_truth.py`; 483 papers carry a clean label and are split.
 
 **2. Do all HLS papers carry labels for all four tasks?** **No — and by design.** Measured on
 NCI01: of 232 rows, 136 carry an exclusion reason and nothing else, and 96 carry Power and Stats.
@@ -894,11 +914,11 @@ That is the gate showing up in the ground truth exactly as intended — a paper 
 humans excluded never got scored on power or stats — and `db.expected_decision()` returns `None` for
 those, so they drop out of the denominator rather than counting as misses.
 
-The consequence for the split is real though: a single 30% holdout drawn over *all* labeled papers
-leaves only ~53 gate survivors to score power_analysis and data_analysis on, which is thin for a
-headline accuracy number. Two options when the NHLBI labels arrive: stratify the split on
-gate-survivor status so both tasks get a proportional holdout, or accept the wide interval and report
-it. Decide before calling `--assign-split`, because it only runs once.
+The consequence for the split was real, and it is why the split is stratified. A single 30% holdout
+drawn over *all* labeled papers leaves whatever number of gate survivors the hash deals into the
+holdout, and survivors are the only papers power_analysis and data_analysis can be scored on.
+**Resolved by stratifying on gate-survivor status** (DC30), which makes the 53-survivor holdout a
+guarantee rather than a coin flip. Still thin for a headline number — report the interval.
 
 **3. Promptbook updates on a miss: manual or model-assisted?** Manual = you read the miss and write the
 rule. Model-assisted = feed the miss + current promptbook to Opus and have it propose the edit. Faster, but
