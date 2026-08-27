@@ -18,26 +18,35 @@ have plateaued. Those wait for run 2.
 
 ## TODO now
 
-- [ ] **Run `db.assign_split()`.** Gate-survivor stratification is implemented (DC30); the dry run
-      gives 123/53 survivors and 215/92 excluded. It runs once. Nothing blocks it now.
+- [x] **Split assigned, 2026-08-26.** 338 build / 145 holdout, stratified on gate-survivor status:
+      123/53 survivors, 215/92 excluded. Runs once; re-running now refuses.
+- [x] **Build rounds cut, 2026-08-26.** `scripts/17_assign_build_rounds.py` ->
+      `results/04_classification/build_rounds.csv`. Exclusion: 7 rounds (6x50 + 38), each 18/32
+      survivor/excluded. Power and data: 3 rounds each over the 123 build survivors (50/50/23).
+- [x] **`src/schemas.py` written.** The Decision model, shared by both routes: `parse_decision()`
+      for the Reading Room (fence-tolerant, raises `ParseFailure` with the raw text for the retry
+      ledger) and `tool_schema(task)` for the Batch API. `wrong_text` is enforced exclusion-only.
 - [ ] **Email Deb the four open exclusion criteria** (E3 stepped wedge, E5 secondary analysis,
       E12 protocol, E17 random drop) plus the longitudinality question and the seven
       restricted-randomization label rows. All six are written up as a checklist in
       [Deb.md](Deb.md) — send that, not a summary. This blocks the v1 promptbook.
 - [ ] **Build the Reading Room** — the isolated CLI harness the promptbook loop runs in. See
       "The Reading Room" below. Nothing in the refinement loop can start without it.
-- [ ] `src/schemas.py` does not exist. Neither do `promptbook_builder.py`, `evaluate.py`,
-      `two_pass.py`, or anything in `results/04_classification/`. The classification half of this
-      plan is documented and unwritten.
+- [ ] Still unwritten: `promptbook_builder.py`, `evaluate.py`, `two_pass.py`, and the run log /
+      accuracy history in `results/04_classification/`.
 
 ### Two ways to lose work, both real, both now guarded
 
-**Re-running `01_verify_identity.py` silently undoes every human verdict** (DC44). It rewrites
-`verdict` for every manifest row from what the identity ladder can see in a PDF, so a `DROPPED`
-paper whose PDF was moved aside comes back `PDF_UNREADABLE`, a `DROPPED` paper whose PDF stayed
-comes back `VERIFIED` and re-enters the corpus, and a `WEAK` paper a human cleared scores `WEAK`
-again. **Always run `scripts/16_reapply_drops.py` straight afterwards** — it replays every recorded
-decision, newest wins.
+**`01_verify_identity.py` used to silently undo every human verdict** (DC44). It rewrites `verdict`
+for every manifest row from what the identity ladder can see in a PDF, so a `DROPPED` paper whose
+PDF was moved aside came back `PDF_UNREADABLE`, a `DROPPED` paper whose PDF stayed came back
+`VERIFIED` and re-entered the corpus, and a `WEAK` paper a human cleared scored `WEAK` again. One
+re-run on 2026-08-26 reversed all 75 drops and 2 cleared papers at once.
+
+**Fixed at the source: it now skips papers with a recorded decision** (`src/review_log.py`), and
+prints how many it protected. `scripts/16_reapply_drops.py` remains for the two cases left —
+repairing a manifest damaged before the guard existed, and undoing a deliberate
+`--rescore-decided` run.
 
 **Re-running `00_fetch_zotero.py --set human_labelled` undoes the duplicate merge** — the 15 removed NHLBI
 rows are gone from the manifest and their PDFs are moved aside, so `completed_ids()` no longer skips them
@@ -608,6 +617,35 @@ then `data_analysis`.
 - [ ] Gate run (job 1), record survivors
 - [ ] Analysis run (job 2) on survivors
 - [ ] Holdout run — report this number
+
+## Build rounds
+
+**The build split is cut into fixed rounds once, not sampled fresh each time.** A round drawn at
+random every run makes two rounds incomparable, and the plateau rule (two consecutive rounds each
+under 1pp, DC17) would then measure sampling noise as often as it measures the promptbook.
+
+`scripts/17_assign_build_rounds.py` -> `results/04_classification/build_rounds.csv`
+(`paper_id, task, round, stratum`). Deterministic: it hashes `seed + paper_id`, so it regenerates
+byte-identically on any machine. Re-running is a no-op unless the build split itself changed, and if
+it did, that is a finding rather than a refresh.
+
+**Rounds are per task, because the denominators differ.** The gate is scored on the whole build
+split; power and data analysis only ever see gate survivors (DC10), so their rounds come from the
+123 build survivors, not all 338.
+
+| Task | Papers | Rounds | Shape |
+|---|---:|---:|---|
+| exclusion | 338 | 7 | 6x50 + 38, each **18 survivor / 32 excluded** |
+| power_analysis | 123 | 3 | 50 / 50 / 23 |
+| data_analysis | 123 | 3 | 50 / 50 / 23 |
+
+**Each exclusion round is stratified on gate-survivor status** in the build split's own proportion
+(123/338 = 36.4%). Without it a round could come out 80% excluded and its accuracy would not be
+comparable to the next round's, which is the one thing rounds exist to be. The strata are dealt
+round-robin weighted by size, so the proportion falls out of the ordering rather than being
+computed per round.
+
+Rounds 1-3 are the proof-of-concept budget for run 1. There is no requirement to use all 7.
 
 ## The Reading Room
 

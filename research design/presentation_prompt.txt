@@ -14,23 +14,22 @@
 # -------------------------------------------------------------------------
 # 1. TYPOGRAPHY: ALL SERIF  (your request)
 # -------------------------------------------------------------------------
-# Current TYPOGRAPHY block sets headings serif, body humanist sans. Replace
-# with:
+# DECIDED: serif everywhere for text, mono kept for figures. Replace the whole
+# TYPOGRAPHY block below with:
+#
+#   TYPOGRAPHY:
 #     Headings      Source Serif 4 (or Newsreader), 600 weight
 #     Body          Source Serif 4, 400 weight
-#     Numbers/code  Source Serif 4 tabular lining figures
+#     Numbers/code  IBM Plex Mono, tabular figures
+#     All figures in tables and stat callouts use tabular lining numerals.
 #
-# One decision you need to make: IBM Plex Mono currently carries every table
-# and stat callout, and mono is what makes columns of figures line up. Source
-# Serif 4 does have tabular lining numerals, so a pure-serif deck is possible,
-# but check one dense table (slide 10 or 17) before committing to it.
-#   - Pure serif: change LAYOUT RULES "Big numbers are ... large, mono, petrol"
-#     to "large, serif, petrol", and TYPOGRAPHY's last line already says to use
-#     tabular lining numerals - keep that, it is what makes it work.
-#   - Serif + mono kept for figures only: leave the mono line, delete only the
-#     humanist sans body line. Less pure, safer for the tables.
-# My recommendation: pure serif, with tabular figures. This deck's tables are
-# short and the visual consistency is worth more than perfect column alignment.
+# The only change from what is written below is the Body line: the humanist
+# sans (IBM Plex Sans) goes, and body text becomes the same serif as the
+# headings. Mono stays exactly as it is, because it is what makes columns of
+# figures line up, and slides 10, 12 and 17 all lean on that.
+#
+# Nothing in LAYOUT RULES needs to change. "Big numbers are a design element:
+# large, mono, petrol" stays true.
 #
 # -------------------------------------------------------------------------
 # 2. SLIDE 10 - TWO WRONG NUMBERS  (highest priority; these were shown)

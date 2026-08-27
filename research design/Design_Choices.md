@@ -7,7 +7,7 @@ this is the index. Standing rules are in [CLAUDE.md](../.claude/CLAUDE.md).
 
 ## Open — still need a decision
 
-Everything else has been settled; the decisions are recorded as DC1-DC46 below.
+Everything else has been settled; the decisions are recorded as DC1-DC47 below.
 
 | | Question | Blocks |
 |---|---|---|
@@ -80,9 +80,13 @@ Everything else has been settled; the decisions are recorded as DC1-DC46 below.
 
 ### Method and storage
 
-- **DC15 — Promptbooks are markdown in `promptbooks/`, versioned by git commit.** Built empirically
-  from misses, not written up front. Each edit is its own commit with the accuracy delta in the
-  message; `promptbook_version` on a judgment is that commit hash.
+- **DC15 — Promptbooks are markdown in `promptbooks/vN/`, one frozen directory per version.** Built
+  empirically from misses, not written up front. `promptbooks/CURRENT` names the active version; a
+  rule change means copying `vN/` to `vN+1/`, never editing in place, because a judgment records
+  `promptbook_version` and a rule that moved under a fixed version makes every earlier judgment
+  unreproducible. Each version bump is its own commit with the accuracy delta in the message, and
+  each carries a tables-only `vN doc.md` recording what changed, why, and which papers it was
+  written against.
 - **DC16 — Opus builds, Sonnet runs.** Opus 5 for the promptbook loop (one-time, high-stakes); Sonnet 5
   for the full run with an Opus second pass on low confidence. Every promptbook gets a Sonnet check
   once it plateaus on Opus — otherwise the gap surfaces after thousands of calls.
@@ -195,10 +199,14 @@ Everything else has been settled; the decisions are recorded as DC1-DC46 below.
   so a re-run silently reverses two things a human already settled: a `DROPPED` paper comes back
   (`PDF_UNREADABLE` if its PDF was moved aside, `VERIFIED` if it was not — and that one re-enters
   the active corpus), and a `WEAK` paper cleared by hand scores `WEAK` again, because what resolved
-  it was a person reading the PDF and that is not in the file. `scripts/16_reapply_drops.py` replays
-  every recorded decision afterwards, ordered by timestamp so the newest wins — a paper cleared in
-  script 03 and *later* dropped by script 09 stays dropped. This is DC20 paying off: because no
-  paper ever left silently, a clobbered manifest is fully rebuildable from the logs.
+  it was a person reading the PDF and that is not in the file. One re-run on 2026-08-26 reversed all
+  75 drops and 2 cleared papers at once.
+  **Fixed at the source rather than by a follow-up step:** `src/review_log.py` reads every decision
+  back out of the logs, ordered by timestamp so the newest wins (a paper cleared in script 03 and
+  *later* dropped by script 09 stays dropped), and `01_verify_identity.py` now **skips** those papers
+  instead of rescoring them. `scripts/16_reapply_drops.py` stays as the repair path.
+  This is DC20 paying off twice: because no paper ever left silently, the clobbered manifest was
+  fully rebuildable, and the same logs are what the guard now reads.
 - **DC45 — The promptbook's E-numbers are the canonical exclusion taxonomy.** NCI used 8 reason
   strings and NHLBI 13, a union of 15 that mixes genuinely new criteria with renamings of the same
   idea. Rather than invent a third vocabulary, exclusion reasons map onto E1-E16 — already the
@@ -218,6 +226,17 @@ Everything else has been settled; the decisions are recorded as DC1-DC46 below.
   here is only that the write-up states what they are rather than calling them truth. Exactly how
   that is reported (raw accuracy, κ against a human-agreement ceiling, or both) is O2, decided when
   the results exist.
+
+- **DC47 — Build rounds are cut once and written down, not sampled fresh.** DC32 fixes the round
+  size at 50; this fixes *which* 50. A round drawn at random each run makes two rounds
+  incomparable, so the plateau rule (DC17) would measure sampling noise as often as the promptbook.
+  `scripts/17_assign_build_rounds.py` hashes `seed + paper_id` and writes
+  `results/04_classification/build_rounds.csv`, regenerable byte-identically anywhere. Rounds are
+  **per task** because the denominators differ — the gate is scored on all 338 build papers (7
+  rounds), power and data only on the 123 build survivors (3 rounds each, DC10). Each exclusion
+  round is **stratified** at the build split's own 36% survivor rate (18/32 per round): an
+  unstratified round could come out 80% excluded, and comparability across rounds is the only thing
+  rounds are for.
 
 - **DC22 — Message Batches API for the full run; `claude -p` CLI for the promptbook loop.** The full
   run is batch classification, not agentic tool use — Batches API, not sync calls, no MCP. The

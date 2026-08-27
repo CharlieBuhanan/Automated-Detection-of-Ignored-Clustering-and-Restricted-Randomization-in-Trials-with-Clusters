@@ -8,12 +8,14 @@ WHY
 
     Restoring them is only safe once the HLS has stopped shrinking. Every further
     HLS drop creates more restore candidates, and a restore pass run halfway
-    through leaves the corpus in a state no single script explains. So this runs
+    through leaves the corpus in a state no single script explains. So this ran
     first: fourteen read-only tests that each assert one way the HLS could still
     be hiding a paper that has to leave.
 
-    All PASS -> the HLS is closed, and the DC42 restore sweep can be written.
-    Any FAIL -> fix that first; the restore list at the bottom is not final yet.
+    All 14 passed on 2026-08-26 and the 23 restores went through
+    (`scripts/15_restore_dc42_duplicates.py`). The list is now a standing
+    regression: run it after anything that touches HLS membership, and any FAIL
+    means a new candidate has appeared and the restore needs re-running.
 
     Read-only. Writes nothing, changes nothing, drops nothing.
 
@@ -249,12 +251,31 @@ def main():
     # -- C13 --------------------------------------------------------------
     # Restoring US papers changes the corpus, not the labels -- but a split
     # already fixed means the corpus was frozen, and this sweep is late.
-    split_assigned = conn.execute(
-        "SELECT COUNT(*) FROM validation_labels WHERE split IS NOT NULL").fetchone()[0]
-    cl.check("C13", "the build/holdout split has not been assigned yet",
-             split_assigned == 0,
-             (f"{split_assigned} paper(s) already split -- the corpus was frozen before this sweep"
-              if split_assigned else "split is NULL for every label; assign it after the restore"))
+    # Before the split existed this asserted the opposite -- that nothing had
+    # been assigned yet, so the corpus could still change. It was assigned on
+    # 2026-08-26 and cannot be reassigned, so the question flips: every label
+    # must now carry a split, and it must be stratified as DC30 specifies.
+    # An unsplit label here means a paper entered the HLS after the freeze,
+    # which is the drift the run-once guard exists to make visible.
+    split_rows = conn.execute(
+        "SELECT split, COUNT(*) FROM validation_labels GROUP BY split").fetchall()
+    counts = {row[0]: row[1] for row in split_rows}
+    unsplit = counts.get(None, 0)
+
+    strata = {}
+    for row in conn.execute("SELECT * FROM validation_labels WHERE split IS NOT NULL"):
+        key = (db._gate_stratum(row), row["split"])
+        strata[key] = strata.get(key, 0) + 1
+    survivors_held = strata.get(("survivor", db.SPLIT_HOLDOUT), 0)
+
+    cl.check("C13", "every label carries a split, stratified on gate-survivor status",
+             unsplit == 0 and survivors_held > 0,
+             (f"{unsplit} label(s) have no split -- assigned after the freeze"
+              if unsplit else
+              f"{counts.get(db.SPLIT_BUILD, 0)} build / {counts.get(db.SPLIT_HOLDOUT, 0)} holdout; "
+              f"survivors {strata.get(('survivor', db.SPLIT_BUILD), 0)}/{survivors_held}, "
+              f"excluded {strata.get(('excluded', db.SPLIT_BUILD), 0)}/"
+              f"{strata.get(('excluded', db.SPLIT_HOLDOUT), 0)}"))
 
     # -- C14 --------------------------------------------------------------
     # The ledger is what the methods section cites; if it disagrees with the
@@ -273,8 +294,7 @@ def main():
         print(f"{len(cl.failed)} of {len(cl.results)} checks FAILED -- the HLS is not closed.")
         print("Fix these before restoring any US paper; each failure can add restore candidates.")
     else:
-        print(f"All {len(cl.results)} checks passed. The HLS is closed; the DC42 "
-              "restore sweep is safe to run.")
+        print(f"All {len(cl.results)} checks passed. The HLS is closed and split.")
 
     # -- DC42 preview -----------------------------------------------------
     removed = read_csv(REVIEW_DIR / "02_removed_us_duplicates.csv")
@@ -283,11 +303,19 @@ def main():
 
     print()
     print("=" * 70)
-    print(f"DC42 RESTORE CANDIDATES ({len(candidates)} of {len(removed)} removed US papers)")
+    restored = {r["paper_id"] for r in read_csv(REVIEW_DIR / "15_dc42_restored.csv")}
+    outstanding = [r for r in candidates if r["removed_paper_id"] not in restored]
+
+    print(f"DC42: {len(candidates)} of {len(removed)} removed US papers have a twin with no label")
     print("=" * 70)
-    print("US papers whose HLS twin no longer carries a label. Not restored here --")
-    print("this is a preview so the number is known before the sweep is written.")
+    print(f"  {len(candidates) - len(outstanding)} already restored "
+          f"(results/review/15_dc42_restored.csv)")
+    print(f"  {len(outstanding)} outstanding"
+          + (" -- run scripts/15_restore_dc42_duplicates.py" if outstanding else ""))
     print()
+    if not outstanding:
+        conn.close()
+        return 1 if cl.failed else 0
     by_reason = Counter(
         ledger_reason.get(r["matched_validation_paper_id"], "unknown")[:70]
         for r in candidates)

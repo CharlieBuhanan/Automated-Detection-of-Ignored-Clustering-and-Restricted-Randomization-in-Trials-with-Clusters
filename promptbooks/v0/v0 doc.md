@@ -40,6 +40,20 @@ while transcribing Ignore02 into rules, and the ones deliberately left out.
 | `wrong_text` | added as a fourth decision | exclusion only; separates "the call is unclear" from "this is not the paper" (DC41) | — | — |
 | `reasoning` cap | 60 words → **200 characters** | 2026-08-26. A character cap is checkable by the validator without tokenizing; 200 chars is roughly the same length and removes the word-counting ambiguity (DC27) | — | — |
 
+## Rounds available
+
+Cut 2026-08-26 by `scripts/17_assign_build_rounds.py` into
+`results/04_classification/build_rounds.csv`, fixed before any judging so no round can be
+re-drawn after seeing a result (DC47). Membership is deterministic from `sha256(seed + paper_id)`.
+
+| Task | Build papers | Rounds | Shape |
+|---|---:|---:|---|
+| exclusion | 338 | 7 | 6×50 + 38, each **18 survivor / 32 excluded** |
+| power_analysis | 123 | 3 | 50 / 50 / 23 |
+| data_analysis | 123 | 3 | 50 / 50 / 23 |
+
+Run 1 is a proof of concept, so it uses the first rounds only, not all 7.
+
 ## Rounds run against this version
 
 None. v0 has never been executed.

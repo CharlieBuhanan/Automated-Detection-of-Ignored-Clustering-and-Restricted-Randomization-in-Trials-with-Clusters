@@ -74,3 +74,14 @@ Replays human decisions that `01_verify_identity.py` overwrites (DC44).
 - Skip rows already matching the manifest
 - Write verdict + verdict_reason back
 - Idempotent; run after every identity re-run
+
+## Script 17 — logical steps
+
+Cuts the build split into fixed rounds so two rounds are comparable (DC47).
+
+- Read build-split papers from validation_labels
+- Split into survivor / excluded strata
+- Order each stratum by sha256(seed + paper_id)
+- Interleave strata so every 50-window holds both in proportion
+- Cut exclusion into 7 rounds, power/data into 3 each
+- Write results/04_classification/build_rounds.csv
