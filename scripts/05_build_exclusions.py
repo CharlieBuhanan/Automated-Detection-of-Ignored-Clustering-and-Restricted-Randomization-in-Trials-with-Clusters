@@ -315,6 +315,35 @@ def institutional_disagreement_drops(titles: dict) -> list[dict]:
     return rows
 
 
+def expert_review_drops(titles: dict) -> list[dict]:
+    """HLS papers dropped because a reviewer judged the label itself wrong (DC50).
+
+    scripts/18_drop_expert_review.py's own log. Distinct from an institutional
+    disagreement, where two reviewers split: here one reviewer read the row and
+    rejected it, so there is no second answer to weigh -- the label is simply not
+    trusted until the pile is adjudicated.
+    """
+    log = REVIEW_DIR / "18_expert_review_dropped.csv"
+    if not log.exists():
+        return []
+    rows = []
+    for row in read_csv(log):
+        paper_id = row["paper_id"]
+        rows.append({
+            "paper_id": paper_id,
+            "set": SET_HUMAN_LABELLED,
+            "stage": "expert_review_pending",
+            "removed_from": "corpus",
+            "reason": row["reason"],
+            "evidence": f"{row.get('judged_by', '')}: {row.get('what_is_wrong', '')}",
+            "decided_by": BY_HUMAN,
+            "decided_at": row.get("dropped_at", ""),
+            "source_record": "results/review/18_expert_review_dropped.csv",
+            "title": titles.get(paper_id, ""),
+        })
+    return rows
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true", help="Report only, write nothing")
@@ -332,6 +361,7 @@ def main():
               + nhlbi_unreviewed_drops(titles)
               + nonjudgeable_exclusion_drops(titles)
               + institutional_disagreement_drops(titles)
+              + expert_review_drops(titles)
               + unjoinable_labels(titles))
 
     # Two different kinds of removal, and conflating them makes the arithmetic

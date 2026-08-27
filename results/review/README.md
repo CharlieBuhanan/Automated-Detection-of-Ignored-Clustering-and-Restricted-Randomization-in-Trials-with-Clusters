@@ -11,3 +11,4 @@
 - **`10_nonjudgeable_exclusions_dropped.csv`** — HLS papers dropped for a cross-paper exclusion reason (protocol paper, random drop).
 - **`11_text_integrity_flagged.csv`** — papers whose cached text looked like the wrong document (submission forms, etc.).
 - **`12_institutional_disagreements_dropped.csv`** — HLS papers dropped for an NCI/NHLBI disagreement, assumed unresolved.
+- **`18_expert_review_dropped.csv`** — HLS papers dropped because a reviewer judged the *label itself* wrong; awaiting expert re-review (DC50). Not the same as a rule disagreement, which stays scored as an accepted miss (DC51).

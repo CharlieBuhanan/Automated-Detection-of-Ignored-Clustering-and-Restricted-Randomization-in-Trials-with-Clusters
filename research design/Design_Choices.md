@@ -7,13 +7,13 @@ this is the index. Standing rules are in [CLAUDE.md](../.claude/CLAUDE.md).
 
 ## Open — still need a decision
 
-Everything else has been settled; the decisions are recorded as DC1-DC51 below.
+Everything else has been settled; the decisions are recorded as DC1-DC52 below.
 
 | | Question | Blocks |
 |---|---|---|
 | **O1** | **The 5 stepped-wedge papers NHLBI kept and scored — revisit after 2026-09-02.** Decided for now (2026-08-27): **kept in the scored set as accepted misses**, not dropped. See DC51. Deb ruled the criterion, not these rows, and she and Keith may yet re-score them as excluded — the outcome that loses no data. | Nothing; the floor is documented |
 | **O2** | **Inter-rater statistic for the 15 dual-reviewed pairs.** Deferred, not declined: raw agreement is 12/15 = 80%. Decide before writing the methods section whether Cohen's kappa is reported alongside it. | Methods section |
-| **O3** | **E17 random duplicate-drop.** Retired as cross-paper (DC28) and its 34 rows already left the scored set; Deb has not explicitly ruled on it, unlike E3/E5/E12/D14. Low stakes — confirm at the next pass rather than blocking on it. | Nothing |
+| **O3** | **The 7 rows flagged `restricted_rand = yes` whose `should` never asks for it.** Three were scored *correct* despite the restriction being unaccounted for — the Cattamanchi shape (DC50). Written up as a table for Deb in [Deb.md](Deb.md); decides whether they join the expert-review pile, and whether `data_should` can be compared against `promptbook_evidence` at all. | Nothing yet |
 
 ---
 
@@ -122,6 +122,12 @@ Everything else has been settled; the decisions are recorded as DC1-DC51 below.
   output tokens on every paper. **Characters, not words** (changed 2026-08-26 from a 60-word cap):
   the validator can check a character count exactly, where "60 words" needs a tokenizer nobody
   agrees on and produces a rule the model can violate without either side noticing.
+- **DC52 — The model never drops a paper at random, for any reason. Confirmed by Deb, 2026-08-27.**
+  E17 was already retired as cross-paper (DC28); this generalizes it from "not this criterion" to a
+  standing prohibition in the v1 promptbook. Ignore02 used `randuni` to keep one of several
+  same-first-author papers, which is unreproducible from text and not a property of the paper being
+  judged. If the only argument for excluding is that some other paper resembles this one, the
+  answer is `no`.
 - **DC28 — Cross-paper reasons are never exclusion criteria.** A paper is judged on its own text.
   "Its outcomes paper exists elsewhere" and "we kept a different paper by the same group" are facts
   about the corpus, which the model cannot see, so the 41 rows carrying them left the scored set

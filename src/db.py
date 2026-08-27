@@ -116,25 +116,46 @@ def _now() -> str:
 
 
 def insert_labels(conn: sqlite3.Connection, rows: list[dict]) -> int:
-    """Insert label rows. Returns how many landed.
+    """Insert label rows, preserving each paper's split. Returns how many landed.
 
     `INSERT OR REPLACE` on paper_id, so re-running a load after fixing a bad
     citation match corrects the row instead of failing. Labels are truth being
     transcribed, not judgments being accumulated -- the append-only rule that
     governs `judgments` would only pile up duplicate transcriptions here.
 
-    Note this deliberately clears `split`: a corrected match means the paper's
-    identity changed, and silently keeping a holdout assignment made for a
-    different paper is exactly the drift the split exists to prevent.
+    **`split` survives a reload when the paper's identity did not change.** An
+    earlier version wrote NULL unconditionally, on the reasoning that a corrected
+    match means a different paper and a holdout assignment made for a different
+    paper is exactly the drift the split exists to prevent. That reasoning is
+    right about a *corrected* match and wrong about every other row: a load
+    re-inserts the whole file, so one fixed citation silently nulled all 483
+    splits. Since assign_split() refuses to re-run (DC18), recovering from that
+    needs `--force-split`, which deals a *different* split -- the permanent,
+    un-reassignable structure destroyed by an ordinary reload.
+
+    So the identity test is made explicit instead of assumed. A row keeps its
+    split when `citation_raw` is unchanged -- that string is what the join
+    resolved, so if it moved, the label now describes a different paper and the
+    old assignment must not follow it.
     """
     now = _now()
+    existing = {r["paper_id"]: r for r in conn.execute(
+        "SELECT paper_id, split, citation_raw FROM validation_labels")}
+
+    prepared = []
+    for row in rows:
+        prior = existing.get(row["paper_id"])
+        keeps_identity = prior is not None and prior["citation_raw"] == row["citation_raw"]
+        prepared.append({**row, "loaded_at": now,
+                         "split": prior["split"] if keeps_identity else None})
+
     conn.executemany(
         """INSERT OR REPLACE INTO validation_labels
            (paper_id, source_file, citation_raw, exclusion_reason, power, stats,
             review_category, split, matched_by, match_score, loaded_at)
            VALUES (:paper_id, :source_file, :citation_raw, :exclusion_reason, :power,
-                   :stats, :review_category, NULL, :matched_by, :match_score, :loaded_at)""",
-        [{**r, "loaded_at": now} for r in rows],
+                   :stats, :review_category, :split, :matched_by, :match_score, :loaded_at)""",
+        prepared,
     )
     conn.commit()
     return len(rows)

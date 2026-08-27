@@ -223,6 +223,10 @@ def main():
     parser.add_argument("--holdout-frac", type=float, default=0.3)
     parser.add_argument("--force-split", action="store_true",
                         help="Re-assign an existing split. Only with a deliberate reason.")
+    parser.add_argument("--allow-split-prune", action="store_true",
+                        help="Remove label rows that carry a split but are no longer active "
+                             "(a paper DROPPED after the split was assigned). Shrinks the "
+                             "split; it is never re-cut.")
     parser.add_argument("--allow-incomplete", action="store_true",
                         help="Allow --assign-split even while some active Human Labelled Set "
                              "papers still have no label. The split can only be fixed "
@@ -275,15 +279,35 @@ def main():
     # a split is never touched here -- assign_split() is the only thing
     # allowed to change what's in the holdout, and it can only run once.
     keep = {row["paper_id"] for row in labels}
-    stale = [r["paper_id"] for r in conn.execute(
-        "SELECT paper_id FROM validation_labels WHERE split IS NULL")
-        if r["paper_id"] not in keep]
-    if stale:
+    stale = [dict(r) for r in conn.execute(
+        "SELECT paper_id, split FROM validation_labels") if r["paper_id"] not in keep]
+    unsplit = [r["paper_id"] for r in stale if not r["split"]]
+    split_stale = [r for r in stale if r["split"]]
+
+    # A paper that carries a split and is no longer produced by this load has been
+    # DROPPED since the split was assigned. Its row must go -- left behind, it keeps
+    # being scored against a paper that is no longer in the corpus. But it is being
+    # removed from a structure that is fixed once and cannot be re-dealt (DC18), so
+    # it shrinks the split rather than re-cutting it (DC47) and never happens
+    # silently: named, counted, and gated behind an explicit flag.
+    if split_stale and not args.allow_split_prune:
+        raise SystemExit(
+            f"\n{len(split_stale)} paper(s) carry a split but are no longer produced by "
+            f"this load, so they have been dropped since the split was assigned:\n"
+            + "\n".join(f"    {r['paper_id']}  ({r['split']})" for r in split_stale)
+            + "\n\n  Leaving them scores a paper that is no longer in the corpus; removing "
+              "them shrinks\n  a split that cannot be re-dealt. Pass --allow-split-prune "
+              "to remove them.")
+
+    doomed = unsplit + [r["paper_id"] for r in split_stale]
+    if doomed:
         conn.executemany("DELETE FROM validation_labels WHERE paper_id = ?",
-                         [(p,) for p in stale])
+                         [(p,) for p in doomed])
         conn.commit()
-        print(f"\npruned {len(stale)} stale row(s) no longer produced by this load "
-              f"(and not already split): {', '.join(sorted(stale)[:10])}")
+        print(f"\npruned {len(doomed)} stale row(s) no longer produced by this load: "
+              f"{', '.join(sorted(doomed)[:10])}")
+        for r in split_stale:
+            print(f"  !! {r['paper_id']} left the {r['split']} split -- it is now smaller")
 
     db.insert_labels(conn, labels)
     print(f"\nloaded {len(labels)} label row(s) -> {db.DEFAULT_PATH}")
