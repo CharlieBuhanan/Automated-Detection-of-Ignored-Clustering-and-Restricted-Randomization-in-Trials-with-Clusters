@@ -1,0 +1,6 @@
+task,split,promptbook_version,configuration_status,bin_lower,bin_upper,n,mean_confidence,empirical_accuracy,calibration_gap
+data_analysis,build,v1,comparable,0.5,0.6,3,0.55,1,-0.45
+data_analysis,build,v1,comparable,0.6,0.7,14,0.6307,0.7857,-0.155
+data_analysis,build,v1,comparable,0.7,0.8,20,0.738,0.8,-0.062
+data_analysis,build,v1,comparable,0.8,0.9,1,0.85,1,-0.15
+data_analysis,build,v1,comparable,0.9,1.0,2,0.925,1,-0.075

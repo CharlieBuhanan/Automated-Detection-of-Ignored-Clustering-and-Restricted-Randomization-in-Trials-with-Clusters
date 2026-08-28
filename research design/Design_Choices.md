@@ -49,33 +49,16 @@ Everything else has been settled; the decisions are recorded as DC1-DC55 below.
   was read from *at parse time*, so the 1814 fields still name the pre-rename folders. Updating them
   would assert a file was read from somewhere it was not; re-parsing to fix them honestly is what DC6
   forbids. Nothing locates files by it — `set_dir()` (DC3) does that.
-- **DC56 — References are stripped in a second, derived cache, not at send time.** Decided
-  2026-08-28, implemented by `scripts/19_strip_references.py` and `src/reference_strip.py`.
-  Measured over all 1783 cached papers: a standalone references heading is detectable in 1747
-  (98%), and what follows it is **21.6% of the corpus by character** — 20.7M chars, ~6.9M tokens,
-  read by no criterion. It is worse than merely wasted: a bibliography is dense with "stepped
-  wedge", "pilot" and "secondary analysis" attached to papers that are *not* the paper under
-  review, and the model cannot tell a cited title from a claim the paper makes about itself. So
-  this is a cost cut and an accuracy improvement in one.
-  **A directory, not a flag, and not an edit to DC6's cache.** `data/extracted_text/` is
-  untouched; `data/extracted_text_stripped/` holds one file of the same name per paper, and the
-  Reading Room reads that. The bytes the model saw are the evidence a judgment is audited against,
-  and a directory can be hashed and diffed a year from now — text trimmed at send time exists only
-  inside a process that has already exited. Each copy carries a `references_strip` record (source
-  hash, ruleset, chars removed, reason) so the pass is idempotent and staleness is detectable
-  rather than assumed.
-  **Everything ambiguous is left whole.** Three guards: the heading must be alone on its line, it
-  must sit past 30% of the document (measured minimum in this corpus: 46.5%), and a cut removing
-  over 60% is abandoned (measured maximum: 53.5%). 36 papers have no findable heading and go out
-  entire, with the reason recorded. The output directory always holds one file per input file, so
-  a missing file stays a real gap (B7) rather than a paper the stripper quietly declined.
-  **Two details that are not cosmetic.** An appendix or supplement *after* the bibliography is
-  spliced back on — 134 papers have one and that is often where the sample-size calculation lives.
-  And the cut leaves a visible `[REFERENCES SECTION REMOVED]` line, because a paper with no
-  bibliography reads like an abstract, which is exactly what exclusion criterion E2 ("not a full
-  report") looks for; without the marker the trim would manufacture the exclusion it is supposed
-  to be neutral about. Where it is recorded: per paper in the run log's `text_notes`
-  (`refs_removed=N` / `refs_kept:<reason>`), and in the file itself.
+- **DC56 — References are stripped into a derived cache, never at send time.** Decided 2026-08-28;
+  implemented by `scripts/19_strip_references.py` and `src/reference_strip.py`. Of 1,783 cached
+  papers, 1,747 (98%) have a standalone references heading; the removable text is 20.7M characters
+  (21.6%, ~6.9M tokens) and can contain misleading cited study descriptions. The original cache is
+  untouched; `data/extracted_text_stripped/` has one same-named, auditable file per input with a
+  `references_strip` source hash, ruleset, removed-char count, and reason.
+  A cut requires a standalone heading after 30% of the document and must remove at most 60%; 36
+  ambiguous papers remain whole. Post-reference appendices/supplements are restored (134 papers),
+  and `[REFERENCES SECTION REMOVED]` prevents E2 from treating the trim as an abstract. Run logs
+  record `refs_removed=N` or `refs_kept:<reason>`.
 - **DC8 — Text only, no table grids.** Journal tables are unruled, so line detection finds nothing and
   text detection shreds two-column prose. Plain `get_text()` already keeps reading order inside a
   table. If power/data analysis later misses table content, the move is `pymupdf4llm`.
@@ -91,41 +74,23 @@ Everything else has been settled; the decisions are recorded as DC1-DC55 below.
   it *keeps* reach power/data analysis. A dropped paper gets **no row at all** — not a null, not
   "N/A". Same rule for the HLS, so power/data accuracy is computed only over gate survivors. In the
   labels this shows as 176 kept papers of 483, and only those 176 carry power/stats answers.
-- **DC54 — The gate remains separate; post-gate power and data analysis share one paper call.**
-  Decided 2026-08-28. DC9's one-prompt-per-task rule remains true for exclusion, but is superseded
-  for the two analyses after a paper passes DC10's gate. One combined prompt carries isolated power
-  and data rule blocks and returns two independent, task-specific judgments; neither may cite or
-  determine the other. The wrapper validates both, retries and reviews them atomically, and stores
-  one row per existing task name. This removes one repeated full-paper payload per survivor without
-  mixing the gate into analysis, mixing papers, or sacrificing task-specific accuracy and audit
-  trails.
-- **DC55 — Medium effort is the pinned production configuration.** Decided 2026-08-28. The Reading
-  Room and Batch API must both use `medium`; no new scored refinement, validation, production, or
-  holdout call may use the prior `high` setting. High effort consumed the five-hour subscription
-  allowance in one calibration batch, so its marginal quality is not affordable for this study.
-  A promptbook is meaningful only under the configuration that will ship, therefore this setting is
-  changed everywhere together and the runner must pass preflight before another scored call.
+- **DC54 — The gate stays separate; post-gate power and data analysis share one call.** Decided
+  2026-08-28. The combined prompt has isolated rule blocks and returns two independent judgments;
+  the wrapper validates/retries them together and stores one row per task. This removes one repeated
+  paper payload without mixing gate and analysis or task audit trails.
+- **DC55 — Production effort is pinned to `medium`.** Decided 2026-08-28. Reading Room and Batch API
+  scored calls use `medium`, not the unaffordable prior `high`; preflight is required after a change.
 - **DC57 — References-stripping is a new promptbook version, without restarting the baseline.**
   Decided 2026-08-28. The promptbook bytes do not change, but the text supplied to the model does;
   `v2` records that new reading condition. `exclusion_r1` remains the baseline: its 49 accepted
-  `v1`/whole-text judgments stay in the first `promptbook_accuracy_history.csv` row and round 1
+  `v1`/whole-text judgments are retained for the first history row when it is created, and round 1
   does not restart. Later `v2`/stripped-text results must identify their version and preparation
   method when compared with that retained baseline. The directory is cut and `promptbooks/CURRENT`
   moved immediately before the first `v2` request.
-- **DC58 — The Reading Room runs serially by default; `--parallel` is opt-in.** Decided
-  2026-08-28. `--workers 6` was the default and is now a flag. A pool commits six papers of the
-  5-hour subscription window before the first result is readable, which is the difference between
-  noticing a round going wrong and finding out afterwards — it buys wall-clock time this project
-  has with quota it does not. Three behaviours follow, and only the first is available under
-  `--parallel`: a Ctrl-C lands on the paper actually running rather than after the queue drains;
-  a **sealing breach ends the round on the paper it happened on**, leaving the remaining quota
-  unspent instead of proving the same breach 49 more times (under `--parallel` everything is
-  already submitted, so breaches are collected and the round finishes, as before); and the
-  per-paper line carries a running billed-token total, so the number that says whether there is
-  room to finish is on screen while there is still room to finish. `--parallel` and `--serial`
-  together is a refusal, not a precedence rule: the two spellings disagree about the thing that
-  decides the spend. Both strategies live in `src/reading_room.py` behind one `(item, call)`
-  contract and share one result-handling body, so serial mode cannot drift into a second runner.
+- **DC58 — Reading Room is serial by default; `--parallel` is opt-in.** Decided 2026-08-28. Serial
+  makes Ctrl-C and a sealing breach stop before the next spend; parallel submits its pool up front
+  and only collects breaches. The display includes running billed tokens. `--parallel` plus
+  `--serial` refuses; both modes share one result-handling path.
 - **DC11 — A false exclusion is unrecoverable**, so low-confidence gate calls get an Opus second pass
   **before** gating, not after.
 - **DC12 — `undecidable` is an abstention, not a third category.** It means the evidence is genuinely
@@ -159,27 +124,12 @@ Everything else has been settled; the decisions are recorded as DC1-DC55 below.
   every earlier judgment unreproducible. Each version bump is its own commit; include an accuracy delta in the message only
   when a comparable reporting row exists. Each version carries a tables-only `vN doc.md` recording
   what changed, why, and which papers it was written against. **Amended by DC53.**
-- **DC53 — A version has separate draft, run-frozen, and reporting states.** DC15 as originally
-  stated made every edit a version bump, which produced an un-run `v1` and an un-run `v2` within hours
-  of each other on 2026-08-27, neither with a number attached and neither comparable to anything. They
-  were collapsed back into one `v1`.
-
-  1. A version is a **draft** until the first paid/raw model request is launched. Draft edits happen
-     **in place**. A new `vN+1/` during this phase requires a **human-verified rubric change**: a
-     criterion a reviewer has ruled on, or a rule written from a pattern of misses (DC23 — never one
-     paper). Wording, formatting, and token trimming are not rubric changes.
-  2. At the first paid/raw request, capture the promptbook hash and make the version **run-frozen**.
-     It is immutable from then on, even if every reply later fails validation. This preserves the bytes
-     needed to validate, retry, reuse, and audit the paid raw evidence. Any subsequent wording or rule
-     change copies `vN/` to `vN+1/`.
-  3. A row in `results/04_classification/promptbook_accuracy_history.csv` is a separate
-     **reporting** milestone: it may be added only for an accepted, configuration-homogeneous,
-     comparable result. It does not make an already run-frozen version mutable again, nor does the
-     absence of a history row permit an in-place edit.
-
-  **What this costs:** the working tree does not hold a directory per pre-run draft state, so a draft's
-  intermediate wording is recoverable from git history rather than from `ls`. Once money has been
-  spent, the bytes are protected independently of whether a reportable accuracy row exists.
+- **DC53 — Versions have draft, run-frozen, and reporting states.** Draft edits are in place; a new
+  directory before the first paid/raw request requires a human-verified rubric change or a repeated
+  miss pattern (DC23), not wording/format/token trimming. The first paid/raw request records the
+  hash and freezes the version; every later wording or rule change copies `vN` to `vN+1`. A history
+  row is separate: it requires an accepted, configuration-homogeneous comparable result and never
+  makes a frozen version editable. Intermediate draft wording remains in git history.
 - **DC16 — Opus builds, Sonnet runs.** Opus 5 for the promptbook loop (one-time, high-stakes); Sonnet 5
   for the full run with an Opus second pass on low confidence. Every promptbook gets a Sonnet check
   once it plateaus on Opus — otherwise the gap surfaces after thousands of calls.

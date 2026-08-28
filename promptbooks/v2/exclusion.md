@@ -55,7 +55,7 @@ but it isn't the paper.
    primary result; **or** it reports no primary outcome at all.
    *Test: does the text in front of you say the primary analysis is elsewhere or absent?*
    **Never infer it from another paper** — you cannot see any other paper.
-6. **E6. Baseline-only** — no post-randomization treatment effect estimated.
+6. **E6. Baseline-only** — no post-randomization treatment effect estimated. Do not exclude a protocol/design paper solely because it has no post-randomization effect; protocol status is E12. Exclude only if an independent criterion applies.
 7. **E7. Implementation study** — studies adoption, reach, fidelity, or scale-up rather than the
    effect on participants.
 8. **E8. Methods paper** — a design, estimator, simulation, power formula, or instrument.

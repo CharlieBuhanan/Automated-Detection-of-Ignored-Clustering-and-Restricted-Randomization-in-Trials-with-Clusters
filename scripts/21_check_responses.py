@@ -83,6 +83,51 @@ def promptbook_context(task: str) -> tuple[str, str, dict[str, set[str]]]:
     return version, promptbook, {task: rr.promptbook_rule_ids(promptbook, task)}
 
 
+def promptbook_context_for_version(task: str, version: str) -> tuple[str, str, dict[str, set[str]]]:
+    """Load the exact frozen book named by a run environment, not CURRENT."""
+    if not version or Path(version).name != version:
+        raise rr.Refuse(f"invalid promptbook version in run environment: {version!r}")
+    books = ROOT / "promptbooks" / version
+    if not books.is_dir():
+        raise rr.Refuse(f"run environment names missing promptbook directory {books}")
+    if task == rr.COMBINED_ANALYSIS_ROUTE:
+        texts = {}
+        rules = {}
+        for name in rr.schemas.ANALYSIS_TASKS:
+            path = books / f"{name}.md"
+            if not path.is_file():
+                raise rr.Refuse(f"{path} is missing")
+            texts[name] = path.read_text(encoding="utf-8")
+            rules[name] = rr.promptbook_rule_ids(texts[name], name)
+        return version, rr.combined_analysis_promptbook(**texts), rules
+    path = books / f"{task}.md"
+    if not path.is_file():
+        raise rr.Refuse(f"{path} is missing")
+    promptbook = path.read_text(encoding="utf-8")
+    return version, promptbook, {task: rr.promptbook_rule_ids(promptbook, task)}
+
+
+def locate_raw_dir(task: str, round_no: int, version: str | None) -> Path:
+    """Find one versioned run, retaining pre-versioning directories as legacy."""
+    legacy = RAW_ROOT / f"{task}_r{round_no}"
+    versioned = list(RAW_ROOT.glob(f"{task}_v*_r{round_no}"))
+    if version:
+        requested = RAW_ROOT / f"{task}_{version}_r{round_no}"
+        if requested.is_dir():
+            return requested
+        if legacy.is_dir():
+            environment = rr.load_run_environment(legacy / "run_environment.json")
+            if environment.get("promptbook_version") == version:
+                return legacy
+        raise rr.Refuse(f"no {task} round {round_no} raw run for promptbook {version}")
+    candidates = ([legacy] if legacy.is_dir() else []) + versioned
+    if len(candidates) == 1:
+        return candidates[0]
+    if not candidates:
+        raise rr.Refuse(f"no raw run found for {task} round {round_no}")
+    raise rr.Refuse(f"multiple raw runs match {task} round {round_no}; pass --promptbook-version")
+
+
 def write_checked(path: Path, records: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
@@ -297,6 +342,8 @@ def main() -> int:
         description="Validate a Reading Room round and write its judgments.")
     parser.add_argument("--task", required=True, choices=rr.READING_ROOM_ROUTES)
     parser.add_argument("--round", required=True, type=int)
+    parser.add_argument("--promptbook-version",
+                        help="Select a versioned raw run when a round has more than one")
     parser.add_argument("--write", action="store_true",
                         help="Atomically insert accepted judgments and ledger rows")
     parser.add_argument("--pass-name", default=db.PASS_PRIMARY,
@@ -306,20 +353,15 @@ def main() -> int:
     args = parser.parse_args()
 
     bar = "=" * 74
-    raw_dir = RAW_ROOT / f"{args.task}_r{args.round}"
+    raw_dir = locate_raw_dir(args.task, args.round, args.promptbook_version)
     index = read_csv(raw_dir / "index.csv")
     if not index:
         raise rr.Refuse(f"{raw_dir / 'index.csv'} is empty: nothing to check")
     index, superseded = latest_attempt_per_paper(index)
     environment_path = raw_dir / "run_environment.json"
     environment = rr.load_run_environment(environment_path)
-    version, promptbook, known_rules = promptbook_context(args.task)
-
-    if environment.get("promptbook_version") != version:
-        raise rr.Refuse(
-            f"this round ran under promptbook {environment.get('promptbook_version')!r} "
-            f"but promptbooks/CURRENT now names {version!r}; refusing to check "
-            "against a rulebook the model never saw (G11)")
+    version, promptbook, known_rules = promptbook_context_for_version(
+        args.task, str(environment.get("promptbook_version") or ""))
     if environment.get("promptbook_sha256") != rr.sha256_text(promptbook):
         raise rr.Refuse(
             f"the promptbook text for {args.task} changed since this round ran "

@@ -11,6 +11,7 @@ import reading_room as rr
 
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "20_reading_room.py"
+CHECKER = Path(__file__).resolve().parents[2] / "scripts" / "21_check_responses.py"
 
 
 def load_runner_module():
@@ -19,6 +20,34 @@ def load_runner_module():
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
+
+
+def load_checker_module():
+    spec = importlib.util.spec_from_file_location("reading_room_checker_test", CHECKER)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_checker_uses_the_frozen_version_and_separates_versioned_runs(monkeypatch, tmp_path):
+    checker = load_checker_module()
+    books = tmp_path / "promptbooks" / "v1"
+    books.mkdir(parents=True)
+    (books / "data_analysis.md").write_text("# Rules\n\nD1. Rule.\n", encoding="utf-8")
+    raw = tmp_path / "raw"
+    legacy = raw / "data_analysis_r1"
+    legacy.mkdir(parents=True)
+    (legacy / "run_environment.json").write_text('{"promptbook_version": "v1"}', encoding="utf-8")
+    (raw / "data_analysis_v2_r1").mkdir()
+
+    monkeypatch.setattr(checker, "ROOT", tmp_path)
+    monkeypatch.setattr(checker, "RAW_ROOT", raw)
+
+    version, _, rules = checker.promptbook_context_for_version("data_analysis", "v1")
+    assert version == "v1" and rules["data_analysis"] == {"D1"}
+    assert checker.locate_raw_dir("data_analysis", 1, "v1") == legacy
+    assert checker.locate_raw_dir("data_analysis", 1, "v2") == raw / "data_analysis_v2_r1"
 
 
 def test_main_resume_and_force_select_the_right_attempts(monkeypatch, tmp_path, capsys):

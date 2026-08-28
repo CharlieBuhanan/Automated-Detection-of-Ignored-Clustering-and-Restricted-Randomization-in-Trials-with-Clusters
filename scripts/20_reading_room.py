@@ -166,7 +166,6 @@ def main() -> int:
     mode = rr.resolve_run_mode(parallel=args.parallel, serial=args.serial,
                                workers=args.workers)
 
-    raw_dir = RAW_ROOT / f"{args.task}_r{args.round}"
     bar = "=" * 74
 
     # ---------------------------------------------------------------- resolve
@@ -181,6 +180,9 @@ def main() -> int:
     else:
         version, book_path, promptbook = rr.resolve_promptbook(args.task, root=ROOT)
         promptbook_record = promptbook
+    # Version is part of raw-artifact identity. A retry stays in this directory;
+    # a later promptbook version cannot overwrite or mingle its evidence.
+    raw_dir = RAW_ROOT / f"{args.task}_{version}_r{args.round}"
 
     conn = db.connect()
     try:
