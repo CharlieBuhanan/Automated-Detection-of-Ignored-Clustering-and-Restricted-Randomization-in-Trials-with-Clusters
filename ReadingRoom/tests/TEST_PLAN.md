@@ -6,6 +6,30 @@ A leak in this harness is silent: a contaminated accuracy number looks exactly
 like a clean one. So the tests are the specification, and
 `scripts/20_reading_room.py` / `21_check_responses.py` are written to pass them.
 
+> **Status, 2026-08-27: 71 of 72 covered, 299 tests, all passing, all offline.**
+> `python -m pytest ReadingRoom/tests/ -q`
+>
+> **A12 (the live canary) is not built — decided against, not forgotten.** It
+> was the only case that cost money and the only one that proved the walls
+> matter rather than assuming it, so cutting it is a real reduction in
+> assurance. `canary_verdict()` is implemented and unit-tested against synthetic
+> rows, so reinstating it later is a script, not a redesign.
+>
+> Three cases are covered on the harness side only, because their other half is
+> model behaviour that no offline test can settle: **C9** (the harness puts the
+> instructions after the paper and labels it as data; whether the model then
+> resists the injection is a live-run question), **C11** and **C12** (the harness
+> offers and records `wrong_text` / `undecidable` correctly; whether the model
+> picks them on the right papers is measured by accuracy, not by pytest).
+>
+> Writing them first paid for itself: they caught four real defects in code that
+> looked finished — a repeated `--allowed-tools` flag slipping past `verify_argv`,
+> `prepare_room` creating a directory inside the repo before refusing it,
+> `mkdir` outside the `try` in `write_raw` turning an F12 refusal into a bare
+> `FileExistsError` on a worker thread, and `errors="replace"` on the *encode*
+> silently turning undecodable bytes into ASCII `?` instead of a countable
+> U+FFFD.
+
 **Severity legend**
 
 | | Meaning |
@@ -37,7 +61,7 @@ The only group where a failure is FATAL. These prove the room is sealed.
 | A9 | `--resume` / `--continue` / reused `--session-id` in argv | Refuse to launch; each call is a fresh process | **REFUSE** |
 | A10 | MCP servers configured, or `--strict-mcp-config` missing | Refuse to launch | **REFUSE** |
 | A11 | Scratch dir is reused between two papers without being cleared | Refuse; one paper's traces must not outlive it | **REFUSE** |
-| A12 | Canary: decoy flipped-label `ground_truth.csv` reachable, tools ON | Accuracy tracking the decoy fails the suite loudly | **FATAL** |
+| A12 | ~~Canary: decoy flipped-label `ground_truth.csv` reachable, tools ON~~ | **Not built (2026-08-27).** Scoring function `canary_verdict()` is implemented and tested; the live run was cut | **FATAL** |
 
 ## B. Round and split selection (B1-B10)
 
@@ -149,13 +173,17 @@ DC24: the retry rate is a reportable number, so it has to be right.
 | F. Retries / ledger | 12 | DC24's reportable rate, DC19 append-only |
 | **Total** | **72** | |
 
-## Build order
+## Build order — all done, in this order
 
-1. **A + B first.** They are `REFUSE`/`FATAL` cases and need no model call — pure
-   argv and CSV assertions. If these pass, nothing downstream can be silently
-   contaminated.
-2. **D next**, against `src/schemas.py`, which already exists — these can be
-   written and passing today.
-3. **C, E, F** against a fake `claude` on `PATH` that replays canned responses.
-4. **A12 (the canary) last**, because it is the only one that costs money and the
-   only one that proves the walls matter rather than assuming they do.
+1. ~~**A + B first.**~~ `test_a_isolation.py`, `test_b_rounds.py`. Pure argv,
+   path and CSV assertions, no model call.
+2. ~~**D next**, against `src/schemas.py`.~~ `test_d_parsing.py`.
+3. ~~**C, E, F** against a fake `claude` on `PATH`.~~ `test_c_paper_text.py`,
+   `test_e_semantic.py`, `test_f_retries.py`, driven by `fake_claude.py`.
+4. ~~**A12 (the canary) last.**~~ **Cut.** See the status note at the top.
+
+The fake CLI is a real shim on `PATH`, not a monkeypatched `subprocess.run`.
+That is deliberate: the thing most worth testing is that a genuine child process
+sees the locked-down environment and the empty cwd, and a patched function call
+would prove neither. `test_f_retries.py` asserts on the argv, cwd and env keys
+the child actually received.

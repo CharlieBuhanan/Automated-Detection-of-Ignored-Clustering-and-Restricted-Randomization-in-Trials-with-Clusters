@@ -34,22 +34,59 @@ have plateaued. Those wait for run 2.
 - [ ] **Cut `promptbooks/v1/`** — E3 ON, D14 folded into D13, E5 and D3 marked confirmed. Copy
       `v0/`, never edit it (DC15). **Not blocked on O1:** Deb's ruling fixes v1's *rules* outright;
       O1 only decides which *labels* v1 is scored against, and that can settle after v1 is cut.
-- [ ] **Drop `XHFTHUCG` to the expert-review pile** (DC50). Holdout paper, in no build round, so
-      nothing re-cuts and no round size changes: holdout 145 → 144, survivors 53 → 52.
-- [ ] **Factor in the 5 accepted stepped-wedge misses** before reading any exclusion accuracy
-      number (O1, decided 2026-08-27: keep them scored, do not drop). They are wrong **by decision**,
-      so:
-      1. Every exclusion accuracy figure carries a **−0.9pp build / −1.4pp holdout** floor. Compare
-         a round's Δ against that floor, not against 0 — it is most of one plateau step (DC17).
-      2. `evaluate.py` should report them as a named line ("accepted misses: 3") rather than
-         folding them into `miss`, so a real regression is never hidden behind them.
-      3. **Never let an `E3` miss drive a promptbook rule** — check it against the five first. See
-         the preface in [`v0 doc.md`](../promptbooks/v0/v0%20doc.md)'s *Known expected misses*, and
-         carry that preface into every `vN doc.md`.
-      4. Revisit after 2026-09-02 — Deb and Keith may re-score them as excluded, which would erase
-         the floor and is the outcome that loses no data.
-- [ ] **Build the Reading Room** — the isolated CLI harness the promptbook loop runs in. See
-      "The Reading Room" below. Nothing in the refinement loop can start without it.
+- [x] **Drop the expert-review pile, 2026-08-27** — `scripts/18_drop_expert_review.py`, 6 papers.
+      `XHFTHUCG` Cattamanchi (DC50) plus the **5 analyzed stepped-wedge papers** NHLBI kept and
+      scored, which O1/DC51 previously kept in the scored set as accepted misses. **This reverses
+      DC51** (see DC52): once E3 is ON, scoring against a label the same reviewers' own 9
+      stepped-wedge exclusions contradict is the DC37 problem again — a number computed against an
+      answer nobody stands behind. Dropping loses no data and is reversible via
+      `16_reapply_drops.py`; keeping them baked a −0.9pp/−1.4pp floor into every exclusion figure
+      for the rest of the study.
+      `3JVAWNIE` Bernabe-Ortiz, `TT7PIVLD` Ciccone, `7NYXSVAI` Douin (build);
+      `QMLU4TM8` Courtright, `8H9BUEWH` Fiscella, `XHFTHUCG` Cattamanchi (holdout).
+      **What it costs:** build 338 → 335, holdout 145 → 142. Three exclusion rounds run short and
+      are **proceeded with, never re-cut** (DC47). No power/data round changes — all six are
+      gate-excluded or holdout.
+      **What it buys:** exclusion accuracy no longer carries an accepted-miss floor, so a round's Δ
+      is compared against 0 again and `evaluate.py` needs no "accepted misses" line.
+- [ ] **The expert-review list for Keith and Deb, after 2026-09-02** — one meeting, three piles,
+      all restorable. Nothing below is scored while it sits here.
+      1. **6 dropped to expert review** (script 18): Cattamanchi + the 5 stepped wedges above.
+         Cattamanchi is a label a reviewer read and rejected; the 5 follow from Deb's DC48 criterion
+         ruling, which she made **without re-reading these rows** — that distinction is what the
+         adjudication is for.
+      2. **5 NCI/NHLBI mismatches** (script 12, DC37) — the same paper labelled by both institutions
+         with labels that disagree. One is a full flip. Bartels 2024, Beck 2019 `RJD9XX6D`,
+         Gilbert 2022, Ockene 2021, Smith 2023; see `results/review/05_label_match_review.csv`.
+      3. **7 restricted-randomization rows** whose `data_should` never names the restriction — rows
+         1-3 (Douin `7NYXSVAI`, Fortmann `W2VQEXEG`, Kinnamon `XEIAGV9H`) are scored `yes` on the
+         same shape Cattamanchi was dropped for. See [Deb.md](Deb.md). **Douin is in pile 1 too.**
+      Restoring any of these is `scripts/16_reapply_drops.py` plus 07 → 04 → 05; the drop logs in
+      `results/review/` carry the reason for every row.
+- [x] **Reading Room built, 2026-08-27.** `src/reading_room.py` (the walls, importable and
+      tested), `scripts/20_reading_room.py` (run a round, save raw), `scripts/21_check_responses.py`
+      (validate, then write judgments). **299 offline tests pass**, covering 71 of the test plan's
+      72 cases — `python -m pytest ReadingRoom/tests/ -q`, free, spawns no model.
+      **A12, the live canary, was cut** (decided 2026-08-27): it was the only case that proved the
+      walls matter rather than assuming it, so this is a real reduction in assurance and is stated
+      as such in [ReadingRoom/README.md](../ReadingRoom/README.md). `canary_verdict()` is written
+      and unit-tested, so reinstating it is a script and not a redesign.
+      Writing the tests first caught four defects in code that already looked finished: a repeated
+      `--allowed-tools` flag slipping past `verify_argv`, `prepare_room` creating a directory inside
+      the repo *before* refusing it, an F12 refusal escaping as a bare `FileExistsError` on a worker
+      thread, and `errors="replace"` on the encode turning undecodable bytes into an ASCII `?`
+      indistinguishable from one the paper contained.
+- [x] **Smoke-tested against the real CLI, 2026-08-27** — 3 papers, CLI 2.1.197, all 3 passing every
+      check with 3 distinct confidence values. It found **five defects the 299 offline tests could
+      not**, two of which meant the room was not sealed — the table is in
+      [ReadingRoom/README.md](../ReadingRoom/README.md)'s *What the first live run found*, and it is
+      worth a paragraph in the methods write-up. The two that matter most:
+      **`--allowed-tools ""` does not empty the room** (it is a permission allowlist, not an
+      availability filter — 18 tools were still offered, including `TaskCreate`, which spawns a
+      subagent with a full file toolset), and **the room could not authenticate**, because A7 points
+      `CLAUDE_CONFIG_DIR` away from the directory holding the credentials.
+      The harness no longer trusts its own deny list: it asserts on the tool list the CLI *reports*,
+      and a `preflight()` probe spawn checks it before a round is spent rather than after.
 - [ ] Still unwritten: `promptbook_builder.py`, `evaluate.py`, `two_pass.py`, and the run log /
       accuracy history in `results/04_classification/`.
 

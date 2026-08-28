@@ -1,13 +1,44 @@
 # The Reading Room
 
-**Status: design + test plan only. No implementation yet, on purpose.**
-Tests are being written first (`tests/`), because a leak here is silent — a
-contaminated accuracy number looks exactly like a good one.
+**Status: built and green, 2026-08-27.** 299 offline tests pass; 71 of the test
+plan's 72 cases are covered. The one exception is A12, the live canary, which
+was **decided against** — see *Verified three ways* below.
 
 A sealed room where a reviewer is handed exactly one paper, may not bring
 anything else in, and hands back exactly one filled-in form. Full rationale in
 [PLAN.md](../research%20design/PLAN.md)'s *The Reading Room*; this file is the
 build spec.
+
+---
+
+## Run it
+
+```bash
+# 1. See what would run. Costs nothing, spawns nothing, checks every wall.
+python scripts/20_reading_room.py --task exclusion --round 1 --dry-run
+
+# 2. Two papers first, to prove the walls hold before spending a round.
+python scripts/20_reading_room.py --task exclusion --round 1 --limit 2
+python scripts/21_check_responses.py --task exclusion --round 1
+
+# 3. The real round.
+python scripts/20_reading_room.py --task exclusion --round 1 --force
+python scripts/21_check_responses.py --task exclusion --round 1 --write
+```
+
+`--task` is `exclusion | power_analysis | data_analysis`. Every flag is
+documented in each script's module docstring — `python scripts/20_reading_room.py
+--help` also works. **Nothing reaches `data/review.db` without `--write`.**
+
+Needs the CLI on `PATH` (`npm install -g @anthropic-ai/claude-code`), or pass
+`--claude` with a full path. If it is missing, the harness refuses before it
+touches a single paper rather than failing halfway through a round.
+
+Run the offline suite any time — it is free and spawns no model:
+
+```bash
+python -m pytest ReadingRoom/tests/ -q
+```
 
 ---
 
@@ -26,8 +57,8 @@ so. That is the failure this whole directory exists to prevent.
 
 | Wall | How | What it stops |
 |---|---|---|
-| **Empty room** | `cwd` = scratch dir outside the repo. Never `--add-dir`. | No CLAUDE.md, no memory, no relative path to the answers resolves |
-| **No hands** | `--max-turns 1`, empty `--allowed-tools` | Makes it a pure text completion — it cannot read a file even if it decides to |
+| **Empty room** | `cwd` = a fresh scratch dir **per paper**, outside the repo. Never `--add-dir`. A per-paper `CLAUDE_CONFIG_DIR` too, holding only the credentials | No CLAUDE.md, no memory, no relative path to the answers resolves, no previous paper's session transcript |
+| **No hands** | `permissions.deny` listing every tool, `--max-turns 1`, empty `--allowed-tools`, and an assertion that the CLI reported **zero** tools | Makes it a pure text completion — it cannot read a file even if it decides to. The deny list is the mechanism; `--allowed-tools` is only a permission allowlist and does **not** remove a tool |
 | **Paper by hand** | Text on **stdin**, never a path. Output captured from stdout. | One paper's response is not readable by the next |
 | **No name** | Send a random token; wrapper keeps token → `paper_id` | A leak is not lookup-able even if one happens |
 
@@ -119,25 +150,70 @@ version, promptbook version (git commit), and the verbatim raw response. Never
 pass `--resume`, `--continue`, or a reused `--session-id` — every invocation is
 a fresh process with no shared history.
 
-## Verified three ways
+## What the first live run found (2026-08-27)
 
-1. **`stream-json` assertion** — zero `tool_use` blocks per paper; discard any
-   round with one.
-2. **Canary run** — ~20 papers against a *decoy* `ground_truth.csv` with flipped
-   labels, tools deliberately **on**. If accuracy tracks the decoy, the model is
-   reading rather than reasoning. This is the only test that proves the walls
-   matter rather than assuming it.
-3. **The holdout**, run once through the Batch API, which does not depend on
+Three papers against the real CLI, after 299 offline tests were green. It found
+**five defects the offline suite could not**, two of which meant the room was
+not sealed. This is the argument for never trusting a harness that has only
+been tested against a fake.
+
+| # | What broke | Why no offline test caught it |
+|---|---|---|
+| 1 | `"MultiEdit"` in the deny list — CLI 2.1.197 has no such tool and **refuses to start**, every paper exiting non-zero | The name is only validated by the real CLI |
+| 2 | **`--allowed-tools ""` does not empty the room.** It is a *permission* allowlist, not an availability filter. 18 tools were still offered — including `TaskCreate`, which spawns a subagent with its own full file toolset, one turn from `data/ground_truth.csv` | The whole design rested on a wrong belief about a flag's meaning. Only the `system/init` event's `tools` array shows the truth |
+| 3 | **The room could not log in.** A7 points `CLAUDE_CONFIG_DIR` at an empty directory — which is also where the CLI keeps `.credentials.json`. Every paper returned `Not logged in · Please run /login` | The fake CLI does not authenticate |
+| 4 | The CLI writes session transcripts into `CLAUDE_CONFIG_DIR`, so after paper 1 the config dir contained `projects/` and A7 refused every subsequent paper | Needs a real process that writes as a side effect |
+| 5 | A `wrong_text` answer was rejected by the E6 check for citing no rule id — but the v1 promptbook **itself** specifies `WRONG_TEXT` as the evidence value there. The model was right and the checker was wrong | Needs a real model reading the real promptbook |
+
+**What changed as a result.** `DENIED_TOOLS` is now the mechanism rather than the
+belt-and-braces, and it is no longer trusted on its own: `assert_no_tools_offered()`
+checks the tool list the CLI *reports*, so a tool added in a future version is
+caught by something nobody has to remember to update. `carry_auth()` copies
+exactly one file — the credentials, nothing else — into the room. Every paper
+gets its **own** `CLAUDE_CONFIG_DIR` as well as its own cwd, so one paper's
+transcript cannot outlive it. And `preflight()` spawns one throwaway two-word
+call before the round, because defects 1-4 all break every paper identically:
+finding them on paper 1 of 50 wastes 49 papers of quota, finding them on a probe
+wastes nothing.
+
+## Verified two ways, not three
+
+1. **`stream-json` assertion** — zero `tool_use` and zero `tool_result` blocks
+   per paper; any round with one is discarded whole. Asserted on every response
+   in `20_reading_room.py` and again in `21_check_responses.py`.
+2. **The holdout**, run once through the Batch API, which does not depend on
    trusting this loop at all.
+
+**The canary was cut (2026-08-27).** The plan was ~20 papers against a decoy
+`ground_truth.csv` with flipped labels and tools deliberately **on**; if accuracy
+tracked the decoy, the model was reading rather than reasoning. It was the only
+test that would have proven the walls matter rather than assuming it, and
+dropping it is a real reduction in assurance — recorded here rather than quietly
+omitted. What stands in for it: the walls are `--allowed-tools ""` and
+`--max-turns 1`, so a tool call is not merely discouraged but absent from the
+CLI's surface, and wall 1 asserts on the stream anyway. `canary_verdict()` in
+`src/reading_room.py` is kept and tested, so running it later costs a script and
+not a redesign.
 
 ## Files
 
 ```
 ReadingRoom/
-  README.md              this file — design + pseudocode
+  README.md              this file — design, how to run it, pseudocode
   tests/
     TEST_PLAN.md         72 cases: input -> expected handling
+    conftest.py          fixtures; puts the fake CLI on PATH
+    fake_claude.py       a fake `claude` that replays canned replies
+    test_a_isolation.py  A1-A12   the four walls
+    test_b_rounds.py     B1-B10   round and split selection
+    test_c_paper_text.py C1-C12   messy extraction output, injection, encoding
+    test_d_parsing.py    D1-D14   the src/schemas.py contract
+    test_e_semantic.py   E1-E12   valid but wrong
+    test_f_retries.py    F1-F12   retries, concurrency, the ledger
 ```
 
-Scripts land in `scripts/20_*.py` and `scripts/21_*.py` when written, not here —
-this directory is the spec, the repo's script numbering stays unbroken.
+The runnable scripts are `scripts/20_reading_room.py` and
+`scripts/21_check_responses.py`; the logic they call lives in
+`src/reading_room.py` so it can be imported and tested (`import
+20_reading_room` is not valid Python). This directory is the spec and the suite,
+and the repo's script numbering stays unbroken.

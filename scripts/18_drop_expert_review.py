@@ -12,10 +12,21 @@ WHY
     pile after 2026-09-02; whatever they decide, `16_reapply_drops.py` and the log
     below are enough to restore or re-score any row here.
 
-    This is deliberately NOT the same reason as a rule disagreement. A label
-    contradicted by a *rule* stays in the scored set as an accepted miss (DC51) --
-    the 5 stepped-wedge papers NHLBI kept are scored, wrong, on purpose. Only a
-    label a *reviewer* has read and rejected belongs here.
+    TWO KINDS OF MEMBER, AND THE ADJUDICATOR NEEDS TO TELL THEM APART
+    (a) A label a *reviewer read and rejected* -- Cattamanchi. Strongest case.
+    (b) A label contradicted by a *criterion the reviewers themselves ruled on*,
+        where nobody has re-read the row -- the 5 analyzed stepped wedges.
+
+    (b) was originally excluded from this pile: DC51 kept those 5 in the scored
+    set as accepted misses, on the reasoning that reporting real human
+    disagreement beats curating it away. **Reversed 2026-08-27 (DC52.)** The
+    reasoning held while E3 was contested; once Deb ruled E3 ON (DC48), NHLBI's
+    own 9 stepped-wedge exclusions contradict these 5 keeps, so scoring against
+    them is DC37's problem exactly -- a number computed against an answer nobody
+    stands behind. Dropping is reversible and loses no data; keeping them baked a
+    -0.9pp build / -1.4pp holdout floor into every exclusion figure in the study.
+
+    `judged_by` says which kind each row is. Do not flatten that in the meeting.
 
 MEMBERS
     One dict per paper in PILE below. Adding a member is a one-line edit; say who
@@ -70,6 +81,32 @@ PILE = [
             "label contradicts itself -- and ~40 papers of exactly this shape were scored no. "
             "Scored data_correct=yes anyway.",
     },
+]
+
+# The 5 stepped-wedge papers NHLBI kept and fully scored, while excluding 9 other
+# papers for `stepped_wedge_design`. Same reason for all five, so it is written
+# once rather than copy-pasted into five near-identical strings that would drift.
+STEPPED_WEDGE_WRONG = (
+    "Analyzed stepped-wedge trial, labelled KEEP. NHLBI excluded 9 other papers for "
+    "stepped_wedge_design and kept these 5, so the label set contradicts itself. Deb ruled "
+    "2026-08-27 that stepped wedge IS an exclusion (DC48) -- she settled the CRITERION and has "
+    "NOT re-read this row, which is what the adjudication is for. Under E3 the promptbook "
+    "excludes it while the label keeps it, so it is unscoreable either way (DC52 reverses DC51)."
+)
+
+PILE += [
+    {"paper_id": pid, "citation": citation,
+     "judged_by": "criterion (Deb's DC48 ruling, 2026-08-27) -- row not individually re-read",
+     "what_is_wrong": STEPPED_WEDGE_WRONG}
+    for pid, citation in [
+        ("3JVAWNIE", "Bernabe-Ortiz et al. 2020"),
+        ("TT7PIVLD", "Ciccone et al."),
+        # Douin is also one of Deb.md's 7 restricted-randomization rows -- two
+        # independent reasons to look at it, one meeting.
+        ("7NYXSVAI", "Douin et al. 2025"),
+        ("QMLU4TM8", "Courtright et al."),
+        ("8H9BUEWH", "Fiscella et al."),
+    ]
 ]
 
 LOG_COLUMNS = ["dropped_at", "paper_id", "citation", "judged_by", "what_is_wrong",

@@ -301,6 +301,23 @@ Everything else has been settled; the decisions are recorded as DC1-DC52 below.
   a promptbook rule without being checked against the five first, or the loop will learn its way
   back to E3 OFF from five known-bad labels (DC23, DC33). Revisit after 2026-09-02: re-scoring them
   as excluded erases the floor and loses nothing, and is the outcome to prefer.
+  **Superseded by DC52, 2026-08-27 — the 5 were dropped after all.**
+- **DC52 — DC51 reversed: the 5 analyzed stepped-wedge papers join the expert-review pile.**
+  Decided 2026-08-27, executed by `scripts/18_drop_expert_review.py`. Build 338 → 335, holdout
+  145 → 142; three exclusion rounds run short and are **proceeded with, never re-cut** (DC47).
+  DC51's reasoning was right while E3 was contested and wrong once Deb ruled it ON (DC48): with the
+  criterion settled, NHLBI's own 9 stepped-wedge exclusions contradict these 5 keeps, so the label
+  set disagrees with *itself*, not merely with our promptbook. Scoring against a label
+  self-contradicted that way is DC37's problem exactly — a number computed against an answer nobody
+  stands behind. DC51's precedent worry stands and is answered by *where* they go: not deleted, not
+  corrected, but moved to the pile Keith and Deb adjudicate after 2026-09-02, logged with a reason,
+  restorable in one command (`16_reapply_drops.py`). What it buys is not cosmetic — the alternative
+  was carrying a −0.9pp/−1.4pp floor through every exclusion figure for the rest of the study, with
+  a standing rule that no `E3` miss may drive a promptbook change without first being checked
+  against five known-bad labels. **The pile records that these five are a different kind of member
+  from `XHFTHUCG`:** Deb read Cattamanchi and rejected it; she ruled the criterion these five follow
+  from and has not re-read them. `judged_by` says which is which, and the adjudication must not
+  flatten the two.
 
 - **DC22 — Message Batches API for the full run; `claude -p` CLI for the promptbook loop.** The full
   run is batch classification, not agentic tool use — Batches API, not sync calls, no MCP. The
