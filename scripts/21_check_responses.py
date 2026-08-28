@@ -24,8 +24,8 @@ QUICK START
     python scripts/21_check_responses.py --task exclusion --round 1            # report
     python scripts/21_check_responses.py --task exclusion --round 1 --write    # + db
 
-    Nothing is written to `data/review.db` without --write. Run it without the
-    flag first; the report tells you what would land.
+    Nothing is written to `data/review.db` -- or to `retry_ledger.csv` -- without
+    --write. Run it without the flag first; the report tells you what would land.
 
 FLAGS
     --task / --round   which round's raw files to read (required)
@@ -308,7 +308,16 @@ def main() -> int:
                                 extrasaction="ignore")
         writer.writeheader()
         writer.writerows(checked)
-    rr.append_ledger(LEDGER, ledger_rows)
+    # DC24. The ledger is append-only, and this script has no way to recognise a
+    # row it wrote on an earlier run -- so an ungated append means every repeat
+    # of the *report* silently re-files the same 49 attempts. That does not just
+    # bloat the file: the retry rate is failures/attempts, so each extra report
+    # run inflates the denominator and quietly understates the very number the
+    # ledger exists to produce. Report mode is therefore read-only, exactly like
+    # `data/review.db` is, and the ledger is written only by the run that also
+    # lands the judgments.
+    if args.write:
+        rr.append_ledger(LEDGER, ledger_rows)
 
     failures = [r for r in checked if r["status"] == "failed"]
     print(f"\n  passed     : {len(passed)}")
@@ -357,8 +366,9 @@ def main() -> int:
 
     # -------------------------------------------------------------- 10. write
     if not args.write:
-        print(f"\n  Nothing written. Re-run with --write to insert {len(passed)} "
-              f"judgment(s) into data/review.db")
+        print(f"\n  Nothing written -- not the database, not the retry "
+              f"ledger. Re-run with --write to insert {len(passed)} "
+              f"judgment(s) and file {len(ledger_rows)} ledger row(s).")
         return 0
 
     conn = db.connect()
