@@ -266,7 +266,14 @@ these):
 | F. Retries / ledger | 14 | DC24's reportable rate, DC19 append-only |
 | G. Provenance | 12 | The number is traceable to the conditions that made it |
 | H. Combined/API boundary | 6 | Atomic two-task results, idempotence, transport, and G11 |
-| **Total** | **97** | |
+| I. Run mode / spend | 19 | DC58: serial by default, and serial actually stops |
+| J. Reference stripping | 16 | DC56: 21.6% off the input without cutting a methods section |
+| **Total** | **132** | |
+
+Note on lettering: the case-group letters and the test-file letters stopped
+lining up at H, which is asserted across `test_h_`/`test_i_`/`test_j_`/`test_k_`.
+Groups I and J live in `test_l_runner.py` and `test_m_reference_strip.py`; the
+file letter is a sequence number, the case letter is the group.
 
 ## Build order
 
@@ -327,6 +334,46 @@ Where these live: `test_h_combined_schema.py` (H1/H2 parsing), `test_i_combined_
 refusal, and the read-only metrics), `test_k_api_contract.py` (H4, via `src/api_contract.py`
 -- the offline request builder that constructs no client and makes no network call).
 H3 and H6 are asserted in `test_f_retries.py` alongside the rest of the retry budget.
+
+## I. Run mode and spend (I1-I19)
+
+DC58 made serial the default. These cases are about *quota*, not about whether a
+judgment is right, and they turn on one mechanical property: `serial_runner` is
+**lazy**, so a consumer that breaks out of the loop stops the spawning and not
+merely the reporting. A "just use `--workers 1`" implementation passes every
+other test in this file and silently fails that one.
+
+| # | Input / condition | Expected handling | Sev |
+|---|---|---|---|
+| I1-I3 | No flag / `--parallel` / `--serial --workers 6` | Serial unless `--parallel`; serial forces one worker rather than arguing with `--workers` | HANDLE |
+| I4 | `--parallel` and `--serial` together | Refuse. The two spellings disagree about the thing that decides the spend | **REFUSE** |
+| I5 | `--parallel --workers 0` or a negative width | Refuse before anything resolves | **REFUSE** |
+| I6-I9 | A serial round | Every item once, in order, never two at a time, nothing started before the consumer asks | HANDLE |
+| I10 | The work raises `Refuse` | Raise from `call()`, not from the iteration, so one refused paper is logged and skipped rather than ending the round | HANDLE |
+| I8 | The consumer breaks on paper 2 of 50 | Papers 3-50 are never spawned. This is the sealing-breach stop, reduced to its mechanism | HANDLE |
+| I11-I13 | A pooled round | Every item once; genuinely concurrent; everything submitted up front, so stopping early saves nothing — which is why the breach stop is serial-only | HANDLE |
+| I14 | `runner_for` | One dispatch point; the two modes are told apart by *when* work starts | HANDLE |
+| I15-I19 | The running token counter | Sum all three input fields plus output; `None`, never `0`, when the stream reported no usage (G7); read end-to-end off a real captured stream | HANDLE |
+
+## J. Reference stripping (J1-J16)
+
+DC56 removes 21.6% of the corpus by character before a token is spent, which
+makes it the cheapest saving available and the most dangerous: a cut in the wrong
+place removes a methods section, and the resulting judgment looks exactly like a
+correct one. The cases are lopsided on purpose — a few establish that a normal
+paper loses its bibliography, and the rest establish that everything ambiguous is
+left **whole**, with a reason, and that the run log can always say which happened.
+
+| # | Input / condition | Expected handling | Sev |
+|---|---|---|---|
+| J1-J2 | An ordinary paper | Bibliography removed, methods kept, `[REFERENCES SECTION REMOVED]` marker left in place so E2 ("not a full report") is not manufactured by the trim | HANDLE |
+| J3 | An appendix behind the references | Spliced back on — 134 corpus papers have one and it is often where the sample-size calculation lives | HANDLE |
+| J4-J7 | No heading / heading in the first 30% / a cut over 60% / empty text | Copy the paper through whole and record the reason. Never guess | HANDLE |
+| J8-J9 | Two headings; the word inside a sentence | The last standalone heading wins; prose is not a section break | HANDLE |
+| J10 | The heading forms this corpus uses (`5. References`, `REFERENCES:`, `Bibliography`, `Works Cited`, ...) | All match | HANDLE |
+| J11-J12 | The file written | Every extraction field carried through; `char_count` never disagrees with its own `text`; staleness detectable by source hash and ruleset | HANDLE |
+| J13-J15 | What `read_paper_text` reports | `refs_removed=N` or `refs_kept:<reason>` in `text_notes`; a file that never saw the stripper reads as `refs_unprepared`, a third state distinct from "nothing was removed" | HANDLE |
+| J16 | A round mixing prepared and unprepared text | Refuse, before the first spawn. Two conditions averaged into one accuracy number is not one round | **REFUSE** |
 
 The fake CLI is a real shim on `PATH`, not a monkeypatched `subprocess.run`.
 That is deliberate: the thing most worth testing is that a genuine child process

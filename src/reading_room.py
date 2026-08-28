@@ -40,17 +40,38 @@ import shutil
 import subprocess
 import tempfile
 import time
-from dataclasses import dataclass, field
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field, replace as dataclass_replace
+from functools import partial
 from pathlib import Path
 
 import db
+import reference_strip
 import schemas
 
 ROOT = Path(__file__).resolve().parent.parent
 
 ROUNDS_CSV = ROOT / "results" / "04_classification" / "build_rounds.csv"
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
-CACHE_DIR = ROOT / "data" / "extracted_text"
+
+# DC6's cache: one JSON per paper, written once by `pdf_extract`, never edited.
+# Nothing in the Reading Room reads it directly any more -- it is the source the
+# stripped cache below is derived from, and the thing to re-derive from if the
+# stripping rules ever change.
+EXTRACT_CACHE_DIR = ROOT / "data" / "extracted_text"
+
+# What the model actually reads. `scripts/19_strip_references.py` writes one file
+# of the same name here with the bibliography removed: 21.6% of the corpus by
+# character, decided by no criterion, and a dense source of false positives --
+# a reference list is full of "stepped wedge" and "pilot" attached to papers that
+# are not the paper under review.
+#
+# A separate directory rather than a flag because the bytes the model saw are the
+# evidence a judgment is audited against, and a directory can be hashed and
+# diffed a year from now; text trimmed at send time exists only inside a process
+# that has already exited.
+CACHE_DIR = ROOT / "data" / "extracted_text_stripped"
+
 PROMPTBOOKS = ROOT / "promptbooks"
 
 # Pinned, and pinned to the model the *batch* run will use (Costs.md: Sonnet 5
@@ -777,6 +798,28 @@ def billed_input_tokens(usage: dict) -> int | None:
     return sum(present) if present else None
 
 
+def billed_total_tokens(usage: dict) -> int | None:
+    """Everything one call was billed for, in and out, or None if it said nothing.
+
+    What the running counter in the round banner adds up. `None` rather than 0
+    when the stream carried no usage at all (G7): a counter that silently treats
+    unreported papers as free is a counter that tells you to keep going.
+    """
+    parts = [value for value in (billed_input_tokens(usage),
+                                 usage.get("output_tokens"))
+             if isinstance(value, int)]
+    return sum(parts) if parts else None
+
+
+def format_tokens(count: int) -> str:
+    """184000 -> '184k'. This is read while a round runs, not parsed."""
+    if count < 1_000:
+        return str(count)
+    if count < 1_000_000:
+        return f"{count / 1_000:.0f}k"
+    return f"{count / 1_000_000:.2f}M"
+
+
 def tools_offered(stream_text: str) -> list[str] | None:
     """The tool list the CLI reported at startup, or None if it never said.
 
@@ -1108,6 +1151,19 @@ class PaperText:
     replaced: int = 0        # C5: undecodable bytes turned into U+FFFD
     is_empty: bool = False   # C1/C2
 
+    # What `19_strip_references.py` did to this paper before it got here.
+    # Recorded per paper, not once per round, so a judgment is always traceable
+    # to the exact bytes the model saw -- including the 36 papers whose
+    # bibliography could not be found and which therefore went out whole.
+    refs_removed: int = 0        # characters the stripper cut, 0 if it cut none
+    refs_reason: str = ""        # why it cut none, when it cut none
+    # The ruleset that ran. Three states, and the third is the point:
+    # a name = prepared by that ruleset; "" = read from a file that carries no
+    # record, which is what `refs_unprepared` reports; None = this text never
+    # came from a file, so the question does not arise (`clean_paper_text` on a
+    # string in a test).
+    refs_method: str | None = None
+
     @property
     def notes(self) -> str:
         """One field for the run log, empty when the text arrived clean."""
@@ -1120,6 +1176,15 @@ class PaperText:
             parts.append(f"replaced_chars={self.replaced}")
         if self.is_empty:
             parts.append("empty")
+        if self.refs_removed:
+            parts.append(f"refs_removed={self.refs_removed}")
+        elif self.refs_reason:
+            parts.append(f"refs_kept:{self.refs_reason}")
+        if self.refs_method == "":
+            # Not cosmetic. A round mixing prepared and unprepared text is a
+            # round whose papers were not asked the same question, and this cell
+            # is the only place the run log would ever say so.
+            parts.append("refs_unprepared")
         return ";".join(parts)
 
 
@@ -1173,7 +1238,13 @@ def clean_paper_text(raw: str, *, max_chars: int = MAX_PAPER_CHARS,
 
 
 def read_paper_text(path: Path, *, max_chars: int = MAX_PAPER_CHARS) -> PaperText:
-    """Load one `data/extracted_text/*.json` cache entry. Never re-parses a PDF."""
+    """Load one cache entry from `CACHE_DIR`. Never re-parses a PDF.
+
+    Carries the stripper's record through onto the `PaperText` rather than
+    dropping it: the run log has to be able to say how many characters were
+    removed from *this* paper, and a file with no record at all has to be
+    visible as such rather than passing for a prepared one.
+    """
     path = Path(path)
     if not path.is_file():
         raise Refuse(f"no cached extracted text at {path} (B7)")
@@ -1181,8 +1252,33 @@ def read_paper_text(path: Path, *, max_chars: int = MAX_PAPER_CHARS) -> PaperTex
         payload = json.loads(path.read_text(encoding="utf-8", errors="replace"))
     except json.JSONDecodeError as exc:
         raise Refuse(f"{path} is not valid JSON: {exc}") from exc
-    return clean_paper_text(payload.get("text") or "", max_chars=max_chars,
+    body = clean_paper_text(payload.get("text") or "", max_chars=max_chars,
                             paper=path.stem)
+    record = reference_strip.strip_record(payload)
+    removed = record.get("chars_removed")
+    return dataclass_replace(
+        body,
+        refs_removed=removed if isinstance(removed, int) and removed > 0 else 0,
+        refs_reason=str(record.get("reason") or ""),
+        refs_method=str(record.get("method") or ""))
+
+
+def check_round_text_preparation(methods: list[str]) -> None:
+    """Refuse a round whose papers were not all prepared the same way.
+
+    Free, and it lands before the first spawn: the text is loaded to check C3
+    anyway. Half a round on stripped text and half on whole text is not one
+    round -- it is two conditions averaged into a single accuracy number, with
+    nothing downstream able to separate them again. Same argument as G2's
+    CLI-version check, one layer earlier and for nothing.
+    """
+    seen = sorted({method or "unprepared" for method in methods})
+    if len(seen) > 1:
+        raise Refuse(
+            f"this round mixes text prepared {len(seen)} different ways ({seen}). "
+            f"Run `python scripts/19_strip_references.py` so every paper is "
+            f"prepared identically, or the round averages two conditions into "
+            f"one number")
 
 
 # ------------------------------------------------------- wall 3: the prompt
@@ -1548,6 +1644,85 @@ def run_paper(prompt: str, *, room: Room, token: str, paper_id: str,
     return Attempt(paper_id=paper_id, token=token, attempt=attempt,
                    exit_code=exit_code, stdout=stdout or "", stderr=stderr or "",
                    duration=round(time.monotonic() - started, 2), timed_out=timed_out)
+
+
+# ------------------------------------------------------ how a round is driven
+
+# Only consulted when `--parallel` is asked for. Six was the old default and
+# stays the old default; what changed is that you now have to ask.
+DEFAULT_WORKERS = 6
+
+
+@dataclass(frozen=True)
+class RunMode:
+    """Serial or pooled, and how wide. Resolved once, before anything spawns."""
+    serial: bool
+    workers: int
+
+    @property
+    def label(self) -> str:
+        return ("1  (serial: no pool, one paper at a time)" if self.serial
+                else f"{self.workers}  (--parallel)")
+
+
+def resolve_run_mode(*, parallel: bool = False, serial: bool = False,
+                     workers: int = DEFAULT_WORKERS) -> RunMode:
+    """Decide how the round runs. **Serial is the default.**
+
+    It was not always. A pool spends `--workers` papers of quota before the first
+    result reaches the screen, which on a five-hour subscription window is the
+    difference between noticing a round going wrong and finding out afterwards --
+    and a Ctrl-C lands on the paper actually running rather than after the queue
+    drains. Six-way parallelism buys wall-clock time this project has with quota
+    it does not, so it is opt-in now.
+
+    `--parallel` together with `--serial` is a refusal rather than a precedence
+    rule. The two spellings disagree about the thing that decides the spend, and
+    quietly honoring one of them is how the wrong one gets honored.
+    """
+    if parallel and serial:
+        raise Refuse("--parallel and --serial contradict each other. Pass one; "
+                     "serial is the default if you pass neither")
+    if not parallel:
+        return RunMode(serial=True, workers=1)
+    if workers < 1:
+        raise Refuse(f"--workers {workers} is not a number of papers")
+    return RunMode(serial=False, workers=workers)
+
+
+def serial_runner(items, work):
+    """Yield `(item, call)` one at a time, in order, on this thread.
+
+    Not merely `--workers 1`. Nothing starts until the consumer asks for it, so a
+    consumer that stops -- on a sealing breach, on Ctrl-C -- stops the *spend*
+    and not just the reporting. That laziness is the whole feature.
+    """
+    for item in items:
+        yield item, partial(work, item)
+
+
+def parallel_runner(items, work, *, workers: int = DEFAULT_WORKERS):
+    """`workers` papers in flight, each `(item, call)` yielded as it lands.
+
+    Every item is submitted up front, so stopping early here stops the *reading*
+    and not the spending. That is the trade `resolve_run_mode` makes explicit.
+    """
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {pool.submit(work, item): item for item in items}
+        for future in as_completed(futures):
+            yield futures[future], future.result
+
+
+def runner_for(mode: RunMode, items, work):
+    """The one place the two strategies are chosen between.
+
+    Both yield the same `(item, call)` pairs so the caller keeps a single
+    result-handling body. Serial mode must not become a second runner that
+    quietly drifts from the parallel one.
+    """
+    if mode.serial:
+        return serial_runner(items, work)
+    return parallel_runner(items, work, workers=mode.workers)
 
 
 @dataclass

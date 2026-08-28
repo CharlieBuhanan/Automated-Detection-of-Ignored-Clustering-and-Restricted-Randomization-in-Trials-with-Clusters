@@ -119,8 +119,10 @@ have plateaued. Those wait for run 2.
          `--system-prompt`, guarded by a token ceiling on the preflight probe (A17).
       3. **Everything is now logged**, in two layers: a per-round `run_environment.json` (model,
          effort, thinking mode, `claude_code_version`, verbatim argv, sha256 of system prompt /
-         settings / promptbook, git commit, observed tool list, host/OS/python) and per-paper
-         columns (`request_id`, durations, full token usage, cost, `stop_reason`, service tier).
+         settings / promptbook, git commit, observed tool list, host/OS/python, start/finish) and
+         per-paper columns (`request_id`, `session_id`, durations, full token usage including
+         `billed_input_tokens`, cost, `stop_reason`/`terminal_reason`, service tier, and
+         `text_notes` recording how the paper's text was prepared).
       4. **Effort will be pinned to `medium` on both sides** — `--effort medium` in the
          Reading Room and `output_config.effort: medium` in the Batch API. The prior `high`
          setting exhausted the subscription quota during one calibration batch; medium is the
@@ -193,7 +195,38 @@ have plateaued. Those wait for run 2.
       the run pays the 1.25x cache-write premium for no reuse. One 50-paper exclusion round is
       ~770k tokens; one full build-split regression (335 papers, which the Human Labelled Set
       rule requires after any promptbook change) is **~5.2M tokens**, which is what exhausts the
-      5-hour subscription window in a single run. Levers, largest first, are being decided.
+      5-hour subscription window in a single run. **The three levers below are the plan, in the
+      order they are being done.** Together they take a full regression from ~5.2M tokens on
+      subscription quota to ~4.1M on a separate budget that does not touch the 5-hour window.
+
+- [x] **Lever 1 — strip references. Done 2026-08-28.** The free win, and the one that also
+      improves accuracy. Measured over all 1783 cached papers: a standalone references heading is
+      detectable in 1747 (98%), and what follows it is **21.6% of the corpus by character**
+      (20.7M chars, ~6.9M tokens). No criterion E1-E18 is decided by a bibliography, and reference
+      titles actively cause false positives -- a reference list is dense with "stepped wedge",
+      "pilot" and "secondary analysis" attached to papers that are not the paper under review, and
+      the model cannot tell a cited title from a claim the paper makes about itself.
+      `scripts/19_strip_references.py` writes a stripped copy of each cache entry to
+      `data/extracted_text_stripped/` and the Reading Room reads that directory; the DC6 cache is
+      never modified. A separate directory rather than a flag because the bytes the model saw are
+      the evidence a judgment is audited against (DC56). Exclusion drops 15.4k → ~12.1k tokens per
+      paper; a 50-paper round drops ~855k → ~670k. **This changes what the model reads, so it
+      forces a promptbook version bump** (DC57).
+- [ ] **Lever 2 — stop paying for the full split on exploratory rounds.** The Human Labelled Set
+      rule ties the full 335-paper re-run to *appending a `promptbook_accuracy_history.csv` row*,
+      not to iterating. So refine on a fixed 50-paper subset for several fast rounds, append
+      nothing, and spend the full split only when claiming a plateau. Five cheap rounds plus one
+      full regression is ~7M tokens instead of ~31M. **No rule change is needed** -- the
+      discipline is simply not writing the CSV row, and DC32's warning about subset noise applies
+      to reported numbers, not to exploratory ones. This is what makes the first few batches
+      affordable.
+- [ ] **Lever 3 — the Batch API, when credits land.** The actual fix, and already half-built in
+      `src/api_contract.py`. 50% off, and critically it is a **separate budget that does not touch
+      the 5-hour window at all**. A references-stripped full exclusion regression is roughly 4.1M
+      input tokens, run overnight. Note that the Reading Room deliberately strips
+      `ANTHROPIC_API_KEY` from the child environment (DC22) to stay on subscription quota; that
+      decision is exactly what now costs the window, and it is worth revisiting explicitly rather
+      than by accident. Scope the Batch transport on top of `api_contract.py` rather than beside it.
 
 ### Write-up and corpus documentation
 
@@ -550,6 +583,12 @@ scored as misses.
    `VERIFIED`). PyMuPDF primary, pdfplumber fallback, pytesseract only on exception. Cached to
    `data/extracted_text/{paper_id}.json`. Parsed once per paper, ever.
 
+   **2a. Prepare** — `scripts/19_strip_references.py`, added 2026-08-28. A second, derived cache
+   at `data/extracted_text_stripped/`, same filenames, with the bibliography removed and an audit
+   record (`references_strip`) attached to each file. Offline, free, idempotent, and re-derivable
+   from step 2 at any time. This is what the Reading Room and the Batch run read; step 2's cache
+   is never modified, which is what keeps DC6 true. See DC56.
+
    **Driven off the manifest, not a directory listing.** MISMATCH and DROPPED papers are still sitting
    in `data/raw_pdfs/`, so a glob would extract exactly the files step 1 exists to keep out.
 
@@ -718,7 +757,7 @@ scored as misses.
 
    **Option: run the promptbook loop through the Claude Code CLI instead of the API, to spend subscription
    quota rather than API credits.** `claude -p "<prompt>" --output-format json` runs headless and
-   authenticates off the subscription login. A small script walks `data/extracted_text/*.json`, pipes
+   authenticates off the subscription login. A small script walks `data/extracted_text_stripped/*.json`, pipes
    each paper's text in with the current promptbook, and writes one response JSON per paper to a new
    directory for hand-inspection. Only for promptbook refinement — the full run stays on the Batches API
    (see the standing rule). Two trade-offs to accept if we go this way: no provider-enforced JSON
@@ -920,12 +959,23 @@ file" failure, and it means the model has no write target to be confused about.
 API side), adaptive thinking — the only mode
 on this model, with no CLI switch and `budget_tokens` removed. A promptbook
 refined under one configuration and shipped under another is tuned on nothing:
-record any configuration change as a distinct provenance stratum, do not pool it
-for DC17/G11, and use a new promptbook version only if the promptbook bytes also
-change. The existing high-effort reuse exception remains explicitly mixed.
+record any configuration change as a distinct provenance stratum and do not pool
+it for DC17/G11. A **model or effort** change is a stratum but not a version bump
+— the promptbook bytes are unchanged and so is the text they are applied to. A
+change to **what the model reads** is both, and forces a version bump even with
+the promptbook byte-identical (DC57): `v1`-on-whole-text and `v1`-on-stripped-text
+are two configurations wearing one label, because a rule reading "excludes if the
+paper describes a stepped-wedge design" behaves differently against a document
+carrying 40 reference titles containing that phrase. The existing high-effort
+reuse exception remains explicitly mixed.
 
 **Every run is recorded in two layers** — a per-round `run_environment.json` for
-the invariants and per-paper run-log columns for what varies. The CLI exposes no
+the invariants and per-paper run-log columns for what varies. A third thing is
+recorded outside both, in the text itself: each `data/extracted_text_stripped/`
+file carries a `references_strip` block (source hash, ruleset, chars removed,
+reason), and `run_log.csv`'s `text_notes` repeats the per-paper outcome as
+`refs_removed=N` / `refs_kept:<reason>` / `refs_unprepared`. So a judgment is
+traceable to the exact bytes the model saw, not merely to the paper it came from. The CLI exposes no
 temperature and no seed, so identical bytes are unreachable and the write-up must
 not claim them; what is reproducible is the *procedure*, recorded completely
 enough to be set up again. Group **G** of the test plan fails a round whose
@@ -938,8 +988,16 @@ record has a hole in it. Note that no dated model snapshot exists —
 build split, and for each paper spawns one `claude -p` process with the promptbook and the paper
 text on stdin. **Papers are judged one at a time, never batched into one prompt**: ten papers in one
 context would let the model make exactly the cross-paper judgments E12 and E17 forbid, and position
-effects inside the batch would contaminate the accuracy number. Speed comes from running 5-8
-processes concurrently, which buys the same wall-clock and none of the contamination.
+effects inside the batch would contaminate the accuracy number.
+
+**Serial is the default; `--parallel` is opt-in (DC58).** Running 5-8 processes concurrently buys
+wall-clock this project has with quota it does not: a pool commits `--workers` papers of the 5-hour
+subscription window before the first result is readable, and a round that has gone wrong cannot then
+be stopped. Serially, a sealing breach (`tool_use`/`tool_result`) **ends the round on the paper it
+happened on** with the rest of the quota unspent, a Ctrl-C lands on the paper actually running, and
+the per-paper line carries a running billed-token total so the operator can see the window draining.
+Under `--parallel` the pool has already submitted everything, so a breach is collected and the round
+finishes — the same behaviour as before.
 
 **`scripts/21_check_responses.py`** — validates what came back, before any of it is scored. In
 order: exit code → **zero `tool_use` blocks** in `--output-format stream-json`, and discard the

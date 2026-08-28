@@ -21,6 +21,11 @@ data/labels/
 # --- Cached full text of those PDFs: same redistribution problem ---
 data/extracted_text/
 **/extracted_text/
+# The references-stripped copy (scripts/19_strip_references.py) is still
+# the papers' full text -- same redistribution problem, and the two rules
+# above do not match a directory whose name only starts with the prefix.
+data/extracted_text_stripped/
+**/extracted_text_stripped/
 
 # --- Zotero metadata + local DB ---
 data/zotero_meta.jsonl

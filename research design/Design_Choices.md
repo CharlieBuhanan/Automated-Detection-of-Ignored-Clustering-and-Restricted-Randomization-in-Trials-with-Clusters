@@ -14,6 +14,9 @@ Everything else has been settled; the decisions are recorded as DC1-DC55 below.
 | **O1** | **The 5 stepped-wedge papers NHLBI kept and scored — revisit after 2026-09-02.** Decided for now (2026-08-27): **kept in the scored set as accepted misses**, not dropped. See DC51. Deb ruled the criterion, not these rows, and she and Keith may yet re-score them as excluded — the outcome that loses no data. | Nothing; the floor is documented |
 | **O2** | **Inter-rater statistic for the 15 dual-reviewed pairs.** Deferred, not declined: raw agreement is 12/15 = 80%. Decide before writing the methods section whether Cohen's kappa is reported alongside it. | Methods section |
 | **O3** | **The 7 rows flagged `restricted_rand = yes` whose `should` never asks for it.** Three were scored *correct* despite the restriction being unaccounted for — the Cattamanchi shape (DC50). Written up as a table for Deb in [Deb.md](Deb.md); decides whether they join the expert-review pile, and whether `data_should` can be compared against `promptbook_evidence` at all. | Nothing yet |
+| **O4** | **Is the 5-hour subscription ceiling metered on raw tokens or on cost-equivalent?** If cost-equivalent, the 1.25× cache-write premium is costing ~20% for nothing — `cache_read` is zero on all 134 calls measured, because each sealed process writes a cache it never reads — and killing that premium jumps above lever 2 in priority. If raw tokens, it is worth nothing and can be ignored. Cheap to settle: one round's usage blocks against the observed window. | Ordering of the cost levers (PLAN.md TODO) |
+| **O5** | **Is `exclusion_r1` (85 papers, already paid) still the baseline after references-stripping?** The 49 accepted judgments were made on whole text under `v1`; everything from here is stripped text under `v2` (DC57). Either they are a distinct provenance stratum reported separately and the comparison restarts at `v2` round 1, or a paired re-run on the same 49 papers measures the trimming effect itself and buys back the baseline for ~600k tokens. | The first `promptbook_accuracy_history.csv` row |
+| **O6** | **How many refinement rounds until plateau?** Decides whether lever 2 (exploratory rounds on a fixed 50-paper subset, no history row) is sufficient on its own, or whether Batch API credits are a prerequisite for finishing rather than an optimization. Nothing to decide yet — it is answered by rounds 1-3 under `v2`, and it is worth writing the guess down first. | Whether lever 3 is on the critical path |
 
 ---
 
@@ -47,6 +50,33 @@ Everything else has been settled; the decisions are recorded as DC1-DC55 below.
   was read from *at parse time*, so the 1814 fields still name the pre-rename folders. Updating them
   would assert a file was read from somewhere it was not; re-parsing to fix them honestly is what DC6
   forbids. Nothing locates files by it — `set_dir()` (DC3) does that.
+- **DC56 — References are stripped in a second, derived cache, not at send time.** Decided
+  2026-08-28, implemented by `scripts/19_strip_references.py` and `src/reference_strip.py`.
+  Measured over all 1783 cached papers: a standalone references heading is detectable in 1747
+  (98%), and what follows it is **21.6% of the corpus by character** — 20.7M chars, ~6.9M tokens,
+  read by no criterion. It is worse than merely wasted: a bibliography is dense with "stepped
+  wedge", "pilot" and "secondary analysis" attached to papers that are *not* the paper under
+  review, and the model cannot tell a cited title from a claim the paper makes about itself. So
+  this is a cost cut and an accuracy improvement in one.
+  **A directory, not a flag, and not an edit to DC6's cache.** `data/extracted_text/` is
+  untouched; `data/extracted_text_stripped/` holds one file of the same name per paper, and the
+  Reading Room reads that. The bytes the model saw are the evidence a judgment is audited against,
+  and a directory can be hashed and diffed a year from now — text trimmed at send time exists only
+  inside a process that has already exited. Each copy carries a `references_strip` record (source
+  hash, ruleset, chars removed, reason) so the pass is idempotent and staleness is detectable
+  rather than assumed.
+  **Everything ambiguous is left whole.** Three guards: the heading must be alone on its line, it
+  must sit past 30% of the document (measured minimum in this corpus: 46.5%), and a cut removing
+  over 60% is abandoned (measured maximum: 53.5%). 36 papers have no findable heading and go out
+  entire, with the reason recorded. The output directory always holds one file per input file, so
+  a missing file stays a real gap (B7) rather than a paper the stripper quietly declined.
+  **Two details that are not cosmetic.** An appendix or supplement *after* the bibliography is
+  spliced back on — 134 papers have one and that is often where the sample-size calculation lives.
+  And the cut leaves a visible `[REFERENCES SECTION REMOVED]` line, because a paper with no
+  bibliography reads like an abstract, which is exactly what exclusion criterion E2 ("not a full
+  report") looks for; without the marker the trim would manufacture the exclusion it is supposed
+  to be neutral about. Where it is recorded: per paper in the run log's `text_notes`
+  (`refs_removed=N` / `refs_kept:<reason>`), and in the file itself.
 - **DC8 — Text only, no table grids.** Journal tables are unruled, so line detection finds nothing and
   text detection shreds two-column prose. Plain `get_text()` already keeps reading order inside a
   table. If power/data analysis later misses table content, the move is `pymupdf4llm`.
@@ -76,6 +106,34 @@ Everything else has been settled; the decisions are recorded as DC1-DC55 below.
   allowance in one calibration batch, so its marginal quality is not affordable for this study.
   A promptbook is meaningful only under the configuration that will ship, therefore this setting is
   changed everywhere together and the runner must pass preflight before another scored call.
+- **DC57 — Changing what the model *reads* bumps the promptbook version, same as changing what it
+  is *told*.** Decided 2026-08-28. DC53 says a version is run-frozen once it has served a paid
+  request and that a new `vN+1/` otherwise needs a human-verified rubric change, not a rewording.
+  References-stripping (DC56) is neither: the promptbook bytes do not change at all. It still
+  forces `v2`. A promptbook is a function of the text it is applied to — a rule reading "excludes
+  if the paper describes a stepped-wedge design" behaves differently against a document that
+  carries 40 reference titles containing that phrase and one that does not — so `v1`-on-whole-text
+  and `v1`-on-stripped-text are two configurations wearing one label. Since DC55 already treats
+  model and effort changes as new configurations, the input the promptbook is applied to is
+  treated the same way. The practical consequence is O5: `exclusion_r1`'s 49 accepted judgments
+  belong to `v1`/whole-text and cannot be pooled with anything that follows.
+  **The directory is cut when the next round runs, not now.** Three directories describing one
+  unexecuted state is the version noise DC53 was written to stop; the rule is recorded here and
+  `promptbooks/CURRENT` moves at the same moment the first `v2` request does.
+- **DC58 — The Reading Room runs serially by default; `--parallel` is opt-in.** Decided
+  2026-08-28. `--workers 6` was the default and is now a flag. A pool commits six papers of the
+  5-hour subscription window before the first result is readable, which is the difference between
+  noticing a round going wrong and finding out afterwards — it buys wall-clock time this project
+  has with quota it does not. Three behaviours follow, and only the first is available under
+  `--parallel`: a Ctrl-C lands on the paper actually running rather than after the queue drains;
+  a **sealing breach ends the round on the paper it happened on**, leaving the remaining quota
+  unspent instead of proving the same breach 49 more times (under `--parallel` everything is
+  already submitted, so breaches are collected and the round finishes, as before); and the
+  per-paper line carries a running billed-token total, so the number that says whether there is
+  room to finish is on screen while there is still room to finish. `--parallel` and `--serial`
+  together is a refusal, not a precedence rule: the two spellings disagree about the thing that
+  decides the spend. Both strategies live in `src/reading_room.py` behind one `(item, call)`
+  contract and share one result-handling body, so serial mode cannot drift into a second runner.
 - **DC11 — A false exclusion is unrecoverable**, so low-confidence gate calls get an Opus second pass
   **before** gating, not after.
 - **DC12 — `undecidable` is an abstention, not a third category.** It means the evidence is genuinely

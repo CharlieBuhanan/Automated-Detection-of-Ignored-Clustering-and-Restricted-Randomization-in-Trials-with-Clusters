@@ -34,12 +34,29 @@ FLAGS YOU WILL ACTUALLY USE
     --force     re-run a round that already has raw files (F5). Off by default
                 because re-running double-inserts judgments
     --claude    path to the CLI, if it is not on PATH (F11)
-    --workers   concurrent papers, default 6. One paper per process, always
-    --serial    one paper at a time, no worker pool (alias --no-parallel).
-                Slower by roughly --workers, but the spend arrives at a pace
-                you can read, and Ctrl-C stops on the paper actually running
-                instead of after the pool drains
+    --parallel  run --workers papers at once. OFF by default: a pool spends six
+                papers' quota before the first result reaches the screen, and on
+                a five-hour subscription window that is the difference between
+                noticing a round going wrong and finding out afterwards
+    --workers   how wide --parallel goes, default 6. One paper per process, always
+    --serial    the default; accepted so existing commands keep working
     --model     override the pinned model. You almost never want this
+
+HOW A ROUND STOPS
+    Serially, a `tool_use` or `tool_result` block ends the round **on the paper
+    it happened on**. The room was not sealed, every later paper would run under
+    the same broken conditions, and their quota is worth more unspent than spent
+    proving the same thing 49 more times. Under --parallel the pool has already
+    submitted everything, so the breach is collected and the round finishes.
+
+    The per-paper line carries a running token total for the same reason: it is
+    the number that says whether there is room to finish.
+
+WHAT IT READS
+    data/extracted_text_stripped/<paper_id>.json -- the references-stripped copy
+    written by `scripts/19_strip_references.py`, which is 21.6% smaller than the
+    extraction cache and decided by no criterion. Papers prepared two different
+    ways in one round is a refusal, before anything spawns.
 
 WHERE THINGS LAND
     results/04_classification/raw/<task>_r<round>/
@@ -67,7 +84,6 @@ import argparse
 import csv
 import io
 import sys
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
@@ -130,14 +146,23 @@ def main() -> int:
     parser.add_argument("--force", action="store_true",
                         help="Re-run a round that already has raw files (F5)")
     parser.add_argument("--claude", default="claude", help="Path to the CLI")
-    parser.add_argument("--workers", type=int, default=6)
+    parser.add_argument("--parallel", action="store_true",
+                        help="Run --workers papers at once. Off by default: the "
+                             "pool commits six papers of quota before the first "
+                             "result is readable")
+    parser.add_argument("--workers", type=int, default=rr.DEFAULT_WORKERS,
+                        help="How wide --parallel goes. Ignored without it")
     parser.add_argument("--serial", "--no-parallel", action="store_true",
                         dest="serial",
-                        help="One paper at a time, no worker pool. It overrides "
-                             "--workers rather than arguing with it")
+                        help="One paper at a time. This is the default; the flag "
+                             "is kept so existing commands keep working")
     parser.add_argument("--model", default=rr.MODEL)
     parser.add_argument("--timeout", type=int, default=rr.TIMEOUT_SECONDS)
     args = parser.parse_args()
+
+    # Refuses on contradictory flags, so it happens before anything is resolved.
+    mode = rr.resolve_run_mode(parallel=args.parallel, serial=args.serial,
+                               workers=args.workers)
 
     raw_dir = RAW_ROOT / f"{args.task}_r{args.round}"
     bar = "=" * 74
@@ -176,6 +201,7 @@ def main() -> int:
     else:
         print(f"  promptbook   : {version}  ({book_path.relative_to(ROOT)})")
     print(f"  model        : {args.model}")
+    print(f"  text         : {rr.CACHE_DIR.relative_to(ROOT)}")
     print(f"  papers       : {plan.n}"
           + (f"  (nominal {rr.ROUND_SIZE}; short rounds are proceeded with, "
              f"never re-cut -- DC47)" if plan.n != rr.ROUND_SIZE else ""))
@@ -246,6 +272,10 @@ def main() -> int:
     for paper, body in text_problems:
         print(f"    no text  {paper.paper_id}: {rr.NO_TEXT_REASON}")
 
+    # Free, and before the first spawn: a round half on stripped text and half
+    # on whole text is two conditions averaged into one accuracy number.
+    rr.check_round_text_preparation([body.refs_method for _, body in prepared])
+
     if not args.dry_run:
         rr.find_claude(args.claude)                                     # F11
 
@@ -255,6 +285,11 @@ def main() -> int:
         total = sum(b.chars for _, b in prepared)
         print(f"  total text: {total:,} chars "
               f"(~{total // 3:,} tokens at 3 chars/token)")
+        cut = sum(b.refs_removed for _, b in prepared)
+        whole = [p.paper_id for p, b in prepared if not b.refs_removed]
+        print(f"  references: {cut:,} chars already removed "
+              f"(~{cut // 3:,} tokens not being sent); {len(whole)} paper(s) "
+              f"went out whole")
         return 0
 
     # ----------------------------------------------------------------- the run
@@ -281,16 +316,20 @@ def main() -> int:
               f"\n{bar}")
         return 0
 
-    workers_note = ("1  (--serial: no pool, one paper at a time)"
-                    if args.serial else str(args.workers))
-    print(f"  workers      : {workers_note}")
+    print(f"  workers      : {mode.label}")
     print(bar)
 
     started_at = now()
     index_rows, log_rows, ledger_rows = list(existing), [], []
     fatal: list[str] = []
+    # The running spend, and how much of it the CLI declined to report. G7: an
+    # absent usage block is counted as unknown, never as zero -- a counter that
+    # treats unreported papers as free is a counter that says "keep going".
+    tokens_so_far, tokens_unreported, calls_made = 0, 0, 0
+    stopped_after, breach_stopped = 0, False
 
-    def one_paper(paper, body):
+    def one_paper(item):
+        paper, body = item
         token = rr.new_token(body.text)
         if combined:
             prompt = rr.build_combined_analysis_prompt(
@@ -309,33 +348,16 @@ def main() -> int:
         attempt.raw_path = rr.write_raw(attempt, raw_dir)
         return paper, body, attempt
 
-    # Both strategies yield `(paper, call)`, where `call()` returns the
-    # triple `one_paper` produced or re-raises what it raised. One shared
-    # result-handling body below is the point: serial mode must not become a
-    # second runner that quietly drifts from the parallel one.
-    def serially():
-        """One paper at a time, in round order, on this thread.
-
-        Not merely `--workers 1`. With no pool in the picture a Ctrl-C lands
-        on the paper actually running, so an operator watching a round go
-        wrong stops it there rather than after the queue drains -- the
-        difference between losing one paper's spend and losing the round's.
-        """
-        for paper, body in prepared:
-            yield paper, lambda p=paper, b=body: one_paper(p, b)
-
-    def in_parallel():
-        """`--workers` papers in flight, each result handled as it lands."""
-        with ThreadPoolExecutor(max_workers=args.workers) as pool:
-            futures = {pool.submit(one_paper, paper, body): paper
-                       for paper, body in prepared}
-            for future in as_completed(futures):
-                yield futures[future], future.result
-
-    # `closing` so an early exit shuts the generator down -- and with it the
+    # Both strategies live in `reading_room` and yield the same `(item, call)`
+    # pairs, where `call()` returns the triple `one_paper` produced or re-raises
+    # what it raised. The one shared result-handling body below is the point:
+    # serial mode must not become a second runner that drifts from the parallel
+    # one. `closing` so an early exit shuts the generator down -- and with it the
     # pool's `with` block -- rather than leaving it to the garbage collector.
-    with closing(serially() if args.serial else in_parallel()) as runner:
-        for i, (paper, call) in enumerate(runner, 1):
+    with closing(rr.runner_for(mode, prepared, one_paper)) as runner:
+        for i, (item, call) in enumerate(runner, 1):
+            paper, _ = item
+            stopped_after = i
             try:
                 paper, body, attempt = call()
             except rr.Refuse as exc:
@@ -360,8 +382,17 @@ def main() -> int:
                 outcome = "TOOL_USE"
             detail = "" if attempt.ok else attempt.stderr.strip()[:200]
 
+            calls_made += 1
+            spent = rr.billed_total_tokens(rr.stream_usage(attempt.stdout))
+            if spent is None:
+                tokens_unreported += 1
+            else:
+                tokens_so_far += spent
+
             print(f"  [{i:>3}/{len(prepared)}] {outcome:<15} {paper.paper_id} "
-                  f"{attempt.duration:>6.1f}s  {body.chars:>7,} chars"
+                  f"{attempt.duration:>6.1f}s  {body.chars:>7,} chars  "
+                  f"{rr.format_tokens(tokens_so_far):>6} tok"
+                  + (f"+{tokens_unreported}?" if tokens_unreported else "")
                   + (f"  [{body.notes}]" if body.notes else ""))
 
             index_rows.append({
@@ -400,6 +431,21 @@ def main() -> int:
                     "raw_path": str(attempt.raw_path.relative_to(ROOT)),
                     "retry_eligible": "no" if terminal_status else "yes",
                     "terminal_status": terminal_status})
+
+            # Serially, the breach ends the round on the paper it happened on.
+            # Every later paper would run under the same broken conditions, so
+            # their quota is worth more unspent than spent proving it 49 more
+            # times. Under --parallel the pool has already submitted them all,
+            # so there is nothing left to save and the round finishes.
+            if not sealed and mode.serial:
+                breach_stopped = True
+                break
+
+    if breach_stopped:
+        unsent = len(prepared) - stopped_after
+        print(f"\n  !! STOPPED on paper {stopped_after} of {len(prepared)}: the "
+              f"room was not sealed.\n     {unsent} paper(s) were not sent; that "
+              f"quota is unspent.")
 
     # C1/C2 papers never reached the CLI; they still need a row, or the round's
     # denominator quietly shrinks.
@@ -445,6 +491,11 @@ def main() -> int:
               f"anything.\n  Raw files are kept as evidence. Do NOT score this "
               f"round (A1/A2).")
         return 2
+
+    unreported = (f", {tokens_unreported} paper(s) reported none"
+                  if tokens_unreported else "")
+    print(f"  tokens  -> {tokens_so_far:,} billed in+out across "
+          f"{calls_made} call(s){unreported}")
 
     ok = sum(1 for r in log_rows if r["outcome"] == "ok")
     cost = sum(r["total_cost_usd"] for r in log_rows

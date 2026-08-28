@@ -86,6 +86,21 @@ Cuts the build split into fixed rounds so two rounds are comparable (DC47).
 - Cut exclusion into 7 rounds, power/data into 3 each
 - Write results/04_classification/build_rounds.csv
 
+## Script 19 — strip references from the cached text
+
+Offline and free. No model call, no network, no subscription quota. Re-runnable.
+
+- Read every `data/extracted_text/*.json`; never modify it (DC6)
+- Find the LAST standalone references heading; decline if there is none, if it sits in the first 30% of the document, or if the cut would remove over 60%
+- Splice back any appendix or supplement that followed the bibliography
+- Leave a `[REFERENCES SECTION REMOVED]` marker so a trimmed paper does not read as an abstract (E2)
+- Write the copy to `data/extracted_text_stripped/<paper_id>.json` with a `references_strip` audit record (source hash, ruleset, chars removed, reason)
+- Skip files already produced from the same source by the same rules unless `--force`
+- Report the character and token saving, every paper left whole and why, and both accounting gaps: sources with no copy, copies with no source
+- `--check` reports all of the above and writes nothing
+
+Measured 2026-08-28: 1747/1783 stripped, 21.6% of the corpus removed (~6.9M tokens).
+
 ## Script 22 — evaluate persisted judgments
 
 Read-only. It never calls a model and never changes `data/review.db`.

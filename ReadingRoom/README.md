@@ -16,6 +16,9 @@ this file is the build spec.
 ## Run it
 
 ```bash
+# 0. Prepare the text. Offline, free, idempotent. Do this before any round.
+python scripts/19_strip_references.py
+
 # 1. Plan only. Costs nothing, spawns nothing, checks every wall.
 python scripts/20_reading_room.py --task exclusion --round 1 --dry-run
 
@@ -31,8 +34,15 @@ python scripts/20_reading_room.py --task exclusion --round 1 --force
 python scripts/21_check_responses.py --task exclusion --round 1 --write
 ```
 
-`--task` is `exclusion | power_analysis | data_analysis`. Every flag is in each
-script's `--help`. **Nothing reaches `data/review.db` without `--write`.**
+`--task` is `exclusion | power_analysis | data_analysis | combined_analysis`.
+Every flag is in each script's `--help`. **Nothing reaches `data/review.db`
+without `--write`.**
+
+**Rounds run one paper at a time.** `--parallel` restores the old six-way pool,
+and you almost never want it: the pool commits six papers of the 5-hour window
+before the first result is readable, and a round that has gone wrong cannot then
+be stopped (DC58). Serially, a sealing breach ends the round on the paper it
+happened on, and the per-paper line carries a running billed-token total.
 
 ## Evaluate persisted judgments
 
@@ -91,14 +101,19 @@ confused about.
 
 Reads `promptbooks/CURRENT`, resolves the round from `build_rounds.csv`, and
 refuses if any paper is in the holdout (DC18), lacks cached text, or has left the
-corpus. Then it spawns one sealed process per paper, 6 at a time, and saves each
-response **verbatim before parsing** — if parsing is what mangles it, you need
-the original to prove that.
+corpus. Then it spawns one sealed process per paper, **one at a time by
+default**, and saves each response **verbatim before parsing** — if parsing is
+what mangles it, you need the original to prove that.
+
+It reads `data/extracted_text_stripped/`, the references-stripped copy written by
+`scripts/19_strip_references.py` (DC56) — 21.6% smaller than the extraction cache
+and decided by no criterion. A round whose papers were prepared two different
+ways is refused before anything spawns.
 
 **One paper per process, never batched:** ten papers in one context lets the
 model make exactly the cross-paper judgments E12 and E17 forbid, and position
-effects inside the batch contaminate the accuracy number. Concurrency buys the
-same wall-clock with none of the contamination.
+effects inside the batch contaminate the accuracy number. Running them serially
+costs wall-clock and buys the ability to stop.
 
 Before any paper, one throwaway two-word probe (`preflight`) checks every wall
 that only a real process can test: that the room can log in, that zero tools were
@@ -254,7 +269,7 @@ ReadingRoom/
                          run_environment.json. ONE LINE (live finding 7).
                          Changing it is a promptbook version bump, not an edit
   tests/
-    TEST_PLAN.md         89 cases: input -> expected handling
+    TEST_PLAN.md         132 cases: input -> expected handling
     conftest.py          fixtures; puts the fake CLI on PATH
     fake_claude.py       a fake `claude` that replays the real 2.1.197 stream
     test_a_isolation.py  A1-A17   the walls
@@ -264,7 +279,13 @@ ReadingRoom/
     test_e_semantic.py   E1-E12   valid but wrong
     test_f_retries.py    F1-F12   retries, concurrency, the ledger
     test_g_provenance.py G1-G12   the run record
+    test_h_combined_schema.py     test_i_combined_route.py      test_j_evaluate.py            test_k_api_contract.py    H1-H6    the post-gate route and the API boundary
+    test_l_runner.py     I1-I19   serial by default, and serial actually stops
+    test_m_reference_strip.py                          J1-J16   21.6% off the input without cutting a method
 ```
+
+The file letter is a sequence number and the case letter is the group; they
+stopped lining up at H, which is asserted across four files.
 
 The runnable scripts are `scripts/20_reading_room.py` and
 `scripts/21_check_responses.py`; the logic they call lives in
