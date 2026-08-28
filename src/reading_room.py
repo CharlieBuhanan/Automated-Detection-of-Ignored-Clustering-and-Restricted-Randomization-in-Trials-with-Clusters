@@ -30,15 +30,16 @@ deliberately not built -- decided 2026-08-27, see that file.
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import os
+import platform
 import re
 import secrets
 import shutil
 import subprocess
 import tempfile
 import time
-import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -56,6 +57,35 @@ PROMPTBOOKS = ROOT / "promptbooks"
 # batch for the gate and the analysis run). A promptbook refined against one
 # model and shipped against another is a promptbook tuned on nothing.
 MODEL = "claude-sonnet-5"
+
+# A16. Pinned for the same reason MODEL is, and pinned identically on both
+# routes: `--effort high` here, `output_config.effort` on the Batch API. `high`
+# is the API default and the recommended floor for judgment-sensitive work. The
+# CLI accepts it but never echoes it back in any stream event, so this records
+# *intent* -- G11 is what catches it changing between two rounds.
+EFFORT = "high"
+
+# A15. The pinned minimal system prompt, passed verbatim as `--system-prompt`.
+#
+# Not a nicety. The 2026-08-27 probe found every call was carrying ~12,200
+# tokens of Claude Code's own agentic system prompt -- coding-assistant persona,
+# tool instructions, cwd/git/env/memory sections. The room was sealed against
+# files and wide open to a persona, and the promptbook was being tuned against a
+# coding agent then shipped to a bare Batch API classifier.
+#
+# CLI 2.1.197 has no `--system-prompt-file`, so the *contents* go on the command
+# line. That is the better shape for A15 anyway: `run_environment.json` records
+# argv verbatim, so the record contains the exact bytes that were sent rather
+# than a path to a file that may since have changed.
+SYSTEM_PROMPT_PATH = ROOT / "ReadingRoom" / "prompts" / "system_prompt.txt"
+
+# A17. The measurement that A15 took *effect*, as opposed to merely being passed.
+# A flag can be present and ignored, and nothing else in the harness would
+# notice. The preflight probe is a two-word prompt, so its entire input token
+# count is essentially the system prompt: CLI 2.1.197 measured 12,198 tokens with
+# the default persona and 183 with the pinned one. The ceiling sits between them
+# with room for the pinned prompt to grow several times over.
+PREFLIGHT_TOKEN_CEILING = 2_000
 
 # DC32. The nominal size; DC47 says a short round is proceeded with, never
 # re-cut, so this is a label for the log and not a check.
@@ -87,33 +117,39 @@ ENV_ALLOWLIST = (
 
 # argv the wrapper must never build. A9: every invocation is a fresh process
 # with no shared history, so anything that carries history forward is a refusal.
+#
+# `--append-system-prompt` is here for a different reason than the rest: it
+# *keeps* the default persona and adds to it, which is precisely the thing A15
+# exists to remove. Only `--system-prompt`, which replaces, is allowed.
 FORBIDDEN_FLAGS = ("--add-dir", "--resume", "--continue", "--session-id",
                    "--fork-session", "--mcp-config", "--append-system-prompt",
+                   "--append-system-prompt-file",
                    "--dangerously-skip-permissions")
 
-# THE list that empties the room -- not belt and braces, the actual mechanism.
+# The SECOND layer. `--tools ""` (A13) is the mechanism that empties the room.
 #
-# The 2026-08-27 smoke test corrected a wrong belief in this module's design:
-# `--allowed-tools ""` is a *permission* allowlist, deciding what may run without
-# a prompt. It does not remove a tool. `permissions.deny` in the settings file is
-# what removes one, so this list is load-bearing and `--allowed-tools ""` is the
-# belt-and-braces, exactly the reverse of what the comment here used to say.
+# Both live probes moved this list. The first found that `--allowed-tools ""` is
+# a *permission* allowlist -- it decides what may run without a prompt and
+# removes nothing -- which briefly made this deny list the only thing standing
+# between the model and `data/ground_truth.csv`; 18 tools were still offered,
+# `TaskCreate` among them, which spawns a subagent with its own full file
+# toolset. The second probe then found `--tools ""`, a real availability filter,
+# and `system/init` came back `"tools":[]`. So this list went from belt to
+# braces in the space of one day.
 #
-# The first live run reported 18 tools still offered, the file tools correctly
-# gone. Several of the survivors are worse than a file read: `TaskCreate` spawns
-# a subagent that has its own full tool set, `Skill` runs packaged instructions,
-# `ToolSearch` surfaces deferred tools on demand, and `SendMessage` reaches
-# another session entirely.
+# It is kept rather than deleted because it fails in a different direction than
+# the flag does: a CLI that silently ignored `--tools` would still honour
+# `permissions.deny`, and vice versa.
 #
 # EVERY NAME MUST BE A TOOL THE INSTALLED CLI ACTUALLY HAS. It validates the deny
 # list at startup and exits non-zero on an unknown name, so a stale entry does
 # not weaken the room -- it stops the room opening at all. `MultiEdit` was here
-# until that same smoke test rejected every paper with
+# until the first smoke test rejected every paper with
 # `Permission deny rule "MultiEdit" matches no known tool`.
 #
-# A hand-maintained list of names cannot be trusted to stay complete across CLI
-# versions, which is why `assert_no_tools_offered` checks the *observed* tool
-# list on every response instead of trusting this one.
+# Neither layer is trusted on its own: `assert_no_tools_offered` (A14) checks the
+# tool list the CLI *observes and reports*, so a tool added in a future version
+# is caught by something nobody has to remember to update.
 DENIED_TOOLS = (
     # file and shell -- the ones that reach data/ground_truth.csv
     "Bash", "Read", "Write", "Edit", "NotebookEdit", "Glob", "Grep",
@@ -151,24 +187,88 @@ class RoundDiscarded(RuntimeError):
 # --------------------------------------------------------------- wall 1: argv
 
 
+def load_system_prompt(path: Path | None = None) -> str:
+    """A15. The pinned minimal system prompt. Missing is a refusal, not a default.
+
+    Deliberately not falling back to "no `--system-prompt`": that is precisely
+    the failure mode, and it is silent. A round run without this file would look
+    exactly like a round run with it, except the model reading the papers is a
+    coding agent carrying 12,200 tokens of instructions about a repository that
+    is not there.
+    """
+    path = Path(path) if path is not None else SYSTEM_PROMPT_PATH
+    if not path.is_file():
+        raise Refuse(
+            f"the pinned system prompt {path} does not exist. Without it the CLI "
+            f"sends its own ~12,200-token agentic persona and the room is sealed "
+            f"against files but wide open to a persona -- and the Batch API run "
+            f"becomes a different experiment (A15)")
+    text = path.read_text(encoding="utf-8").strip()
+    if not text:
+        raise Refuse(f"the pinned system prompt {path} is empty. An empty value "
+                     f"is not a minimal prompt and may fall back to the CLI "
+                     f"default (A15)")
+
+    # ONE LINE, and this is not a style rule. On Windows `claude` is a `.cmd`
+    # shim (`C:\...\claude.CMD` here), and cmd.exe's `%*` expansion ends the
+    # command line at the first newline: a multi-line value is truncated to its
+    # first line AND every flag after it on the argv is silently dropped.
+    #
+    # Measured 2026-08-27, three paragraphs through a real shim: the prompt
+    # arrived as its opening sentence and `--strict-mcp-config` and `--settings`
+    # never arrived at all. Two walls gone, exit code 0, tools still empty,
+    # nothing in any log saying so. `verify_argv` cannot catch it either, because
+    # it inspects the argv we *built*, not the one the child received.
+    #
+    # So the prompt is single-line and the refusal is here, at the only point
+    # that sees the bytes before they reach a command line.
+    if "\n" in text or "\r" in text:
+        raise Refuse(
+            f"the pinned system prompt {path} contains a newline. On Windows the "
+            f"CLI is a .cmd shim and cmd.exe truncates the command line at the "
+            f"first newline -- the prompt would arrive as its first line only, "
+            f"and every flag after --system-prompt would be dropped without a "
+            f"word in any log. Keep it to one line (A15)")
+    return text
+
+
 def build_argv(*, model: str = MODEL, settings_path: Path,
-               claude: str = "claude") -> list[str]:
+               claude: str = "claude", system_prompt: str | None = None,
+               effort: str = EFFORT) -> list[str]:
     """The one argv the Reading Room is allowed to spawn.
 
     Built in one place so `verify_argv` has exactly one thing to check and no
     caller can assemble a different one. `--verbose` is not optional: the CLI
     refuses `--output-format stream-json` under `-p` without it, and the stream
     is the only evidence that zero tools were used (A1).
+
+    `system_prompt` defaults to the pinned file rather than to a literal, so the
+    default path through this function is the correct one and a caller has to go
+    out of its way to send anything else.
+
+    **`--system-prompt` goes last, deliberately.** It is the only argument
+    carrying free text, so it is the only one that can be mangled by something
+    between here and the CLI -- and on Windows `claude` is a `.cmd` shim, where a
+    stray newline truncates the command line and takes every following flag with
+    it. `load_system_prompt` refuses a newline outright; putting the flag last as
+    well means that if some other character ever does the same thing, what is
+    lost is the prompt and not a wall. A wrong prompt is visible in the record;
+    a missing `--settings` is not.
     """
+    if system_prompt is None:
+        system_prompt = load_system_prompt()
     return [
         claude, "-p",
         "--max-turns", "1",            # no hands: one turn, no tool loop
-        "--allowed-tools", "",         # no hands: nothing is callable
+        "--tools", "",                 # A13: THE availability filter
+        "--allowed-tools", "",         # A5: second layer, a permission allowlist
         "--output-format", "stream-json",
         "--verbose",                   # required by stream-json under -p
         "--model", model,
+        "--effort", effort,            # A16: pinned, and pinned on both routes
         "--strict-mcp-config",         # no MCP server, project or user
         "--settings", str(settings_path),
+        "--system-prompt", system_prompt,   # A15: replaces the CLI persona. LAST
     ]
 
 
@@ -193,12 +293,17 @@ def _flag_value(argv: list[str], flag: str) -> str | None:
     return values[0] if values else None
 
 
-def verify_argv(argv: list[str]) -> None:
-    """A4-A6, A9, A10. Refuse an argv that would open any wall.
+def verify_argv(argv: list[str], *, system_prompt: str | None = None,
+                effort: str = EFFORT) -> None:
+    """A4-A6, A9, A10, A13, A15, A16. Refuse an argv that would open any wall.
 
     Checked on the argv actually about to be spawned, not on the intent behind
     it, so a hand-edited command line or a future caller that builds its own is
     caught by the same test.
+
+    Every flag is checked in *every* occurrence it appears, never just the
+    first: `--tools "" --tools default` is an argv the CLI accepts, and the
+    second one is what takes effect.
     """
     for flag in FORBIDDEN_FLAGS:
         if any(item == flag or item.startswith(flag + "=") for item in argv):
@@ -222,13 +327,59 @@ def verify_argv(argv: list[str]) -> None:
         if value.strip() != "1":
             raise Refuse(f"--max-turns is {value!r}, must be exactly 1 (A6)")
 
-    tools = _flag_values(argv, "--allowed-tools")
+    # A13. THE no-hands mechanism. `--tools ""` is the availability filter: it
+    # decides which tools exist at all. `--allowed-tools` below is only a
+    # permission allowlist and removes nothing -- that wrong belief is what let
+    # the first live run offer 18 tools under a configuration everyone thought
+    # was empty. If exactly one of these two checks could be kept, it is this one.
+    tools = _flag_values(argv, "--tools")
     if not tools:
-        raise Refuse("--allowed-tools missing: it must be present and empty (A5)")
+        raise Refuse("--tools missing: it is the availability filter and the "
+                     "actual no-hands mechanism. --allowed-tools is only a "
+                     "permission allowlist and removes nothing (A13)")
     for value in tools:
+        if value.strip():
+            raise Refuse(f"--tools is {value!r}, must be empty -- it is what "
+                         f"decides which tools exist at all (A13)")
+
+    allowed = _flag_values(argv, "--allowed-tools")
+    if not allowed:
+        raise Refuse("--allowed-tools missing: it must be present and empty (A5)")
+    for value in allowed:
         if value.strip():
             raise Refuse(f"--allowed-tools is {value!r}, must be empty -- the "
                          f"room has no hands (A5)")
+
+    # A16. Pinned identically on both routes, or the promptbook is refined at one
+    # reasoning level and shipped at another. The CLI never echoes it back, so
+    # this argv check is the only place it can be verified at all.
+    efforts = _flag_values(argv, "--effort")
+    if not efforts:
+        raise Refuse(f"--effort missing: it must be pinned to {effort!r}, the "
+                     f"same level the Batch API run passes as "
+                     f"output_config.effort (A16)")
+    for value in efforts:
+        if value.strip() != effort:
+            raise Refuse(f"--effort is {value!r}, must be exactly {effort!r} -- "
+                         f"the Reading Room and the Batch API run at the same "
+                         f"level or the promptbook is tuned on nothing (A16)")
+
+    # A15. Byte-for-byte against the pinned file, not merely present: a
+    # `--system-prompt` carrying something else is a different experiment, and a
+    # missing one hands the papers to Claude Code's ~12,200-token coding persona.
+    expected = load_system_prompt() if system_prompt is None else system_prompt
+    prompts = _flag_values(argv, "--system-prompt")
+    if not prompts:
+        raise Refuse(f"--system-prompt missing: without it the CLI sends its own "
+                     f"agentic persona and the model is a coding agent, not the "
+                     f"bare classifier the Batch API run will be (A15)")
+    for value in prompts:
+        if value.strip() != expected.strip():
+            raise Refuse(
+                f"--system-prompt does not match the pinned prompt at "
+                f"{SYSTEM_PROMPT_PATH}. Sent {len(value)} chars starting "
+                f"{value.strip()[:60]!r}; pinned is {len(expected)} chars "
+                f"starting {expected.strip()[:60]!r} (A15)")
 
     if "--strict-mcp-config" not in argv:
         raise Refuse("--strict-mcp-config missing: project or user MCP servers "
@@ -553,6 +704,72 @@ def scan_stream_for_tools(stream_text: str, *, paper: str = "?") -> None:
                     f"stream. The room was not sealed -- discard the whole "
                     f"round, every paper in it ran under the same conditions "
                     f"(A1/A2)")
+
+
+def stream_events(stream_text: str) -> list[dict]:
+    """Every JSON object in the stream, in order. Unparseable lines are skipped.
+
+    Skipped rather than raised on: a half-written line is a different check's
+    problem (`21_check_responses.py` parses the reply), and a scan that dies on
+    the first bad line cannot report on the good ones around it.
+    """
+    events = []
+    for line in stream_text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(event, dict):
+            events.append(event)
+    return events
+
+
+def find_event(stream_text: str, kind: str, subtype: str | None = None) -> dict | None:
+    """The first event of a type, or None. `None` means absent, never empty."""
+    for event in stream_events(stream_text):
+        if event.get("type") != kind:
+            continue
+        if subtype is not None and event.get("subtype") != subtype:
+            continue
+        return event
+    return None
+
+
+def stream_usage(stream_text: str) -> dict:
+    """The usage block, from the `result` event or else the assistant event.
+
+    Returns `{}` when the stream carries neither. G7 says a missing usage field
+    is logged as null and never defaulted to zero, so every caller has to be
+    able to tell 'absent' from 'zero' -- which is why this returns an empty dict
+    rather than a dict of zeros.
+    """
+    result = find_event(stream_text, "result")
+    if isinstance(result, dict) and isinstance(result.get("usage"), dict):
+        return result["usage"]
+    for event in stream_events(stream_text):
+        message = event.get("message")
+        if (event.get("type") == "assistant" and isinstance(message, dict)
+                and isinstance(message.get("usage"), dict)):
+            return message["usage"]
+    return {}
+
+
+def billed_input_tokens(usage: dict) -> int | None:
+    """A17. Everything the request was billed for on the way in, or None.
+
+    All three fields, not `input_tokens` alone. The system prompt is cached, so
+    on a cold call it lands in `cache_creation_input_tokens` and on a warm one in
+    `cache_read_input_tokens` -- the 2026-08-27 probe's 12,198 was 9,140 created
+    plus 3,058 read, with `input_tokens` in single digits. A ceiling checked
+    against `input_tokens` would have waved that straight through.
+    """
+    fields = ("input_tokens", "cache_creation_input_tokens",
+              "cache_read_input_tokens")
+    present = [usage[f] for f in fields if isinstance(usage.get(f), int)]
+    return sum(present) if present else None
 
 
 def tools_offered(stream_text: str) -> list[str] | None:
@@ -1020,6 +1237,8 @@ RETRY_LEDGER_COLUMNS = ["timestamp", "task", "round", "paper_id", "token", "atte
 FAILURE_PROCESS = "process"        # non-zero exit, timeout, CLI missing
 FAILURE_PARSE = "parse"            # reply did not become a Decision
 FAILURE_SEMANTIC = "semantic"      # valid Decision, wrong content (E-group)
+FAILURE_TRUNCATION = "truncation"  # G9: stop_reason=max_tokens, hit the output cap
+FAILURE_INCOMPLETE = "incomplete"  # G5/G6: stream is missing its own provenance
 
 
 @dataclass
@@ -1096,17 +1315,35 @@ def run_paper(prompt: str, *, room: Room, token: str, paper_id: str,
                    duration=round(time.monotonic() - started, 2), timed_out=timed_out)
 
 
+@dataclass
+class Preflight:
+    """What the throwaway probe established about the room, before a round runs."""
+    tools: list[str]
+    input_tokens: int | None
+    claude_code_version: str | None
+    model: str | None
+    stdout: str
+
+
 def preflight(room: Room, *, model: str = MODEL, claude: str = "claude",
-              repo_root: Path = ROOT, timeout: int = 120) -> list[str]:
+              repo_root: Path = ROOT, timeout: int = 120,
+              ceiling: int = PREFLIGHT_TOKEN_CEILING) -> Preflight:
     """One throwaway spawn that proves the room is empty before a round is spent.
 
-    Returns the tool list the CLI reported, which is `[]` when all is well.
+    Every failure it catches breaks *every* paper identically, which is exactly
+    why it is worth a spawn: finding one on paper 1 of 50 wastes 49 papers of
+    quota, finding it on a two-word prompt wastes nothing. Four so far, all from
+    live runs and none catchable offline:
 
-    This exists because the two things that broke the first live run -- a stale
-    name in `DENIED_TOOLS`, and credentials the room could not see -- both fail
-    identically on every paper, and both are invisible until a real process
-    starts. Finding them on paper 1 of 50 wastes 49 papers' quota; finding them
-    on a two-word prompt wastes nothing.
+      - a stale name in `DENIED_TOOLS` stopping the CLI from starting at all
+      - credentials the room could not see, so every paper said `Not logged in`
+      - tools still offered under a flag believed to remove them (A14)
+      - `--system-prompt` passed and not taking effect (A17)
+
+    That last one is why the probe is a *measurement* and not just a smoke test.
+    The prompt is two words, so its whole billed input is the system prompt: 183
+    tokens pinned, 12,198 with the CLI's default persona. Nothing else in the
+    harness can tell those apart.
     """
     probe = ("Reply with the single word OK. Do not use any tool.\n"
              "This is a startup check, not a paper.")
@@ -1127,7 +1364,32 @@ def preflight(room: Room, *, model: str = MODEL, claude: str = "claude",
 
     scan_stream_for_tools(attempt.stdout, paper="preflight")
     assert_no_tools_offered(attempt.stdout, paper="preflight")
-    return tools_offered(attempt.stdout) or []
+
+    # A17. A flag can be present and ignored, and no other check would notice.
+    billed = billed_input_tokens(stream_usage(attempt.stdout))
+    if billed is None:
+        raise Refuse(
+            "the preflight probe reported no token usage, so there is no way to "
+            "check whether --system-prompt took effect. A15 passing the flag and "
+            "A17 proving it landed are different claims, and only the second one "
+            "is evidence (A17)")
+    if billed > ceiling:
+        raise Refuse(
+            f"the preflight probe was billed {billed:,} input tokens for a "
+            f"two-word prompt, over the {ceiling:,} ceiling. --system-prompt was "
+            f"passed but did not replace the CLI's default: on this same probe "
+            f"the default agentic persona measured 12,198 tokens and the pinned "
+            f"prompt measured 183. Every paper would be judged by a coding agent "
+            f"rather than the classifier the Batch API run uses. Refusing the "
+            f"round before any paper is sent (A15/A17)")
+
+    init = find_event(attempt.stdout, "system", "init") or {}
+    return Preflight(
+        tools=tools_offered(attempt.stdout) or [],
+        input_tokens=billed,
+        claude_code_version=init.get("claude_code_version"),
+        model=init.get("model"),
+        stdout=attempt.stdout)
 
 
 def write_raw(attempt: Attempt, raw_dir: Path) -> Path:
@@ -1185,6 +1447,296 @@ def retry_rate(rows: list[dict]) -> dict:
         "retry_rate": round(retries / attempts, 4) if attempts else None,
         "by_kind": kinds,
     }
+
+
+# ------------------------------------------- G: provenance and the run record
+#
+# A number nobody can trace back to the conditions that produced it is not a
+# result. The CLI exposes neither temperature nor seed, so identical bytes are
+# unreachable and claiming otherwise in the write-up would be false. What
+# replaces them is a completely recorded *procedure* -- and a recording with a
+# hole in it fails here rather than being quietly written down with the hole.
+#
+# Two layers, because the fields divide cleanly. `run_environment.json` holds
+# what must be identical for every paper in a round (model, effort, hashes, CLI
+# version); the run log holds what legitimately varies per paper (request id,
+# durations, tokens, cost). G11 compares two rounds using only the first layer.
+
+
+# G12. A different serving path is a different experiment: fast mode and the
+# priority tiers trade latency against the compute behind an answer, which is
+# exactly the variable the round is trying to hold still.
+EXPECTED_SERVING = {
+    "fast_mode_state": "off",
+    "speed": "standard",
+    "service_tier": "standard",
+}
+
+# What the per-paper run log records. G7: a field the CLI did not send is written
+# as an empty cell, never as a zero -- a fabricated 0 for `total_cost_usd` is
+# indistinguishable from a free call, and the round's cost would silently be a
+# lie. Every one of these is nullable for that reason.
+PROVENANCE_COLUMNS = [
+    "request_id", "session_id", "claude_code_version", "reported_model",
+    "duration_ms", "duration_api_ms", "ttft_ms", "num_turns",
+    "stop_reason", "terminal_reason",
+    "input_tokens", "output_tokens", "cache_read_input_tokens",
+    "cache_creation_input_tokens", "billed_input_tokens",
+    "total_cost_usd", "service_tier", "speed", "inference_geo",
+    "fast_mode_state", "context_window", "max_output_tokens",
+    "permission_denials",
+]
+
+
+def sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def git_commit(repo_root: Path = ROOT) -> str:
+    """G10. `<sha>` or `<sha>-dirty`. Never a clean sha over a dirty tree.
+
+    A dirty tree means the code that ran is not the code at that commit, so
+    recording the bare sha would point a future reader at something that never
+    produced this round. `unknown` if git is unavailable -- honest, and it makes
+    G11 refuse to compare rather than compare against a guess.
+    """
+    def git(*args: str) -> str | None:
+        try:
+            done = subprocess.run(("git", *args), cwd=str(repo_root),
+                                  capture_output=True, text=True, timeout=30,
+                                  check=False)
+        except (OSError, subprocess.SubprocessError):
+            return None
+        return done.stdout.strip() if done.returncode == 0 else None
+
+    sha = git("rev-parse", "HEAD")
+    if not sha:
+        return "unknown"
+    status = git("status", "--porcelain")
+    return f"{sha}-dirty" if status else sha
+
+
+def paper_provenance(stream_text: str) -> dict:
+    """Every per-paper field the stream carries. Missing stays missing (G7).
+
+    Reads the `result` event for timing, usage and serving path, the assistant
+    event for `request_id`, and `system/init` for the CLI version. A key absent
+    from the stream is absent from this dict -- callers write an empty cell, and
+    nothing here invents a zero.
+    """
+    result = find_event(stream_text, "result") or {}
+    init = find_event(stream_text, "system", "init") or {}
+    usage = stream_usage(stream_text)
+
+    row: dict = {}
+    for key in ("session_id", "duration_ms", "duration_api_ms", "ttft_ms",
+                "num_turns", "stop_reason", "terminal_reason", "total_cost_usd",
+                "service_tier", "inference_geo", "context_window",
+                "max_output_tokens", "fast_mode_state"):
+        if key in result:
+            row[key] = result[key]
+    for key in ("input_tokens", "output_tokens", "cache_read_input_tokens",
+                "cache_creation_input_tokens", "speed"):
+        if key in usage:
+            row[key] = usage[key]
+    # `service_tier` rides on either event depending on version; the result
+    # event wins where both are present.
+    if "service_tier" not in row and "service_tier" in usage:
+        row["service_tier"] = usage["service_tier"]
+
+    if "claude_code_version" in init:
+        row["claude_code_version"] = init["claude_code_version"]
+    if "model" in init:
+        row["reported_model"] = init["model"]
+
+    billed = billed_input_tokens(usage)
+    if billed is not None:
+        row["billed_input_tokens"] = billed
+
+    for event in stream_events(stream_text):
+        if event.get("type") == "assistant" and event.get("request_id"):
+            row["request_id"] = event["request_id"]
+            break
+
+    denials = result.get("permission_denials")
+    if isinstance(denials, list):
+        row["permission_denials"] = len(denials)
+    return row
+
+
+def check_paper_provenance(stream_text: str, *, paper: str = "?",
+                           model: str = MODEL) -> None:
+    """G2-G6, G8, G9, G12 on one paper's stream. Raises before it is scored.
+
+    Ordered by blast radius, loudest first: a FATAL means the round's conditions
+    were not what the record says, and there is no point retrying one paper
+    inside a round that is already void.
+    """
+    init = find_event(stream_text, "system", "init")
+    if init is None:
+        raise Refuse(f"paper {paper}: no system/init event, so nothing states "
+                     f"which CLI or model ran it. An unprovenanced response is "
+                     f"not scoreable (G4)")
+
+    if not init.get("claude_code_version"):                                 # G4
+        raise Refuse(
+            f"paper {paper}: system/init carries no claude_code_version. "
+            f"Provenance is not optional, and a CLI that omits it is one this "
+            f"harness has not been verified against (G4)")
+
+    reported = init.get("model")                                            # G3
+    if reported and reported != model:
+        raise RoundDiscarded(
+            f"paper {paper}: the CLI reported model {reported!r}, not the pinned "
+            f"{model!r}. Every paper in this round was routed the same way, so "
+            f"none of them is evidence about {model!r} (G3)")
+
+    result = find_event(stream_text, "result")
+    if result is None:                                                      # G5
+        raise SemanticFailure(
+            f"paper {paper}: the stream has no result event -- the process was "
+            f"killed or timed out mid-answer. There is no duration, usage or "
+            f"cost to log and none may be invented, so this is a retry (G5)",
+            case="G5")
+
+    denials = result.get("permission_denials")                              # G8
+    if isinstance(denials, list) and denials:
+        raise RoundDiscarded(
+            f"paper {paper}: permission_denials is non-empty ({denials!r}). "
+            f"Something attempted an action, whether or not it succeeded -- the "
+            f"room was not as empty as the record says (G8)")
+
+    # G12. Checked against both events, because the field moved between CLI
+    # versions and a check that looks in one place only would silently pass.
+    usage = stream_usage(stream_text)
+    for key, expected in EXPECTED_SERVING.items():
+        actual = result.get(key, usage.get(key))
+        if actual is not None and actual != expected:
+            raise RoundDiscarded(
+                f"paper {paper}: {key}={actual!r}, expected {expected!r}. A "
+                f"different serving path is a different experiment, and every "
+                f"paper in this round took it (G12)")
+
+    if result.get("stop_reason") == "max_tokens":                           # G9
+        raise SemanticFailure(
+            f"paper {paper}: stop_reason=max_tokens -- the reply hit the output "
+            f"cap and is truncated. Logged as a truncation, NOT as a parse "
+            f"failure: DC24's rate is only meaningful if the ledger says which "
+            f"(G9)", case="G9")
+
+    if not any(event.get("request_id") for event in stream_events(stream_text)
+               if event.get("type") == "assistant"):                        # G6
+        raise SemanticFailure(
+            f"paper {paper}: no request_id on any assistant event. It is the "
+            f"only handle Anthropic support can trace this call by, so a "
+            f"response without one is not fully provenanced (G6)", case="G6")
+
+
+def check_round_provenance(versions: list[str]) -> None:
+    """G2. One CLI version for the whole round, or the round is two experiments.
+
+    The CLI auto-updates. A round that straddles an update ran its early papers
+    under one program and its late ones under another, and the accuracy number
+    is an average across two conditions that nothing in the output distinguishes.
+    """
+    seen = sorted({v for v in versions if v})
+    if len(seen) > 1:
+        raise RoundDiscarded(
+            f"this round ran under {len(seen)} different CLI versions {seen}. "
+            f"The CLI auto-updated mid-round, so the early papers and the late "
+            f"papers were judged by different programs and the round's accuracy "
+            f"is an average over two conditions (G2)")
+
+
+# Fields that must match for two rounds to be comparable (G11). Deliberately
+# short: these are the ones that change what the model is, not what it was asked.
+COMPARABLE_FIELDS = ("model", "effort", "system_prompt_sha256",
+                     "promptbook_version", "promptbook_sha256")
+
+
+def build_run_environment(*, task: str, round_no: int, argv: list[str],
+                          promptbook_version: str, promptbook_text: str,
+                          settings_path: Path, tools_offered: list[str],
+                          claude_code_version: str | None,
+                          model: str = MODEL, effort: str = EFFORT,
+                          started_at: str, finished_at: str | None = None,
+                          repo_root: Path = ROOT) -> dict:
+    """The round's invariants, as they will be written to run_environment.json.
+
+    `argv` verbatim, minus nothing: it is the only field that records what was
+    *actually* sent, including the full text of the system prompt. Everything
+    else in here can be derived from it or from the repo, which is the point --
+    a reader should be able to check the summary against the raw argv.
+    """
+    system_prompt = load_system_prompt()
+    return {
+        "task": task,
+        "round": round_no,
+        "model": model,
+        "effort": effort,
+        "thinking": "adaptive",   # the only on-mode on Sonnet 5; no CLI flag
+        "claude_code_version": claude_code_version,
+        "argv": list(argv),
+        "system_prompt_path": str(Path(SYSTEM_PROMPT_PATH).relative_to(repo_root)),
+        "system_prompt_sha256": sha256_text(system_prompt),
+        "settings_sha256": sha256_file(settings_path),
+        "promptbook_version": promptbook_version,
+        "promptbook_sha256": sha256_text(promptbook_text),
+        "git_commit": git_commit(repo_root),
+        "tools_offered": list(tools_offered),
+        "host": platform.node(),
+        "os": f"{platform.system()} {platform.release()}",
+        "python_version": platform.python_version(),
+        "started_at": started_at,
+        "finished_at": finished_at,
+    }
+
+
+def write_run_environment(path: Path, environment: dict) -> Path:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(environment, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8")
+    return path
+
+
+def load_run_environment(path: Path) -> dict:
+    """G1. No run record, no scoring. An unprovenanced round is not reportable."""
+    path = Path(path)
+    if not path.is_file():
+        raise Refuse(
+            f"{path} does not exist, so nothing records the model, effort, CLI "
+            f"version, prompt hashes or commit this round ran under. An "
+            f"unprovenanced round is not a reportable result -- re-run it with a "
+            f"harness that writes one (G1)")
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise Refuse(f"{path} is not valid JSON: {exc} (G1)") from exc
+
+
+def compare_run_environments(first: dict, second: dict, *,
+                             fields: tuple[str, ...] = COMPARABLE_FIELDS) -> None:
+    """G11. Refuse to put two rounds on the same axis if the conditions moved.
+
+    A plateau is two consecutive rounds each gaining under 1pp (DC17). Computed
+    across a model change, an effort change or a promptbook change, that number
+    is measuring the config change and calling it convergence -- which would end
+    the refinement loop on an artefact.
+    """
+    differences = {field: (first.get(field), second.get(field))
+                   for field in fields
+                   if first.get(field) != second.get(field)}
+    if differences:
+        detail = "; ".join(f"{k}: {a!r} -> {b!r}" for k, (a, b) in differences.items())
+        raise Refuse(
+            f"these two rounds did not run under the same conditions ({detail}). "
+            f"A plateau computed across a config change measures the change, not "
+            f"convergence -- refusing to compare them (G11)")
 
 
 # ------------------------------------ E: structurally valid, substantively wrong

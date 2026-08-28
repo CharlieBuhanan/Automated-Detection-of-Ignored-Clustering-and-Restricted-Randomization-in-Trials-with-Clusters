@@ -75,8 +75,10 @@ LEDGER = RESULTS / "retry_ledger.csv"
 INDEX_COLUMNS = ["paper_id", "token", "task", "round", "promptbook_version",
                  "model", "attempt", "exit_code", "duration_seconds",
                  "raw_path", "started_at"]
-RUN_LOG_COLUMNS = ["paper_id", "token", "task", "round", "stratum", "chars",
-                   "text_notes", "outcome", "detail", "duration_seconds"]
+RUN_LOG_COLUMNS = (["paper_id", "token", "task", "round", "stratum", "chars",
+                    "text_notes", "outcome", "detail", "attempt", "exit_code",
+                    "duration_seconds"]
+                   + rr.PROVENANCE_COLUMNS)                          # group G
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
@@ -107,6 +109,10 @@ def main() -> int:
     parser.add_argument("--round", required=True, type=int)
     parser.add_argument("--dry-run", action="store_true",
                         help="Resolve the round and check every wall; spawn nothing")
+    parser.add_argument("--preflight-only", action="store_true",
+                        help="Spawn ONLY the two-word probe, then stop. Re-checks "
+                             "every live wall (login, A14 tools, A17 tokens) "
+                             "after a config change, without spending a round")
     parser.add_argument("--limit", type=int, help="First N papers only")
     parser.add_argument("--resume", action="store_true",
                         help="Skip papers that already have a successful raw file")
@@ -190,15 +196,29 @@ def main() -> int:
     room = rr.prepare_room(repo_root=ROOT)
     print(f"  room         : {room.root}")
 
-    # One throwaway spawn before the round. Both failures the first live run hit
-    # -- a stale deny-list name and credentials the room could not see -- break
-    # every paper identically, so finding them on paper 1 of 50 wastes 49.
-    offered = rr.preflight(room, model=args.model, claude=args.claude,
-                           repo_root=ROOT)
-    print(f"  preflight    : logged in, {len(offered)} tools offered "
+    # One throwaway spawn before the round. Every failure it catches breaks every
+    # paper identically, so finding one on paper 1 of 50 wastes 49 papers' quota
+    # and finding it on a two-word prompt wastes nothing.
+    probe = rr.preflight(room, model=args.model, claude=args.claude,
+                         repo_root=ROOT)
+    print(f"  preflight    : logged in, {len(probe.tools)} tools offered "
           f"(the room is empty)")
+    print(f"  system prompt: {probe.input_tokens:,} billed input tokens on a "
+          f"two-word probe (A17 ceiling {rr.PREFLIGHT_TOKEN_CEILING:,}; the CLI "
+          f"default measured 12,198)")
+    if probe.claude_code_version:
+        print(f"  CLI version  : {probe.claude_code_version}")
+    print(f"  effort       : {rr.EFFORT}  (pinned; the Batch API run passes the "
+          f"same level)")
+
+    if args.preflight_only:
+        print(f"{bar}\nPREFLIGHT OK -- every live wall held. No paper was sent."
+              f"\n{bar}")
+        return 0
+
     print(f"  workers      : {args.workers}\n{bar}")
 
+    started_at = now()
     index_rows, log_rows, ledger_rows = list(existing), [], []
     fatal: list[str] = []
 
@@ -254,12 +274,16 @@ def main() -> int:
                 "duration_seconds": attempt.duration,
                 "raw_path": str(attempt.raw_path.relative_to(ROOT)),
                 "started_at": now()})
+            # Group G. Whatever the stream carried, and nothing it did not: an
+            # absent field is an empty cell, never a fabricated 0 (G7).
             log_rows.append({
                 "paper_id": paper.paper_id, "token": attempt.token,
                 "task": args.task, "round": args.round, "stratum": paper.stratum,
                 "chars": body.chars, "text_notes": body.notes,
                 "outcome": outcome, "detail": detail,
-                "duration_seconds": attempt.duration})
+                "attempt": attempt.attempt, "exit_code": attempt.exit_code,
+                "duration_seconds": attempt.duration,
+                **rr.paper_provenance(attempt.stdout)})
             ledger_rows.append({
                 "timestamp": now(), "task": args.task, "round": args.round,
                 "paper_id": paper.paper_id, "token": attempt.token,
@@ -282,6 +306,27 @@ def main() -> int:
     write_csv(raw_dir / "run_log.csv", RUN_LOG_COLUMNS, log_rows)
     rr.append_ledger(LEDGER, ledger_rows)
 
+    # G2. The CLI auto-updates. A round that straddled an update ran its early
+    # papers under one program and its late ones under another, and nothing in
+    # the accuracy number would say so.
+    try:
+        rr.check_round_provenance([r.get("claude_code_version") for r in log_rows])
+    except rr.RoundDiscarded as exc:
+        fatal.append(str(exc))
+
+    # G1/G10/G11. Written even on a discarded round: the record of what went
+    # wrong is worth exactly as much as the record of what went right, and a
+    # reader looking at the raw files needs to know which CLI produced them.
+    environment = rr.build_run_environment(
+        task=args.task, round_no=args.round,
+        argv=rr.build_argv(model=args.model, settings_path=room.settings_path,
+                           claude=rr.find_claude(args.claude)),
+        promptbook_version=version, promptbook_text=promptbook,
+        settings_path=room.settings_path, tools_offered=probe.tools,
+        claude_code_version=probe.claude_code_version, model=args.model,
+        started_at=started_at, finished_at=now(), repo_root=ROOT)
+    rr.write_run_environment(raw_dir / "run_environment.json", environment)
+
     print(f"{bar}")
     if fatal:
         print(f"ROUND DISCARDED -- the room was not sealed\n{bar}")
@@ -294,9 +339,17 @@ def main() -> int:
         return 2
 
     ok = sum(1 for r in log_rows if r["outcome"] == "ok")
+    cost = sum(r["total_cost_usd"] for r in log_rows
+               if isinstance(r.get("total_cost_usd"), (int, float)))
     print(f"DONE -- {ok}/{len(log_rows)} responses saved\n{bar}")
     print(f"  raw     -> {raw_dir.relative_to(ROOT)}")
     print(f"  ledger  -> {LEDGER.relative_to(ROOT)}")
+    print(f"  run env -> {(raw_dir / 'run_environment.json').relative_to(ROOT)}"
+          f"  (commit {environment['git_commit'][:12]}"
+          + ("-dirty" if environment["git_commit"].endswith("-dirty") else "")
+          + ")")
+    print(f"  cost    -> ${cost:.2f} reported by the CLI "
+          f"(blank where it reported none -- never defaulted to 0, G7)")
     print(f"\n  Next: python scripts/21_check_responses.py --task {args.task} "
           f"--round {args.round}")
     return 0

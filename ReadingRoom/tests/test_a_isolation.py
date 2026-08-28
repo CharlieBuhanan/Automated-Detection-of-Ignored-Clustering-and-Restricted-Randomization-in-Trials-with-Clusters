@@ -237,6 +237,369 @@ def test_model_is_pinned_to_the_batch_run_model():
     assert rr.MODEL == "claude-sonnet-5"
 
 
+# ------------------------------------------------- A13: --tools is the mechanism
+#
+# The distinction these tests exist to pin: `--tools ""` is an *availability*
+# filter and decides which tools exist; `--allowed-tools ""` is a *permission*
+# allowlist and removes nothing. Believing otherwise is what let the first live
+# run offer 18 tools -- `TaskCreate` among them -- under a configuration everyone
+# had signed off on as empty.
+
+
+def test_a13_build_argv_empties_the_room_with_tools():
+    argv = rr.build_argv(settings_path=Path("s.json"))
+    assert rr._flag_values(argv, "--tools") == [""], \
+        "--tools must be present and empty: it is the availability filter"
+
+
+def test_a13_missing_tools_is_refused(tmp_path):
+    argv = rr.build_argv(settings_path=tmp_path / "s.json")
+    i = argv.index("--tools")
+    del argv[i:i + 2]
+    with pytest.raises(rr.Refuse, match="A13"):
+        rr.verify_argv(argv)
+
+
+@pytest.mark.parametrize("value", ["default", "Read", "Bash,Edit", " Read "])
+def test_a13_non_empty_tools_is_refused(value, tmp_path):
+    argv = rr.build_argv(settings_path=tmp_path / "s.json")
+    argv[argv.index("--tools") + 1] = value
+    with pytest.raises(rr.Refuse, match="A13"):
+        rr.verify_argv(argv)
+
+
+def test_a13_a_second_tools_flag_cannot_hand_the_room_back_its_hands(tmp_path):
+    """`--tools "" --tools default` is an argv the CLI accepts; the last wins."""
+    argv = rr.build_argv(settings_path=tmp_path / "s.json") + ["--tools", "default"]
+    with pytest.raises(rr.Refuse, match="A13"):
+        rr.verify_argv(argv)
+
+
+def test_a13_tools_and_allowed_tools_are_checked_separately(tmp_path):
+    """Neither flag's check may be satisfied by the other one being present.
+
+    They are different mechanisms with confusingly similar names, and the whole
+    first live run went wrong on exactly that confusion.
+    """
+    argv = rr.build_argv(settings_path=tmp_path / "s.json")
+    without_tools = list(argv)
+    del without_tools[without_tools.index("--tools"):
+                      without_tools.index("--tools") + 2]
+    with pytest.raises(rr.Refuse, match="A13"):
+        rr.verify_argv(without_tools)
+
+    without_allowed = list(argv)
+    i = without_allowed.index("--allowed-tools")
+    del without_allowed[i:i + 2]
+    with pytest.raises(rr.Refuse, match="A5"):
+        rr.verify_argv(without_allowed)
+
+
+# ------------------------------------- A14: the tool list the CLI itself reports
+
+
+def test_a14_an_empty_reported_tool_list_passes():
+    text = stream({"type": "system", "subtype": "init", "tools": []})
+    assert rr.tools_offered(text) == []
+    rr.assert_no_tools_offered(text)            # must not raise
+
+
+def test_a14_a_non_empty_reported_tool_list_discards_the_round():
+    """What the CLI *observed*, not what the settings file asked for."""
+    text = stream({"type": "system", "subtype": "init",
+                   "tools": ["Read", "TaskCreate", "Skill"]})
+    with pytest.raises(rr.RoundDiscarded) as excinfo:
+        rr.assert_no_tools_offered(text, paper="deadbeef")
+
+    message = str(excinfo.value)
+    assert "TaskCreate" in message, "the tools that were offered must be named"
+    assert "deadbeef" in message
+
+
+def test_a14_a_tool_no_one_has_heard_of_is_still_caught():
+    """The check is the length of the observed list, never a name list.
+
+    This is the case a hand-maintained DENIED_TOOLS cannot cover: a tool added
+    in a CLI version nobody has read the changelog for.
+    """
+    text = stream({"type": "system", "subtype": "init",
+                   "tools": ["SomeToolInventedNextQuarter"]})
+    with pytest.raises(rr.RoundDiscarded):
+        rr.assert_no_tools_offered(text)
+
+
+def test_a14_no_init_event_is_another_checks_problem():
+    """Absent is not empty, and this function does not guess which."""
+    assert rr.tools_offered(stream(assistant_text("{}"))) is None
+    rr.assert_no_tools_offered(stream(assistant_text("{}")))
+
+
+# ----------------------------------------- A15: the pinned minimal system prompt
+
+
+def test_a15_the_pinned_prompt_file_exists_and_is_committed():
+    assert rr.SYSTEM_PROMPT_PATH.is_file(), \
+        f"{rr.SYSTEM_PROMPT_PATH} is the wall that makes the Reading Room and " \
+        f"the Batch API the same experiment"
+    assert rr.load_system_prompt().strip()
+
+
+def test_a15_the_pinned_prompt_is_small_enough_for_the_a17_ceiling():
+    """A17's ceiling only means something while the prompt sits far below it.
+
+    Not style policing: if the pinned prompt ever grew to thousands of tokens,
+    a round carrying the CLI's default persona *as well* could still come in
+    under the ceiling, and A17 would pass while the room was open.
+    """
+    chars = len(rr.load_system_prompt())
+    assert chars < 4_000, (
+        f"the pinned system prompt is {chars} chars (~{chars // 4} tokens); at "
+        f"that size the A17 ceiling of {rr.PREFLIGHT_TOKEN_CEILING} no longer "
+        f"separates a sealed room from a leaked persona")
+
+
+def test_a15_build_argv_sends_the_pinned_prompt_verbatim():
+    argv = rr.build_argv(settings_path=Path("s.json"))
+    assert rr._flag_value(argv, "--system-prompt") == rr.load_system_prompt()
+
+
+def test_a15_missing_system_prompt_is_refused(tmp_path):
+    argv = rr.build_argv(settings_path=tmp_path / "s.json")
+    i = argv.index("--system-prompt")
+    del argv[i:i + 2]
+    with pytest.raises(rr.Refuse, match="A15"):
+        rr.verify_argv(argv)
+
+
+def test_a15_a_different_system_prompt_is_refused(tmp_path):
+    """Present is not the same claim as correct."""
+    argv = rr.build_argv(settings_path=tmp_path / "s.json")
+    argv[argv.index("--system-prompt") + 1] = "You are a helpful assistant."
+    with pytest.raises(rr.Refuse, match="A15"):
+        rr.verify_argv(argv)
+
+
+def test_a15_a_second_system_prompt_flag_is_refused(tmp_path):
+    argv = (rr.build_argv(settings_path=tmp_path / "s.json")
+            + ["--system-prompt", "Actually, you are Claude Code."])
+    with pytest.raises(rr.Refuse, match="A15"):
+        rr.verify_argv(argv)
+
+
+def test_a15_append_system_prompt_is_forbidden_not_merely_checked():
+    """`--append-system-prompt` KEEPS the default persona and adds to it.
+
+    That is the opposite of what A15 is for, so it belongs in FORBIDDEN_FLAGS
+    rather than in the byte comparison.
+    """
+    assert "--append-system-prompt" in rr.FORBIDDEN_FLAGS
+
+
+def test_a15_a_missing_prompt_file_refuses_rather_than_defaulting(tmp_path):
+    """The failure mode is silent, so it may never fall back to 'no flag'."""
+    with pytest.raises(rr.Refuse, match="A15"):
+        rr.load_system_prompt(tmp_path / "not_here.txt")
+
+
+@pytest.mark.parametrize("body", ["", "   \n\n  "])
+def test_a15_an_empty_prompt_file_is_refused(body, tmp_path):
+    path = tmp_path / "system_prompt.txt"
+    path.write_text(body, encoding="utf-8")
+    with pytest.raises(rr.Refuse, match="A15"):
+        rr.load_system_prompt(path)
+
+
+@pytest.mark.parametrize("body", ["One line.\nTwo lines.", "One line.\r\nTwo."])
+def test_a15_a_multiline_prompt_file_is_refused(body, tmp_path):
+    """A newline in this value silently removes walls. Found live, 2026-08-27.
+
+    On Windows `claude` is a `.cmd` shim, and cmd.exe's `%*` ends the command
+    line at the first newline. Measured through a real shim: a three-paragraph
+    prompt arrived as its opening sentence, and `--strict-mcp-config` and
+    `--settings` -- the MCP wall and the deny list -- never arrived at all. Exit
+    code 0, tools still empty, nothing in any log.
+
+    `verify_argv` cannot catch this: it inspects the argv we built, not the argv
+    the child received. This is the only place that sees the bytes in time.
+    """
+    path = tmp_path / "system_prompt.txt"
+    path.write_text(body, encoding="utf-8")
+    with pytest.raises(rr.Refuse, match="newline"):
+        rr.load_system_prompt(path)
+
+
+def test_a15_the_committed_prompt_is_one_line():
+    assert "\n" not in rr.load_system_prompt()
+
+
+def test_a15_the_system_prompt_is_the_last_argument(tmp_path):
+    """So the one argument that can be mangled has no wall downstream of it."""
+    argv = rr.build_argv(settings_path=tmp_path / "s.json")
+    assert argv[-2] == "--system-prompt"
+
+
+def test_a15_verify_argv_accepts_an_explicit_expected_prompt(tmp_path):
+    """So a future pinned prompt can be tested without touching the real file."""
+    argv = rr.build_argv(settings_path=tmp_path / "s.json", system_prompt="Read one paper.")
+    rr.verify_argv(argv, system_prompt="Read one paper.")
+    with pytest.raises(rr.Refuse, match="A15"):
+        rr.verify_argv(argv, system_prompt="Read two papers.")
+
+
+# ---------------------------------------------------------------- A16: --effort
+
+
+def test_a16_effort_is_pinned_high_on_both_routes():
+    """`--effort` here, `output_config.effort` on the Batch API. Same level."""
+    assert rr.EFFORT == "high"
+
+
+def test_a16_build_argv_pins_the_effort():
+    argv = rr.build_argv(settings_path=Path("s.json"))
+    assert rr._flag_value(argv, "--effort") == rr.EFFORT
+
+
+def test_a16_missing_effort_is_refused(tmp_path):
+    argv = rr.build_argv(settings_path=tmp_path / "s.json")
+    i = argv.index("--effort")
+    del argv[i:i + 2]
+    with pytest.raises(rr.Refuse, match="A16"):
+        rr.verify_argv(argv)
+
+
+@pytest.mark.parametrize("level", ["low", "medium", "xhigh", "max", "", "High"])
+def test_a16_any_other_effort_level_is_refused(level, tmp_path):
+    argv = rr.build_argv(settings_path=tmp_path / "s.json")
+    argv[argv.index("--effort") + 1] = level
+    with pytest.raises(rr.Refuse, match="A16"):
+        rr.verify_argv(argv)
+
+
+def test_a16_a_second_effort_flag_is_refused(tmp_path):
+    argv = rr.build_argv(settings_path=tmp_path / "s.json") + ["--effort", "low"]
+    with pytest.raises(rr.Refuse, match="A16"):
+        rr.verify_argv(argv)
+
+
+# ------------------------------- A17: proof the system prompt actually took hold
+
+
+def test_a17_billed_tokens_sum_every_input_field():
+    """The persona arrives in the CACHE fields, not in `input_tokens`.
+
+    The 2026-08-27 probe measured 12,198 as 9,140 created + 3,058 read, with
+    `input_tokens` in single digits. A ceiling checked against `input_tokens`
+    alone would have waved the whole coding persona straight through.
+    """
+    leaked = {"input_tokens": 4, "cache_creation_input_tokens": 9140,
+              "cache_read_input_tokens": 3058, "output_tokens": 12}
+    assert rr.billed_input_tokens(leaked) == 12_202
+    assert rr.billed_input_tokens(leaked) > rr.PREFLIGHT_TOKEN_CEILING
+
+
+def test_a17_the_sealed_measurement_is_under_the_ceiling():
+    """183 tokens, measured on CLI 2.1.197 with the pinned prompt."""
+    sealed = {"input_tokens": 4, "cache_creation_input_tokens": 179,
+              "cache_read_input_tokens": 0}
+    assert rr.billed_input_tokens(sealed) == 183
+    assert rr.billed_input_tokens(sealed) < rr.PREFLIGHT_TOKEN_CEILING
+
+
+def test_a17_the_ceiling_sits_between_the_two_measurements():
+    """Not a guess. Both endpoints are numbers off a real CLI."""
+    assert 183 < rr.PREFLIGHT_TOKEN_CEILING < 12_198
+
+
+def test_a17_absent_usage_is_none_never_zero():
+    """G7: a missing field is logged as null. Zero would read as 'sealed'."""
+    assert rr.billed_input_tokens({}) is None
+    assert rr.billed_input_tokens({"output_tokens": 40}) is None
+
+
+def test_a17_usage_is_read_from_the_result_event():
+    text = stream(
+        {"type": "system", "subtype": "init", "tools": []},
+        assistant_text("OK"),
+        {"type": "result", "subtype": "success",
+         "usage": {"input_tokens": 4, "cache_creation_input_tokens": 179}},
+    )
+    assert rr.billed_input_tokens(rr.stream_usage(text)) == 183
+
+
+def test_a17_usage_falls_back_to_the_assistant_event():
+    """A stream cut before its result event still carries the assistant's usage."""
+    text = stream({"type": "assistant", "message": {
+        "content": [{"type": "text", "text": "OK"}],
+        "usage": {"input_tokens": 10, "cache_read_input_tokens": 173}}})
+    assert rr.billed_input_tokens(rr.stream_usage(text)) == 183
+
+
+def test_a17_a_stream_with_no_usage_at_all_yields_an_empty_dict():
+    assert rr.stream_usage(stream(assistant_text("OK"))) == {}
+
+
+# A17 end to end, against a real child process. Free -- the fake CLI spawns
+# nothing and replays the exact usage shape CLI 2.1.197 emits.
+
+
+def test_a17_preflight_passes_a_sealed_room(clean_room, fake_claude):
+    probe = rr.preflight(clean_room, claude=str(fake_claude.path),
+                         repo_root=REPO_ROOT)
+    assert probe.tools == []
+    assert probe.input_tokens == 183, "the measured sealed number"
+    assert probe.claude_code_version == "2.1.197"
+    assert probe.model == rr.MODEL
+
+
+def test_a17_preflight_refuses_a_round_when_the_persona_is_back(clean_room, fake_claude):
+    """The whole point: A15 passed the flag, and the flag did not take effect.
+
+    Nothing else in the harness can see this. The tools are still empty, the exit
+    code is still 0, the reply still parses -- and every paper is being judged by
+    a coding agent instead of the classifier the Batch API run will use.
+    """
+    fake_claude.set(usage={"input_tokens": 4, "cache_creation_input_tokens": 9140,
+                           "cache_read_input_tokens": 3058})
+    with pytest.raises(rr.Refuse) as excinfo:
+        rr.preflight(clean_room, claude=str(fake_claude.path), repo_root=REPO_ROOT)
+
+    message = str(excinfo.value)
+    assert "A17" in message
+    assert "12,202" in message, "the refusal must quote what it measured"
+    assert "before any paper" in message, "nothing may be spent"
+
+
+def test_a17_preflight_refuses_when_it_cannot_measure_at_all(clean_room, fake_claude):
+    """No usage block means no evidence the prompt landed. Absent is not sealed."""
+    fake_claude.set(result={"usage": None})
+    with pytest.raises(rr.Refuse, match="A17"):
+        rr.preflight(clean_room, claude=str(fake_claude.path), repo_root=REPO_ROOT)
+
+
+def test_a14_preflight_discards_a_round_that_was_offered_tools(clean_room, fake_claude):
+    fake_claude.set(init={"tools": ["Read", "TaskCreate"]})
+    with pytest.raises(rr.RoundDiscarded, match="TaskCreate"):
+        rr.preflight(clean_room, claude=str(fake_claude.path), repo_root=REPO_ROOT)
+
+
+def test_a13_a16_the_child_process_really_receives_the_pinned_argv(clean_room, fake_claude):
+    """Asserted on the argv a genuine child saw, not on the one we built.
+
+    A patched `subprocess.run` would prove the list was assembled correctly and
+    nothing about whether an empty string survives the shell, the `.cmd` shim and
+    Windows' `list2cmdline` on the way to the CLI -- which is exactly where
+    `--tools ""` could quietly become `--tools` with no value.
+    """
+    rr.preflight(clean_room, claude=str(fake_claude.path), repo_root=REPO_ROOT)
+    argv = fake_claude.invocations()[-1]["argv"]
+
+    assert rr._flag_values(argv, "--tools") == [""], \
+        "the empty string did not survive the trip to the child process (A13)"
+    assert rr._flag_value(argv, "--effort") == rr.EFFORT
+    assert rr._flag_value(argv, "--system-prompt") == rr.load_system_prompt()
+    assert rr._flag_value(argv, "--max-turns") == "1"
+
+
 # ---------------------------------------------- A5/A10: the settings file
 
 

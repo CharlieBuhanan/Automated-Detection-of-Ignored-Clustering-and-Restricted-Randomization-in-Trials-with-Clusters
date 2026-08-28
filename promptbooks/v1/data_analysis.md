@@ -1,10 +1,8 @@
-# Data analysis — criteria (v2)
-
-Criteria only. Source: Glueck & Muller (`Ignore02.pdf`), Methods p.3-4.
+# Data analysis — criteria (v1)
 
 > **Documentation rule for this file.** Every rule is one numbered line: the
 > criterion, then the test that decides it. No prose paragraphs, no rationale
-> inline — rationale goes in [`v2 doc.md`](v2%20doc.md) as a table row naming the
+> inline — rationale goes in [`v1 doc.md`](v1%20doc.md) as a table row naming the
 > papers the rule was written against. Two audiences read this file, a human
 > editing a rule and a model being handed it as a prompt (DC25), and both do
 > better with a table than with an argument.

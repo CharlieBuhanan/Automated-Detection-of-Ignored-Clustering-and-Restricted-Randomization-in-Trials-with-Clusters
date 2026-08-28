@@ -31,9 +31,14 @@ have plateaued. Those wait for run 2.
       (DC28); `XHFTHUCG` Cattamanchi's label is wrong and goes to an **expert-review pile**, not a
       correction (DC50). Round sizes may vary rather than forcing a re-cut (DC47). Still open: the
       5 stepped-wedge papers NHLBI kept (O1), the 7 restricted-randomization rows, E17 (O3).
-- [ ] **Cut `promptbooks/v1/`** — E3 ON, D14 folded into D13, E5 and D3 marked confirmed. Copy
-      `v0/`, never edit it (DC15). **Not blocked on O1:** Deb's ruling fixes v1's *rules* outright;
-      O1 only decides which *labels* v1 is scored against, and that can settle after v1 is cut.
+- [x] **`promptbooks/v1/` cut, 2026-08-27; `CURRENT` → `v1`.** E3 ON, D14 folded into D13, E5 and D3
+      marked confirmed, plus a new **"Your reading conditions"** paragraph in all three prompt blocks
+      (environment description, never cited in `promptbook_evidence`) — needed because the pinned
+      minimal system prompt removes the only implicit statement of the model's situation.
+      **No accuracy delta is reportable**: `v0` was never scored, so there is no row to compare
+      against. `v1` is the first version that will be run. See
+      [`v1 doc.md`](../promptbooks/v1/v1%20doc.md).
+      **This directory absorbed an earlier un-run `v2`** (see DC53 below).
 - [x] **Drop the expert-review pile, 2026-08-27** — `scripts/18_drop_expert_review.py`, 6 papers.
       `XHFTHUCG` Cattamanchi (DC50) plus the **5 analyzed stepped-wedge papers** NHLBI kept and
       scored, which O1/DC51 previously kept in the scored set as accepted misses. **This reverses
@@ -87,11 +92,23 @@ have plateaued. Those wait for run 2.
       `CLAUDE_CONFIG_DIR` away from the directory holding the credentials.
       The harness no longer trusts its own deny list: it asserts on the tool list the CLI *reports*,
       and a `preflight()` probe spawn checks it before a round is spent rather than after.
-- [ ] **Second probe of the CLI, 2026-08-27 — 17 new test cases, spec written, code not.**
+- [ ] **Second probe of the CLI, 2026-08-27 — 17 new test cases. A13-A17 built, group G not.**
       A single throwaway call asking only *what metadata can we log?* turned up two more design
       errors. Full table in [ReadingRoom/README.md](../ReadingRoom/README.md)'s *What the second
       probe found*; the cases are A13-A17 and the new group **G** in
       [TEST_PLAN.md](../ReadingRoom/tests/TEST_PLAN.md) (72 → 89 cases).
+      **A13-A17 are green and verified live (2026-08-27): 353 offline tests, and a real preflight
+      returning 0 tools offered and 271 billed input tokens against a 12,198-token default.**
+      Building them found a **sixth live defect**, and the worst one so far: the pinned system
+      prompt was written as three paragraphs, and on Windows `claude` is a `.cmd` shim whose `%*`
+      expansion **ends the command line at the first newline**. Measured through a real shim, the
+      prompt arrived as its opening sentence and `--strict-mcp-config` and `--settings` never
+      arrived at all — two walls gone, exit code 0, tools still empty, nothing in any log.
+      `verify_argv` could not have caught it: it inspects the argv we *built*, not the one the child
+      received. Fixed three ways — the prompt is one line, `load_system_prompt` refuses a newline,
+      and `--system-prompt` is now the **last** argument so nothing load-bearing sits downstream of
+      the only free-text value. Caught offline only because `fake_claude.py` is a real shim on
+      `PATH` rather than a monkeypatched `subprocess.run`.
       1. **`--tools ""` exists and actually empties the room** — `system/init` returned
          `"tools":[]`. The harness had been using `permissions.deny`, believing no availability
          filter existed. `--tools ""` becomes the mechanism; the deny list drops to a second layer.
@@ -110,14 +127,17 @@ have plateaued. Those wait for run 2.
          must say "`claude-sonnet-5`, CLI 2.1.197" and not imply a pinned snapshot.
       **Blocks the first scored round.** Order to build them is in TEST_PLAN's *Build order*,
       round two; `fake_claude.py` has to grow a `usage` block first.
-- [ ] **Promptbook `v2` cut, 2026-08-27; `CURRENT` → `v2`.** No criterion changed — the only edit is
-      a new **"Your reading conditions"** paragraph in all three prompt blocks, stating that the
-      model has no tools, gets one turn, and can reach no answer key. It is environment description,
-      never cited in `promptbook_evidence`. Needed because the minimal system prompt removes the
-      only implicit statement of the model's situation. **No accuracy delta is reportable**: `v1`
-      was frozen and never scored, so there is no row to compare against — see
-      [`v2 doc.md`](../promptbooks/v2/v2%20doc.md). **Delete the stray `promptbooks/v2/v1 doc.md`**
-      copied in by mistake.
+- [x] **Promptbook versioning rule amended, 2026-08-27 — DC53.** DC15 as written made *every* edit a
+      version bump, which produced an un-run `v1` and an un-run `v2` hours apart, neither with a
+      number attached and neither comparable to anything. They are now **one `v1`**; both remain in
+      git history (`91403fa`, `37130f4`). Two rules replace the blanket one:
+      **(1)** a version freezes when it is **run** — when it has a row in
+      `promptbook_accuracy_history.csv` — and from then on DC15 applies in full;
+      **(2)** before that, edits happen **in place**, and a new `vN+1/` needs a **human-verified
+      rubric change** (a criterion a reviewer ruled on, or a rule from a pattern of misses per DC23).
+      Wording, formatting and token trimming are not rubric changes.
+      Recorded in [Design_Choices.md](Design_Choices.md) as DC53 and in
+      [.claude/CLAUDE.md](../.claude/CLAUDE.md)'s Repo Rules.
 - [ ] Still unwritten: `promptbook_builder.py`, `evaluate.py`, `two_pass.py`, and the run log /
       accuracy history in `results/04_classification/`.
 
@@ -553,8 +573,12 @@ scored as misses.
 
    **Versioned by directory, not just by commit.** A judgment records
    `promptbook_version`, so a rule that changes under a fixed version makes every earlier
-   judgment unreproducible. Each version is a frozen directory; editing one in place is the
-   thing this layout exists to prevent.
+   judgment unreproducible.
+
+   **A version freezes when it is run, not when it is written (DC53).** Once a version has a row in
+   `promptbook_accuracy_history.csv` it is immutable, and editing it in place is the thing this
+   layout exists to prevent. Before that it is a draft: edits happen in place, and a new directory
+   requires a **human-verified rubric change**, not a rewording.
 
    ```
    promptbooks/

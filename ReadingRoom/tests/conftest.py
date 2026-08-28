@@ -115,7 +115,8 @@ FAKE_CLAUDE = Path(__file__).resolve().parent / "fake_claude.py"
 # the point of `child_env` -- so the fake's controls have to be allowlisted for
 # the duration of a test or they never reach it.
 FAKE_ENV_VARS = ("FAKE_CLAUDE_MODE", "FAKE_CLAUDE_REPLY", "FAKE_CLAUDE_STREAM",
-                 "FAKE_CLAUDE_EXIT", "FAKE_CLAUDE_SLEEP", "FAKE_CLAUDE_LOG")
+                 "FAKE_CLAUDE_EXIT", "FAKE_CLAUDE_SLEEP", "FAKE_CLAUDE_LOG",
+                 "FAKE_CLAUDE_INIT", "FAKE_CLAUDE_RESULT", "FAKE_CLAUDE_USAGE")
 
 
 class FakeClaude:
@@ -129,13 +130,23 @@ class FakeClaude:
 
     def set(self, *, mode: str = "echo", reply: str | None = None,
             stream: str | None = None, exit_code: int = 0,
-            sleep: float = 0.0) -> None:
+            sleep: float = 0.0, init: dict | None = None,
+            result: dict | None = None, usage: dict | None = None) -> None:
+        """Drive the fake. `init`/`result`/`usage` are merged onto its defaults.
+
+        A `None` *value* inside one of those dicts deletes that key, which is how
+        group G asks for "the CLI omitted this field" as opposed to "the CLI sent
+        it as null". Only the first shape happens in a real stream.
+        """
         self._monkeypatch.setenv("FAKE_CLAUDE_MODE", mode)
         self._monkeypatch.setenv("FAKE_CLAUDE_EXIT", str(exit_code))
         self._monkeypatch.setenv("FAKE_CLAUDE_SLEEP", str(sleep))
         self._monkeypatch.setenv("FAKE_CLAUDE_LOG", str(self.log_path))
         self._monkeypatch.setenv("FAKE_CLAUDE_REPLY", reply or "")
         self._monkeypatch.setenv("FAKE_CLAUDE_STREAM", stream or "")
+        self._monkeypatch.setenv("FAKE_CLAUDE_INIT", json.dumps(init or {}))
+        self._monkeypatch.setenv("FAKE_CLAUDE_RESULT", json.dumps(result or {}))
+        self._monkeypatch.setenv("FAKE_CLAUDE_USAGE", json.dumps(usage or {}))
 
     def invocations(self) -> list[dict]:
         """One dict per spawn: the argv, cwd, env keys and prompt head it saw."""

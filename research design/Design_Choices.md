@@ -81,13 +81,28 @@ Everything else has been settled; the decisions are recorded as DC1-DC52 below.
 
 ### Method and storage
 
-- **DC15 — Promptbooks are markdown in `promptbooks/vN/`, one frozen directory per version.** Built
+- **DC15 — Promptbooks are markdown in `promptbooks/vN/`, one directory per version.** Built
   empirically from misses, not written up front. `promptbooks/CURRENT` names the active version; a
   rule change means copying `vN/` to `vN+1/`, never editing in place, because a judgment records
   `promptbook_version` and a rule that moved under a fixed version makes every earlier judgment
   unreproducible. Each version bump is its own commit with the accuracy delta in the message, and
   each carries a tables-only `vN doc.md` recording what changed, why, and which papers it was
-  written against.
+  written against. **Amended by DC53.**
+- **DC53 — A version freezes when it is *run*, not when it is written, and a new directory needs a
+  human-verified rubric change.** DC15 as originally stated made every edit a version bump, which
+  produced an un-run `v1` and an un-run `v2` within hours of each other on 2026-08-27, neither with a
+  number attached and neither comparable to anything. They were collapsed back into one `v1`. Two
+  rules replace the blanket one:
+  1. A version is frozen once it has a row in `results/04_classification/promptbook_accuracy_history.csv`.
+     After that DC15 applies in full and unamended — an edit would invalidate a published number.
+  2. Before that, edits happen **in place**. A new `vN+1/` requires a **human-verified rubric
+     change**: a criterion a reviewer has ruled on, or a rule written from a pattern of misses
+     (DC23 — never one paper). Wording, formatting and token-trimming are not rubric changes.
+
+  **What this costs:** the working tree no longer holds a directory per draft state, so an
+  intermediate wording of an un-run promptbook is recoverable from git history rather than from
+  `ls`. That is the intended trade — the thing DC15 protects is the link between a *number* and the
+  bytes that produced it, and an un-run version has no number to protect.
 - **DC16 — Opus builds, Sonnet runs.** Opus 5 for the promptbook loop (one-time, high-stakes); Sonnet 5
   for the full run with an Opus second pass on low confidence. Every promptbook gets a Sonnet check
   once it plateaus on Opus — otherwise the gap surfaces after thousands of calls.

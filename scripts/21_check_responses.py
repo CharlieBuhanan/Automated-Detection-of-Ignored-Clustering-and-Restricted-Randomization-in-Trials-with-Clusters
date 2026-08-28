@@ -98,8 +98,28 @@ def main() -> int:
     if not index:
         raise rr.Refuse(f"{raw_dir / 'index.csv'} is empty: nothing to check")
 
+    # G1, before anything is read: a round nobody can trace back to the model,
+    # effort, CLI version and prompt hashes that produced it is not a reportable
+    # result, so it is not scored at all.
+    environment = rr.load_run_environment(raw_dir / "run_environment.json")
+
     version, _, promptbook = rr.resolve_promptbook(args.task, root=ROOT)
     known_rules = rr.promptbook_rule_ids(promptbook, args.task)
+
+    # The promptbook in force now must be the one the round actually ran under,
+    # or step 7 checks cited rules against the wrong rulebook.
+    if environment.get("promptbook_version") != version:
+        raise rr.Refuse(
+            f"this round ran under promptbook "
+            f"{environment.get('promptbook_version')!r} but promptbooks/CURRENT "
+            f"now names {version!r}. Rule ids would be checked against a "
+            f"rulebook the model never saw (G11)")
+    if environment.get("promptbook_sha256") != rr.sha256_text(promptbook):
+        raise rr.Refuse(
+            f"promptbooks/{version}/{args.task}.md has changed since this round "
+            f"ran (sha256 differs from run_environment.json). A version is "
+            f"frozen once it has been run -- restore it or re-run the round "
+            f"(DC53/G11)")
 
     # E11 needs the set of real identifiers the model was never given. The
     # manifest is the whole corpus, which is exactly the right net: a leak that
@@ -109,8 +129,12 @@ def main() -> int:
     print(f"{bar}\nCHECK RESPONSES -- {args.task} round {args.round}\n{bar}")
     print(f"  promptbook : {version} ({len(known_rules)} rules)")
     print(f"  responses  : {len(index)}")
+    print(f"  ran under  : {environment.get('model')} / effort "
+          f"{environment.get('effort')} / CLI "
+          f"{environment.get('claude_code_version')} / commit "
+          f"{str(environment.get('git_commit'))[:12]}")
 
-    checked, fatal, ledger_rows = [], [], []
+    checked, fatal, ledger_rows, versions = [], [], [], []
 
     for row in index:
         paper_id, token = row["paper_id"], row["token"]
@@ -148,6 +172,23 @@ def main() -> int:
             fatal.append(str(exc))
             checked.append(fail("FATAL", str(exc), case="A1/A2"))
             continue
+
+        # 2b. provenance -- G3/G4/G8/G12 are round-level, G5/G6/G9 are retries.
+        # Before parsing, because a truncated reply (G9) must be logged as a
+        # truncation and not as the parse failure it would look like downstream.
+        try:
+            rr.check_paper_provenance(stream_text, paper=paper_id,
+                                      model=environment.get("model", rr.MODEL))
+        except rr.RoundDiscarded as exc:
+            fatal.append(str(exc))
+            checked.append(fail("FATAL", str(exc), case="G3/G8/G12"))
+            continue
+        except rr.SemanticFailure as exc:
+            kind = (rr.FAILURE_TRUNCATION if exc.case == "G9"
+                    else rr.FAILURE_INCOMPLETE)
+            checked.append(fail(kind, str(exc), case=exc.case))
+            continue
+        versions.append(rr.paper_provenance(stream_text).get("claude_code_version"))
 
         reply = rr.assistant_text(stream_text)
 
@@ -203,6 +244,13 @@ def main() -> int:
         checked.append(record)
 
     passed = [r for r in checked if r["status"] == "ok"]
+
+    # G2 -- ROUND level. The CLI auto-updates; a round that straddled one ran
+    # its early and late papers under two different programs.
+    try:
+        rr.check_round_provenance(versions)
+    except rr.RoundDiscarded as exc:
+        fatal.append(str(exc))
 
     # 8. constant confidence -- ROUND level, and only computable now.
     confidences = [r["confidence"] for r in passed]

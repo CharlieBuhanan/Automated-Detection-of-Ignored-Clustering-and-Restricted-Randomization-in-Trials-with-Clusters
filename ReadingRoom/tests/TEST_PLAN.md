@@ -6,19 +6,28 @@ A leak in this harness is silent: a contaminated accuracy number looks exactly
 like a clean one. So the tests are the specification, and
 `scripts/20_reading_room.py` / `21_check_responses.py` are written to pass them.
 
-> **Status, 2026-08-27 (second revision): 71 of 72 original cases covered, 302
-> tests passing.** `python -m pytest ReadingRoom/tests/ -q`
+> **Status, 2026-08-27 (third revision): 88 of 89 cases covered, 397 tests
+> passing.** `python -m pytest ReadingRoom/tests/ -q`
 >
-> **A13-A17 and the whole of G are specified but NOT yet implemented.** They come
-> from a second live probe of CLI 2.1.197 (see `ReadingRoom/README.md`, *What the
-> second probe found*), which showed that `--tools ""` is the real availability
-> filter and that every call was silently carrying Claude Code's ~12,200-token
-> agentic system prompt. The plan is written first, as it was the first time —
-> the implementation follows.
+> **A13-A17 and G1-G12 are built and green.** A13-A16 are argv assertions; A17
+> and group G are driven by an extended `fake_claude.py` that now emits the real
+> CLI 2.1.197 stream shape — `usage`, `permission_denials`, `fast_mode_state`,
+> `claude_code_version`, `request_id`. Verified against the real CLI the same
+> day: preflight returned **0 tools offered and 271 billed input tokens**, against
+> a 12,198-token default persona.
 >
-> **Do not run a scored round until A13-A17 and G1-G12 are green.** A round run
-> without them is not discardable-and-cheap; it is a number that looks fine and
-> cannot be traced.
+> **Building A15 found a sixth live defect, and the worst one yet.** The pinned
+> system prompt was written as three paragraphs. On Windows `claude` is a `.cmd`
+> shim, and cmd.exe's `%*` expansion **ends the command line at the first
+> newline** — so the prompt arrived as its opening sentence and
+> `--strict-mcp-config` and `--settings` never arrived at all. Two walls gone,
+> exit code 0, tools still empty, nothing in any log. `verify_argv` could not have
+> caught it: it inspects the argv we *built*, not the one the child received.
+> Fixed three ways — the prompt is one line, `load_system_prompt` refuses a
+> newline, and `--system-prompt` is now the **last** argument so nothing
+> load-bearing sits downstream of the only free-text value. It was caught offline
+> only because `fake_claude.py` is a real shim on `PATH` rather than a
+> monkeypatched `subprocess.run`, which is the third time that choice has paid.
 >
 > **A12 (the live canary) is not built — decided against, not forgotten.** It
 > was the only case that cost money and the only one that proved the walls
@@ -256,7 +265,7 @@ these):
 
 ## Build order
 
-Round one — done, in this order:
+Round one — done:
 
 1. ~~**A + B first.**~~ `test_a_isolation.py`, `test_b_rounds.py`. Pure argv,
    path and CSV assertions, no model call.
@@ -265,26 +274,29 @@ Round one — done, in this order:
    `test_e_semantic.py`, `test_f_retries.py`, driven by `fake_claude.py`.
 4. ~~**A12 (the canary) last.**~~ **Cut.** See the status note at the top.
 
-Round two — specified, not yet built, in this order:
+Round two — done, 2026-08-27:
 
-5. **A13-A16 next**, into `test_a_isolation.py`. Pure argv assertions against
-   `build_argv` / `verify_argv`, so they cost nothing and fail loudly the moment
-   the argv changes shape. Do these first: they are the cheapest and they gate
-   everything below.
-6. **G2, G3, G4, G8, G12 into `test_g_provenance.py`**, driven by `fake_claude.py`
-   emitting doctored `system/init` and `result` events. These are the stream
-   assertions; the fake CLI already has the shape.
-7. **G1, G7, G9, G10 next** — file-level and ledger behaviour, no stream needed.
-8. **G11** last of the offline set: it compares two `run_environment.json` files
-   and belongs to `evaluate.py` rather than the harness.
-9. **A17 and G5, G6** need the fake CLI to grow a usage block and a
-   kill-mid-stream mode. Cheapest to do together, once.
+5. ~~**A13-A16**, into `test_a_isolation.py`.~~ Argv assertions against
+   `build_argv` / `verify_argv`. Cheapest, and they gated everything below.
+6. ~~**G2, G3, G4, G8, G12**~~ and ~~**G1, G7, G9, G10**~~ and ~~**G11**~~ into
+   `test_g_provenance.py`.
+7. ~~**A17 and G5, G6**~~ — these needed `fake_claude.py` to grow a `usage` block
+   and a kill-mid-stream mode (`FAKE_CLAUDE_MODE=no_result`), so they were done
+   together as planned.
 
-`fake_claude.py` must be extended before step 6: it currently replays a canned
-reply and does not emit `usage`, `permission_denials`, `fast_mode_state`, or a
-`claude_code_version`. **Every field the real CLI emits and the harness reads
-must be forgeable by the fake**, or the offline suite is testing a shape the real
-stream does not have — which is exactly the failure the first live run exposed.
+`fake_claude.py` was extended first, as required: it now emits `usage`,
+`permission_denials`, `fast_mode_state`, `service_tier`, `speed`, `request_id`
+and `claude_code_version`, with `FAKE_CLAUDE_INIT` / `FAKE_CLAUDE_RESULT` /
+`FAKE_CLAUDE_USAGE` overlaying any field onto the real defaults (a `null` value
+*deletes* a key, so "the CLI omitted it" is expressible and distinct from "the
+CLI sent null"). **Every field the real CLI emits and the harness reads must be
+forgeable by the fake**, or the offline suite is testing a shape the real stream
+does not have — `test_the_fake_cli_emits_the_shape_the_harness_reads` asserts
+exactly that, so the fake cannot drift away from the real CLI unnoticed.
+
+Still open: **G11 belongs to `evaluate.py`**, which is unwritten.
+`compare_run_environments()` is implemented and tested here, so wiring it in is a
+call and not a design.
 
 The fake CLI is a real shim on `PATH`, not a monkeypatched `subprocess.run`.
 That is deliberate: the thing most worth testing is that a genuine child process
