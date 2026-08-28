@@ -19,7 +19,13 @@ plotted and cited. Anything in a table below must match a row there.
 | Git commit | hash of the commit that froze this version |
 | Model used to build it | Claude Opus 5 / Sonnet 5 |
 | Route | CLI / Batch API |
-| Status | active / superseded / abandoned |
+| Status | draft / run-frozen / superseded / abandoned |
+
+A version is a mutable draft only before its first paid/raw model request. That
+request records its hash and makes it run-frozen, even if every reply later
+fails validation. A `promptbook_accuracy_history.csv` row is a separate
+reporting milestone and requires accepted, configuration-comparable data; it
+does not determine whether paid evidence may be edited in place.
 
 ## What changed, and why
 

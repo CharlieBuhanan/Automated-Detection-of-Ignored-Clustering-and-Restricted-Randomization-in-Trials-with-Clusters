@@ -2,8 +2,9 @@
 
 Both routes produce the same object, and both are validated here:
 
-    Batch API   forces the shape with `tool_choice`, so a malformed reply is
-                impossible -- this model is then the tool's input schema.
+    Batch API   sets native JSON Schema structured output with
+                `output_config.format`; this module supplies the schema and
+                still validates every returned response locally.
     Reading Room (`claude -p`) cannot force anything, so the prompt asks for
                 JSON and the wrapper parses it here. A parse failure is a
                 re-prompt and a logged retry, never a discarded paper (DC24).
@@ -292,7 +293,7 @@ def _decision_input_schema(task: str) -> dict:
 
 
 def tool_schema(task: str) -> dict:
-    """The forced `tool_choice` schema for a Batch API run of one task.
+    """The JSON Schema payload for a Batch API run of one task.
 
     Built from the same model as the CLI route parses into, so the two cannot
     drift (DC35). `task` and `paper_id` are dropped: the wrapper knows both, and
@@ -310,7 +311,7 @@ def tool_schema(task: str) -> dict:
 
 
 def combined_analysis_tool_schema() -> dict:
-    """The forced Batch API tool schema for one post-gate combined call (DC54)."""
+    """The JSON Schema payload for one post-gate combined API call (DC54)."""
     return {
         "name": "record_combined_analysis_decisions",
         "description": (

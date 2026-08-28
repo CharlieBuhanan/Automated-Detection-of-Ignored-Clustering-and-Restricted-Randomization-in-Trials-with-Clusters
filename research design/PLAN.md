@@ -133,12 +133,12 @@ have plateaued. Those wait for run 2.
 - [x] **Promptbook versioning rule amended, 2026-08-27 — DC53.** DC15 as written made *every* edit a
       version bump, which produced an un-run `v1` and an un-run `v2` hours apart, neither with a
       number attached and neither comparable to anything. They are now **one `v1`**; both remain in
-      git history (`91403fa`, `37130f4`). Two rules replace the blanket one:
-      **(1)** a version freezes when it is **run** — when it has a row in
-      `promptbook_accuracy_history.csv` — and from then on DC15 applies in full;
-      **(2)** before that, edits happen **in place**, and a new `vN+1/` needs a **human-verified
-      rubric change** (a criterion a reviewer ruled on, or a rule from a pattern of misses per DC23).
-      Wording, formatting and token trimming are not rubric changes.
+      git history (`91403fa`, `37130f4`). A draft is editable in place only before its first paid/raw
+      request; that request captures the promptbook hash and makes the version **run-frozen**, even if
+      validation later rejects the response. A history row is a separate reporting milestone and must
+      come from accepted, provenance-comparable data. Before the first paid/raw request, a new `vN+1/`
+      still needs a **human-verified rubric change** (a criterion a reviewer ruled on, or a rule from a
+      pattern of misses per DC23); wording, formatting, and token trimming are not rubric changes.
       Recorded in [Design_Choices.md](Design_Choices.md) as DC53 and in
       [.claude/CLAUDE.md](../.claude/CLAUDE.md)'s Repo Rules.
 - [x] **Reuse every valid judgment already purchased, decided 2026-08-28.** New build-set planning
@@ -148,9 +148,10 @@ have plateaued. Those wait for run 2.
       A raw response is not reusable merely because the process exited 0: it becomes accepted only
       after schema, semantic, token-binding, promptbook-version, and provenance checks pass and the
       judgment is persisted. Current inventory: 49 exclusion judgments are accepted; data-analysis
-      round 1 contains 49 paid raw responses (41 exit-0 candidates and 8 process failures) but has
-      not yet been checked or written; no power-analysis responses exist. Validate and persist the
-      data candidates before the API planner decides what is missing.
+      round 1 contains 49 paid raw responses: 40 passed the checker but await `--write`, one failed
+      the schema/reasoning-length check, and eight had process failures; no power-analysis responses
+      exist. Persist only the 40 fully validated candidates before the API planner decides what is
+      missing; the nine failures remain missing until a narrow retry or human review resolves them.
 
       Reuse is task-granular. For a build survivor with both analysis judgments, send no request;
       with only data, send a legacy power-only request; with only power, send data-only; with
@@ -170,9 +171,29 @@ have plateaued. Those wait for run 2.
       SQLite. They write Markdown, CSV, and JSON reports showing coverage, the yes/no confusion
       matrix, accuracy, sensitivity, specificity, precision, F1, balanced accuracy, confidence
       summaries, and Cohen's kappa. The current report lands in
-      `results/04_classification/evaluation/current_build_v1/`.
+      `results/04_classification/evaluation/current_build_v1/`. It is a snapshot only: history
+      appending and G11 comparison await request-level route/effort/run provenance, and a pooled
+      legacy-high/new-medium view is exploratory rather than a plateau result.
 - [ ] Still unwritten: `promptbook_builder.py`, `two_pass.py`, and the run log /
       accuracy history in `results/04_classification/`.
+- [ ] **Refactor the promptbooks for one combined power/data analysis block.** The route
+      (`combined_analysis`) and its schema already exist (DC54/DC55); what does not exist is a
+      promptbook written *for* it. Today `build_combined_analysis_prompt()` brackets the two
+      standalone `power_analysis.md` and `data_analysis.md` files, so the shared preamble --
+      objective, reading conditions, answer-format table, abstention rules -- is sent **twice**
+      per paper. Merge them into one `combined_analysis.md` with a single preamble and two rule
+      blocks, keeping the two judgments separately validated and forbidding either half from
+      citing the other. **Measured saving is small** (~1.3k of ~25k tokens per post-gate paper,
+      ~5%): the paper text, not the promptbook, is what the request is made of. Do this for
+      prompt hygiene and one-place editing, and count on the input-size levers below for cost.
+- [ ] **Token/usage budget for the refinement loop.** Measured from `exclusion_r1` and
+      `data_analysis_r1` raw evidence, 2026-08-28: **~15.4k tokens per exclusion paper** and
+      **~24.9k per post-gate paper**, essentially all of it input, and `cache_read` is **zero on
+      every one of the 134 calls** -- each sealed process writes a fresh cache it never reads, so
+      the run pays the 1.25x cache-write premium for no reuse. One 50-paper exclusion round is
+      ~770k tokens; one full build-split regression (335 papers, which the Human Labelled Set
+      rule requires after any promptbook change) is **~5.2M tokens**, which is what exhausts the
+      5-hour subscription window in a single run. Levers, largest first, are being decided.
 
 ### Write-up and corpus documentation
 
@@ -337,8 +358,9 @@ seeing a disappointing holdout number is the easiest way to publish an inflated 
 
 ## Decision schema
 
-All three tasks return the same object via forced `tool_choice`, validated by pydantic
-(`src/schemas.py`):
+API requests return this object through native JSON Schema
+`output_config.format`; the sealed CLI asks for the same JSON and both routes are
+validated locally by Pydantic (`src/schemas.py`):
 
 ```python
 {
@@ -651,10 +673,13 @@ scored as misses.
    `promptbook_version`, so a rule that changes under a fixed version makes every earlier
    judgment unreproducible.
 
-   **A version freezes when it is run, not when it is written (DC53).** Once a version has a row in
-   `promptbook_accuracy_history.csv` it is immutable, and editing it in place is the thing this
-   layout exists to prevent. Before that it is a draft: edits happen in place, and a new directory
-   requires a **human-verified rubric change**, not a rewording.
+   **A version has draft, run-frozen, and reporting states (DC53).** Before its first paid/raw model
+   request it is a draft: edits happen in place, and a new directory requires a **human-verified
+   rubric change**, not a rewording. The first paid/raw request records the promptbook hash and makes
+   that version run-frozen, so its bytes can validate and audit the resulting evidence even if no
+   judgment or accuracy row survives. A `promptbook_accuracy_history.csv` row is a later reporting
+   milestone that requires accepted, configuration-comparable data; its absence never permits editing
+   a run-frozen version in place.
 
    ```
    promptbooks/
@@ -666,8 +691,10 @@ scored as misses.
      v1/  v2/  ...
    ```
 
-   **To change a rule:** copy `vN/` to `vN+1/`, edit there, update `CURRENT`, fill in the new
-   version's doc, commit. One commit per version bump, with the accuracy delta in the message.
+   **To change a run-frozen rule:** copy `vN/` to `vN+1/`, edit there, update `CURRENT`, fill in the
+   new version's doc, commit. During the pre-run draft phase, DC53 permits in-place wording edits and
+   requires a human-verified rubric change for a new directory. Include an accuracy delta in a version
+   bump only when a comparable reporting row exists.
 
    **`vX doc.md` is the human record; the CSV is the machine record.** The doc is tables only
    (no prose): what changed and why, the paper_ids each rule was written against, and every
@@ -681,7 +708,8 @@ scored as misses.
    Each promptbook opens with the same two-paragraph documentation rule — rules are numbered
    lines, rationale goes in the version doc, and a frozen version is never edited.
 
-6. **Promptbook loop** — `src/promptbook_builder.py`, one task at a time, using **Opus** via forced tool-use:
+6. **Promptbook loop** — `src/promptbook_builder.py`, one task at a time, using **Opus** for rubric
+   drafting and the sealed CLI/API route for scored judgments:
    load promptbook -> sample <100 unreviewed papers **from the build split** -> judge -> compare to the SQLite label
    -> log every result -> on a miss, hand-write or have Opus propose (for review) a generalized rule or
    worked example, append it to that task's promptbook, commit with the accuracy delta in the message.
@@ -693,9 +721,10 @@ scored as misses.
    authenticates off the subscription login. A small script walks `data/extracted_text/*.json`, pipes
    each paper's text in with the current promptbook, and writes one response JSON per paper to a new
    directory for hand-inspection. Only for promptbook refinement — the full run stays on the Batches API
-   (see the standing rule). Two trade-offs to accept if we go this way: no forced `tool_choice`, so the
-   prompt has to ask for JSON and the wrapper validates with pydantic and re-prompts on a parse failure;
-   and one process per paper, so no prompt caching and it runs slower. Fine at <100 papers a round.
+   (see the standing rule). Two trade-offs to accept if we go this way: no provider-enforced JSON
+   Schema, so the prompt has to ask for JSON and the wrapper validates with Pydantic and re-prompts on
+   a parse failure; and one process per paper, so no prompt caching and it runs slower. Fine at <100
+   papers a round.
 
    **Decided: the CLI carries the promptbook loop's scored numbers too, not just its drafts.** The cost
    is a known one — **log every parse failure and retry, with paper_id and attempt count.** Retries are
@@ -730,8 +759,11 @@ scored as misses.
    Each invocation is independent — fresh process, no shared history — unless `--resume`, `--continue`,
    or a reused `--session-id` is passed. Don't.
 
-7. **Regression** — `src/evaluate.py` re-runs the current promptbook against the whole build split, computes
-   accuracy/precision/recall, appends to `results/04_classification/promptbook_accuracy_history.csv` with the commit hash.
+7. **Regression** — `src/evaluate.py` evaluates persisted judgments against the whole build split and
+   writes a read-only accuracy/precision/recall snapshot. It does **not** rerun a model or append
+   `results/04_classification/promptbook_accuracy_history.csv` today. A later explicit history action
+   must first verify complete request-level provenance and a homogeneous model/effort/route/prompt hash;
+   mixed legacy-high/new-medium reuse cannot supply a DC17 plateau row.
 
    **Plateau = two consecutive rounds each improving accuracy by less than 1 percentage point.** Then
    stop and move to step 7.
@@ -887,8 +919,10 @@ file" failure, and it means the model has no write target to be confused about.
 `claude-sonnet-5`, `--effort medium` (`output_config.effort: medium` on the Batch
 API side), adaptive thinking — the only mode
 on this model, with no CLI switch and `budget_tokens` removed. A promptbook
-refined under one configuration and shipped under another is tuned on nothing,
-so a change to any of these is a promptbook version bump.
+refined under one configuration and shipped under another is tuned on nothing:
+record any configuration change as a distinct provenance stratum, do not pool it
+for DC17/G11, and use a new promptbook version only if the promptbook bytes also
+change. The existing high-effort reuse exception remains explicitly mixed.
 
 **Every run is recorded in two layers** — a per-round `run_environment.json` for
 the invariants and per-paper run-log columns for what varies. The CLI exposes no
@@ -914,6 +948,8 @@ whole run if any appear → JSON parses, recording whether fence-stripping was n
 within 200 characters → `promptbook_evidence` cites a rule ID that actually exists in the promptbook
 in force → `confidence` in [0,1] and not constant across papers → the blinded token echoes back.
 Failures go to a retry ledger (`paper_id`, attempt, failure kind), which is DC24's reportable number.
+After the configured retry budget, retain the raw evidence and mark the request review-required; never
+write a synthetic `undecidable` judgment for a parser or transport failure.
 
 ### Reproducible procedure, not reproducible bytes
 

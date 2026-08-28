@@ -38,7 +38,7 @@ As of 2026-08-28:
 | Artifact | State | Reuse consequence |
 |---|---:|---|
 | Exclusion round 1 | 49 checked and persisted v1 primary judgments | Accepted; never purchase these paper/task pairs again for the reuse-first build plan |
-| Data-analysis round 1 | 49 raw responses: 41 exit 0, 8 process failures | Candidates only; run the checker and persist only responses that fully pass |
+| Data-analysis round 1 | 49 raw responses: 40 checker-passing candidates awaiting `--write`; 1 schema/parse failure; 8 process failures | Only persisted, fully validated responses become accepted/reusable; the nine failures remain missing until a narrow retry or human review resolves them |
 | Power-analysis responses | none | Missing |
 | Evaluation | `src/evaluate.py` + `scripts/22_evaluate.py` | Read-only dashboard/CSV/JSON report now available |
 
@@ -68,6 +68,26 @@ new requests use medium effort. Preserve that decision without hiding it:
 - do not use the pooled summary for the DC17 plateau rule or claim it is a clean
   medium-effort estimate; and
 - keep the final holdout wholly medium effort and untouched until the end.
+
+### API transport and SDK pin
+
+The sole API classification-output transport is native JSON Schema structured
+output:
+
+```python
+output_config = {
+    "effort": "medium",
+    "format": {"type": "json_schema", "schema": schema},
+}
+```
+
+Use `anthropic==1.0.0` (Python >=3.10) for implementation and CI. This version
+matches the current supported `output_config.format` API contract; it is pinned
+so a generated batch-request shape cannot drift under an unreviewed SDK update.
+API classification requests must not declare a result tool, use `tool_choice`,
+or silently fall back to free-form JSON. Local Pydantic, token-binding,
+rule-prefix, and scientific semantic validation remain mandatory after the
+provider returns schema-constrained JSON.
 
 ## Required architecture
 
@@ -242,7 +262,12 @@ Read-only report mode by default; `--write` performs an atomic transaction.
 
 ### `src/evaluate.py` and `scripts/22_evaluate.py`
 
-Implement a read-only evaluator first. Suggested command after implementation:
+The current evaluator is read-only and already writes a Markdown/CSV/JSON
+snapshot. It reports the requested classification metrics, but it cannot yet
+establish a G11-comparable history row because legacy `judgments` do not retain
+request-level effort, route, response, and run identity. The provenance
+migration above must supply those fields before a configuration-stratified
+evaluator can enforce G11. Suggested command:
 
 ```text
 py -3 scripts/22_evaluate.py --split build --promptbook-version v1 --task all
@@ -260,8 +285,9 @@ Required output per task and configuration stratum:
 - source route/model/effort counts; and
 - a visible warning on any mixed-configuration summary.
 
-Appending `promptbook_accuracy_history.csv` must require an explicit flag and
-must refuse mixed-configuration input for a DC17 plateau row.
+The snapshot evaluator must never append history implicitly. A later explicit
+history command/flag must refuse mixed-configuration input, missing required
+provenance, or an environment mismatch for a DC17 plateau row.
 
 ## Reuse planner contract
 
@@ -298,7 +324,7 @@ predates the combined route.
 
 ### Transport choice
 
-Prefer native JSON structured output on Claude Sonnet 5:
+Use native JSON structured output on Claude Sonnet 5:
 
 ```python
 output_config = {
@@ -317,10 +343,12 @@ parsing, bind it exactly as the current schema parsers do. Continue local
 Pydantic and semantic validation because constrained syntax does not prove that
 the scientific decision cited the correct rule.
 
-Do not silently fall back to free-form JSON. If the installed SDK cannot encode
-`output_config.format` for Message Batches, stop offline and either upgrade the
-SDK or record a deliberate decision to use strict forced tool use. Add no beta
-header unless the current official API requires one.
+Do not silently fall back to free-form JSON or forced tool use. A serializer
+test must demonstrate that the pinned SDK can encode `output_config.format` in
+each Message Batch request before a plan is eligible for submission. If it
+cannot, stop offline, correct the version/implementation, rerun the offline
+suite, and create a new frozen plan. Add no beta header unless the current
+official API requires one.
 
 ### Prompt equivalence
 
@@ -446,7 +474,9 @@ key or network access.
 17. Concatenated API text blocks equal canonical prompt text.
 18. Combined output schema requires both halves and forbids extras.
 19. Single-task schema excludes wrapper-owned task/paper metadata.
-20. Every request carries `output_config.effort == "medium"` explicitly.
+20. Every request carries `output_config.effort == "medium"` and native
+    `output_config.format` explicitly; no request contains a result tool or
+    `tool_choice`.
 21. Unknown route/task refuses before request materialization.
 
 ### C. Determinism and paid-call guards
@@ -477,11 +507,11 @@ key or network access.
 
 40. Valid exclusion response creates one task-bound judgment.
 41. Valid combined response creates two rows sharing one response ID.
-42. Missing or malformed combined half creates zero rows.
+42. Missing or malformed combined half creates zero judgment rows and leaves a
+    terminal retry/review-required record, never a fabricated `undecidable`.
 43. Wrong-text in either analysis half creates zero rows.
 44. P rule cited by data or D rule cited by power rejects the response.
-45. Cross-task conclusion reference rejects or flags according to the finalized
-    semantic policy; test both directions.
+45. Cross-task conclusion reference rejects the response; test both directions.
 46. Max-token stop reason is truncation, not parse failure.
 47. Second ingestion of the same response is a no-op/refusal with row count
     unchanged.
@@ -553,6 +583,7 @@ After separate user approval:
 - [Message Batch creation](https://platform.claude.com/docs/en/api/http/messages/batches/create)
 - [Batch processing lifecycle, results, caching, and limits](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
 - [Structured JSON outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)
+- [Anthropic Python SDK](https://platform.claude.com/docs/en/api/sdks/python) and the pinned [1.0.0 release](https://pypi.org/project/anthropic/1.0.0/)
 - [Effort configuration](https://platform.claude.com/docs/en/build-with-claude/effort)
 
 Relevant current constraints to re-check immediately before implementation and

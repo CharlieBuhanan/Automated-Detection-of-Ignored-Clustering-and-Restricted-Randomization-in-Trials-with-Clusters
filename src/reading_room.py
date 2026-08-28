@@ -1353,13 +1353,15 @@ def build_combined_analysis_prompt(*, power_promptbook: str,
 # paper on a slow link is legitimately slow, but finite.
 TIMEOUT_SECONDS = 600
 
-# F2. Three attempts, then the paper is recorded `undecidable` and the round
-# carries on. Giving up on a paper is a data point; giving up on a round is not.
+# F2. Three attempts, then the paper is marked for human review and the round
+# carries on.  A transport or formatting failure is not a model judgment, so it
+# must never be represented as a fabricated ``undecidable`` decision.
 MAX_ATTEMPTS = 3
 
 RETRY_LEDGER_COLUMNS = ["timestamp", "task", "round", "paper_id", "token", "attempt",
                         "outcome", "failure_kind", "detail", "exit_code",
-                        "duration_seconds", "raw_path"]
+                        "duration_seconds", "raw_path", "retry_eligible",
+                        "terminal_status"]
 
 # F10 vs. a parse failure: both are retries, and DC24's rate is only meaningful
 # if the ledger says which. A rate driven by rate limits says nothing about the
@@ -1369,6 +1371,109 @@ FAILURE_PARSE = "parse"            # reply did not become a Decision
 FAILURE_SEMANTIC = "semantic"      # valid Decision, wrong content (E-group)
 FAILURE_TRUNCATION = "truncation"  # G9: stop_reason=max_tokens, hit the output cap
 FAILURE_INCOMPLETE = "incomplete"  # G5/G6: stream is missing its own provenance
+
+# A paper which spends this budget is *not* given an artificial model answer.
+# It remains visible to the operator as a non-judgment terminal state.
+TERMINAL_REVIEW_REQUIRED = "review_required"
+RETRYABLE_FAILURE_KINDS = frozenset({
+    FAILURE_PROCESS,
+    FAILURE_PARSE,
+    FAILURE_SEMANTIC,
+    FAILURE_TRUNCATION,
+    FAILURE_INCOMPLETE,
+})
+
+
+def attempt_number(row: dict) -> int:
+    """Return a defensively valid attempt number from an index/check row.
+
+    Old Reading Room index files predate real resume numbering and contain
+    blank/``1`` values.  Treat malformed values as the first attempt rather
+    than letting one malformed CSV cell make a retry look free.
+    """
+    try:
+        return max(1, int(row.get("attempt") or 1))
+    except (TypeError, ValueError):
+        return 1
+
+
+def latest_attempts_by_paper(rows: list[dict]) -> dict[str, dict]:
+    """Return the latest append-only index row for each paper.
+
+    Attempt number is the primary chronology and row order only breaks a tie
+    for legacy files.  The raw evidence is never discarded; this merely decides
+    which response a checker or ``--resume`` is allowed to act on.
+    """
+    latest: dict[str, tuple[tuple[int, str, int], dict]] = {}
+    for position, row in enumerate(rows):
+        paper_id = str(row.get("paper_id") or "")
+        if not paper_id:
+            continue
+        key = (attempt_number(row), str(row.get("started_at") or ""), position)
+        previous = latest.get(paper_id)
+        if previous is None or key > previous[0]:
+            latest[paper_id] = (key, row)
+    return {paper_id: row for paper_id, (_, row) in latest.items()}
+
+
+def _checked_matches_attempt(checked: dict, attempt: dict) -> bool:
+    """Whether a checker row describes this exact raw response.
+
+    ``raw_path`` is the durable primary identity.  Token + attempt keeps old
+    checked reports usable while this field rolls out.
+    """
+    raw_path = str(attempt.get("raw_path") or "")
+    checked_path = str(checked.get("raw_path") or "")
+    if raw_path and checked_path:
+        return raw_path == checked_path
+    return (str(checked.get("token") or "") == str(attempt.get("token") or "")
+            and attempt_number(checked) == attempt_number(attempt))
+
+
+def retry_state_for_attempt(attempt: dict | None, checked_rows: list[dict], *,
+                            max_attempts: int = MAX_ATTEMPTS) -> dict:
+    """Classify one paper for safe resume without inventing a judgment.
+
+    A clean process exit is only *awaiting validation*, not complete.  It is
+    held until the checker has either accepted it or reported a retryable
+    failure.  This is what lets ``--resume`` re-prompt parse/semantic failures
+    while preserving a just-produced raw response for inspection.
+    """
+    if attempt is None:
+        return {"state": "not_started", "should_run": True,
+                "next_attempt": 1, "failure_kind": ""}
+
+    number = attempt_number(attempt)
+    matching = [row for row in checked_rows if _checked_matches_attempt(row, attempt)]
+    checked = matching[-1] if matching else None
+
+    if str(attempt.get("exit_code") or "") != "0":
+        kind = FAILURE_PROCESS
+    elif checked is None:
+        return {"state": "awaiting_check", "should_run": False,
+                "next_attempt": None, "failure_kind": ""}
+    elif checked.get("status") == "ok":
+        return {"state": "accepted", "should_run": False,
+                "next_attempt": None, "failure_kind": ""}
+    elif checked.get("status") == "failed":
+        kind = str(checked.get("failure_kind") or FAILURE_SEMANTIC)
+        raw_eligible = str(checked.get("retry_eligible") or "").strip().lower()
+        eligible = (raw_eligible in {"yes", "true", "1"}
+                    if raw_eligible else kind in RETRYABLE_FAILURE_KINDS)
+        if not eligible:
+            return {"state": TERMINAL_REVIEW_REQUIRED, "should_run": False,
+                    "next_attempt": None, "failure_kind": kind}
+        # Fall through to the budget check below.
+    else:
+        # Unknown checker status is not a licence to spend another call.
+        return {"state": "awaiting_check", "should_run": False,
+                "next_attempt": None, "failure_kind": ""}
+
+    if number >= max_attempts:
+        return {"state": TERMINAL_REVIEW_REQUIRED, "should_run": False,
+                "next_attempt": None, "failure_kind": kind}
+    return {"state": "retry", "should_run": True,
+            "next_attempt": number + 1, "failure_kind": kind}
 
 
 @dataclass
@@ -1986,6 +2091,45 @@ def check_decision(decision: schemas.Decision, *, task: str, token: str,
     if not 0.0 <= decision.confidence <= 1.0:                                # E7
         raise SemanticFailure(f"confidence {decision.confidence} outside [0,1]",
                               case="E7")
+
+
+# A deliberately narrow detector for a forbidden *dependency*, rather than a
+# ban on ordinary domain language such as "data analysis".  Rule-prefix checks
+# already make cross-task evidence impossible; this covers an explicit claim
+# that the other task's answer/decision determined this one.
+_CROSS_TASK_CONCLUSION = {
+    "power_analysis": re.compile(
+        r"\b(?:data[_\s-]?analysis)\s+(?:decision|judg(?:e?ment)?|conclusion|"
+        r"answer|classification|result)\b|\b(?:according to|based on)\s+(?:the\s+)?"
+        r"data[_\s-]?analysis\b", re.IGNORECASE),
+    "data_analysis": re.compile(
+        r"\b(?:power[_\s-]?analysis)\s+(?:decision|judg(?:e?ment)?|conclusion|"
+        r"answer|classification|result)\b|\b(?:according to|based on)\s+(?:the\s+)?"
+        r"power[_\s-]?analysis\b", re.IGNORECASE),
+}
+
+
+def check_combined_analysis_decision(
+        combined: schemas.CombinedAnalysisDecision, *, token: str,
+        known_rules: dict[str, set[str]]) -> None:
+    """Validate both combined halves or reject the whole response (DC54).
+
+    The parser guarantees the enclosing shape.  This checker deliberately
+    repeats the task-local validation that legacy calls receive, then rejects
+    any explicit dependency on the other task's *conclusion*.  No caller may
+    persist a successful half when its sibling fails.
+    """
+    for task, decision in combined.task_decisions().items():
+        check_token_echo(decision, token)
+        check_decision(decision, task=task, token=token,
+                       known_rules=known_rules[task])
+        cross_reference = _CROSS_TASK_CONCLUSION[task].search(
+            f"{decision.reasoning}\n{decision.promptbook_evidence}")
+        if cross_reference:
+            raise SemanticFailure(
+                f"{task} refers to the other task's conclusion via "
+                f"{cross_reference.group(0)!r}; the two decisions must be "
+                f"independent (DC54)", case="DC54")
 
 
 def check_token_echo(decision: schemas.Decision, token: str) -> None:

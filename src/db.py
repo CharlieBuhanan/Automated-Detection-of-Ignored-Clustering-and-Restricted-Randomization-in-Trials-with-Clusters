@@ -32,9 +32,12 @@ answers questions about them, so the classification code can be tested against
 a temporary database.
 """
 
+import hashlib
+import json
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, Mapping
 
 # The three tasks, fixed. A CHECK constraint on this list is the storage-layer
 # half of the "never conflate tasks" rule: a typo'd task name fails loudly at
@@ -79,16 +82,95 @@ CREATE TABLE IF NOT EXISTS judgments (
     promptbook_evidence TEXT NOT NULL,
     confidence      REAL,
     promptbook_version  TEXT NOT NULL,
+    -- These remain nullable to preserve historical CLI judgments.  Every new
+    -- reportable judgment is linked to an immutable run and raw response; the
+    -- evaluator labels NULL rows as legacy/unprovenanced instead of guessing
+    -- their effort or transport.
+    run_id          TEXT,
+    response_id     TEXT,
     timestamp       TEXT NOT NULL,
     UNIQUE (paper_id, task, judgment_index)
 );
 
+-- `classification_runs` holds the round/request invariants.  It is separate
+-- from judgments because one combined response can yield two task judgments,
+-- and because a retry can yield no judgment at all while still being evidence
+-- about cost and failure handling.
+CREATE TABLE IF NOT EXISTS classification_runs (
+    run_id                  TEXT PRIMARY KEY,
+    task                    TEXT NOT NULL,
+    round_no                INTEGER,
+    transport               TEXT NOT NULL,
+    route                   TEXT NOT NULL,
+    model_used              TEXT NOT NULL,
+    effort                  TEXT NOT NULL,
+    system_prompt_sha256    TEXT NOT NULL,
+    promptbook_version      TEXT NOT NULL,
+    promptbook_sha256       TEXT NOT NULL,
+    request_config_sha256   TEXT NOT NULL,
+    config_fingerprint      TEXT NOT NULL,
+    environment_json        TEXT NOT NULL,
+    source_path             TEXT,
+    created_at              TEXT NOT NULL
+);
+
+-- One immutable raw/provider response belongs to one run.  `response_id` is
+-- local and stable (not necessarily an Anthropic ID), so both the CLI and
+-- future Batch transport can use the same idempotency boundary.
+CREATE TABLE IF NOT EXISTS classification_responses (
+    response_id             TEXT PRIMARY KEY,
+    run_id                  TEXT NOT NULL REFERENCES classification_runs(run_id),
+    paper_id                TEXT NOT NULL,
+    attempt                 INTEGER,
+    provider_response_id    TEXT,
+    raw_path                TEXT,
+    status                  TEXT NOT NULL,
+    metadata_json           TEXT,
+    created_at              TEXT NOT NULL,
+    UNIQUE (run_id, paper_id, attempt)
+);
+
 CREATE INDEX IF NOT EXISTS idx_judgments_paper_task ON judgments (paper_id, task);
 CREATE INDEX IF NOT EXISTS idx_judgments_promptbook ON judgments (promptbook_version);
+CREATE INDEX IF NOT EXISTS idx_classification_runs_config
+    ON classification_runs (config_fingerprint);
+CREATE INDEX IF NOT EXISTS idx_classification_responses_run_paper
+    ON classification_responses (run_id, paper_id);
 CREATE INDEX IF NOT EXISTS idx_labels_split         ON validation_labels (split);
 """
 
 DEFAULT_PATH = Path(__file__).resolve().parent.parent / "data" / "review.db"
+
+
+def _migrate_judgment_provenance(conn: sqlite3.Connection) -> None:
+    """Add provenance links to an existing append-only judgments table.
+
+    SQLite's ``CREATE TABLE IF NOT EXISTS`` deliberately does not alter an old
+    table.  The project already has paid, valid CLI judgments, so this migration
+    only adds nullable columns and never rewrites a scientific decision.  An
+    old row therefore remains visibly legacy until a documented backfill can
+    link it to immutable raw evidence.
+    """
+    columns = {
+        row["name"]
+        for row in conn.execute("PRAGMA table_info(judgments)").fetchall()
+    }
+    if "run_id" not in columns:
+        conn.execute("ALTER TABLE judgments ADD COLUMN run_id TEXT")
+    if "response_id" not in columns:
+        conn.execute("ALTER TABLE judgments ADD COLUMN response_id TEXT")
+
+    # Partial uniqueness preserves the historical NULL rows while making a
+    # replay of a known raw/provider response fail loudly rather than acquire a
+    # new judgment_index and silently inflate a metric denominator.
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_judgments_run_id ON judgments (run_id)")
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_judgments_response_id ON judgments (response_id)")
+    conn.execute(
+        """CREATE UNIQUE INDEX IF NOT EXISTS idx_judgments_response_task
+             ON judgments (response_id, task) WHERE response_id IS NOT NULL""")
+    conn.commit()
 
 
 def connect(db_path: Path = DEFAULT_PATH) -> sqlite3.Connection:
@@ -105,11 +187,272 @@ def connect(db_path: Path = DEFAULT_PATH) -> sqlite3.Connection:
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
     conn.executescript(SCHEMA)
+    _migrate_judgment_provenance(conn)
     return conn
 
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+# ---------------------------------------------------------------- provenance
+
+# These are intentionally broader than Reading Room's original G11 list.  A
+# change in route, transport, or request serialization can change what reaches
+# the model even if the model/effort pair is unchanged.  Values are recorded in
+# the database rather than inferred later from a directory name.
+COMPARABLE_CONFIGURATION_FIELDS = (
+    "model_used",
+    "effort",
+    "system_prompt_sha256",
+    "promptbook_version",
+    "promptbook_sha256",
+    "route",
+    "transport",
+    "request_config_sha256",
+)
+
+
+class ProvenanceError(ValueError):
+    """A run/response link is incomplete or contradicts immutable evidence."""
+
+
+def _canonical_json(value: Any) -> str:
+    """Stable JSON for fingerprints and immutable-record comparisons."""
+    return json.dumps(value, sort_keys=True, separators=(",", ":"),
+                      ensure_ascii=False, default=str)
+
+
+def _sha256_json(value: Any) -> str:
+    return hashlib.sha256(_canonical_json(value).encode("utf-8")).hexdigest()
+
+
+def _nonempty_string(value: Any, *, field: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ProvenanceError(f"{field} is required for a reportable run")
+    return value
+
+
+def _run_request_config(environment: Mapping[str, Any], *, route: str,
+                        transport: str) -> dict[str, Any]:
+    """The request-affecting portion of a run environment.
+
+    Timestamps and host details distinguish *runs* but not experimental
+    conditions.  Conversely, the verbatim argv/settings/schema fields can
+    change a request while the named promptbook version stays the same, so they
+    deliberately contribute to this hash whenever present.
+    """
+    request_keys = (
+        "argv", "thinking", "settings_sha256", "claude_code_version",
+        "tools_offered", "request_template_sha256", "response_schema_sha256",
+        "max_output_tokens", "temperature", "top_p",
+    )
+    return {
+        "route": route,
+        "transport": transport,
+        **{key: environment.get(key) for key in request_keys
+           if environment.get(key) is not None},
+    }
+
+
+def _run_configuration(*, model_used: str, effort: str,
+                       system_prompt_sha256: str, promptbook_version: str,
+                       promptbook_sha256: str, route: str, transport: str,
+                       request_config_sha256: str) -> dict[str, str]:
+    return {
+        "model_used": model_used,
+        "effort": effort,
+        "system_prompt_sha256": system_prompt_sha256,
+        "promptbook_version": promptbook_version,
+        "promptbook_sha256": promptbook_sha256,
+        "route": route,
+        "transport": transport,
+        "request_config_sha256": request_config_sha256,
+    }
+
+
+def run_id_from_environment(environment: Mapping[str, Any], *,
+                            source_path: str | Path | None = None) -> str:
+    """Deterministic local identity for one immutable CLI/API run record.
+
+    The full environment (including timing) participates here on purpose: two
+    otherwise identical rounds are two distinct runs.  Configuration
+    comparability instead uses ``config_fingerprint`` below, which excludes
+    incidental timing/host values.
+    """
+    task = str(environment.get("task") or "classification")
+    round_no = environment.get("round")
+    prefix = f"{task}-r{round_no}" if round_no is not None else task
+    identity = {
+        "environment": dict(environment),
+        "source_path": str(source_path) if source_path is not None else None,
+    }
+    return f"run-{prefix}-{_sha256_json(identity)[:20]}"
+
+
+def response_id_for_attempt(*, run_id: str, paper_id: str, attempt: int | None,
+                            provider_response_id: str | None = None) -> str:
+    """Stable local response identity, shared by one or two task judgments."""
+    if provider_response_id:
+        # Scope a provider handle to its local run: providers need not promise
+        # global uniqueness across transports or test fixtures.
+        suffix = f"provider:{provider_response_id}"
+    else:
+        suffix = f"attempt:{attempt if attempt is not None else 'unknown'}"
+    return f"response-{_sha256_json({'run_id': run_id, 'paper_id': paper_id, 'id': suffix})}"
+
+
+def register_run_environment(
+        conn: sqlite3.Connection, environment: Mapping[str, Any], *,
+        source_path: str | Path | None = None, run_id: str | None = None,
+        transport: str = "reading_room", route: str | None = None,
+        commit: bool = True) -> str:
+    """Record an immutable, fully configured classification run.
+
+    Re-registering exactly the same run is a no-op; attempting to reuse an ID
+    for a different configuration raises.  This makes checker/API restarts
+    safe without allowing mutable provenance.
+    """
+    task = _nonempty_string(environment.get("task"), field="task")
+    model_used = _nonempty_string(environment.get("model"), field="model")
+    effort = _nonempty_string(environment.get("effort"), field="effort")
+    system_prompt_sha256 = _nonempty_string(
+        environment.get("system_prompt_sha256"), field="system_prompt_sha256")
+    promptbook_version = _nonempty_string(
+        environment.get("promptbook_version"), field="promptbook_version")
+    promptbook_sha256 = _nonempty_string(
+        environment.get("promptbook_sha256"), field="promptbook_sha256")
+    route = _nonempty_string(route or environment.get("route") or task, field="route")
+    transport = _nonempty_string(transport or environment.get("transport"), field="transport")
+    request_config_sha256 = str(environment.get("request_config_sha256") or
+                                _sha256_json(_run_request_config(
+                                    environment, route=route, transport=transport)))
+    config = _run_configuration(
+        model_used=model_used, effort=effort,
+        system_prompt_sha256=system_prompt_sha256,
+        promptbook_version=promptbook_version,
+        promptbook_sha256=promptbook_sha256,
+        route=route, transport=transport,
+        request_config_sha256=request_config_sha256)
+    config_fingerprint = _sha256_json(config)
+    run_id = run_id or run_id_from_environment(environment, source_path=source_path)
+    run_id = _nonempty_string(run_id, field="run_id")
+    payload = {
+        "run_id": run_id,
+        "task": task,
+        "round_no": environment.get("round"),
+        "transport": transport,
+        "route": route,
+        "model_used": model_used,
+        "effort": effort,
+        "system_prompt_sha256": system_prompt_sha256,
+        "promptbook_version": promptbook_version,
+        "promptbook_sha256": promptbook_sha256,
+        "request_config_sha256": request_config_sha256,
+        "config_fingerprint": config_fingerprint,
+        "environment_json": _canonical_json(dict(environment)),
+        "source_path": str(source_path) if source_path is not None else None,
+        "created_at": _now(),
+    }
+    prior = conn.execute(
+        "SELECT * FROM classification_runs WHERE run_id = ?", (run_id,)).fetchone()
+    if prior is not None:
+        immutable = ("task", "round_no", "transport", "route", "model_used", "effort",
+                     "system_prompt_sha256", "promptbook_version", "promptbook_sha256",
+                     "request_config_sha256", "config_fingerprint", "environment_json",
+                     "source_path")
+        differences = [field for field in immutable if prior[field] != payload[field]]
+        if differences:
+            raise ProvenanceError(
+                f"run_id {run_id!r} already records different immutable fields: "
+                f"{', '.join(differences)}")
+        return run_id
+
+    conn.execute(
+        """INSERT INTO classification_runs
+           (run_id, task, round_no, transport, route, model_used, effort,
+            system_prompt_sha256, promptbook_version, promptbook_sha256,
+            request_config_sha256, config_fingerprint, environment_json,
+            source_path, created_at)
+           VALUES (:run_id, :task, :round_no, :transport, :route, :model_used,
+                   :effort, :system_prompt_sha256, :promptbook_version,
+                   :promptbook_sha256, :request_config_sha256,
+                   :config_fingerprint, :environment_json, :source_path,
+                   :created_at)""",
+        payload,
+    )
+    if commit:
+        conn.commit()
+    return run_id
+
+
+def register_response(
+        conn: sqlite3.Connection, *, response_id: str, run_id: str,
+        paper_id: str, attempt: int | None, provider_response_id: str | None = None,
+        raw_path: str | Path | None = None, status: str = "accepted",
+        metadata: Mapping[str, Any] | None = None, commit: bool = True) -> str:
+    """Record one immutable raw/provider response, idempotently.
+
+    A duplicate with precisely the same facts is safe on resume.  A duplicate
+    ID that points to another paper, attempt, raw path, or provider message is
+    evidence of a bookkeeping error and is rejected.
+    """
+    response_id = _nonempty_string(response_id, field="response_id")
+    run_id = _nonempty_string(run_id, field="run_id")
+    paper_id = _nonempty_string(paper_id, field="paper_id")
+    if conn.execute("SELECT 1 FROM classification_runs WHERE run_id = ?", (run_id,)).fetchone() is None:
+        raise ProvenanceError(
+            f"run_id {run_id!r} is not registered; record its environment before a response")
+    payload = {
+        "response_id": response_id,
+        "run_id": run_id,
+        "paper_id": paper_id,
+        "attempt": attempt,
+        "provider_response_id": provider_response_id,
+        "raw_path": str(raw_path) if raw_path is not None else None,
+        "status": _nonempty_string(status, field="status"),
+        "metadata_json": _canonical_json(dict(metadata)) if metadata is not None else None,
+        "created_at": _now(),
+    }
+    prior = conn.execute(
+        "SELECT * FROM classification_responses WHERE response_id = ?", (response_id,)).fetchone()
+    if prior is not None:
+        immutable = ("run_id", "paper_id", "attempt", "provider_response_id", "raw_path",
+                     "status", "metadata_json")
+        differences = [field for field in immutable if prior[field] != payload[field]]
+        if differences:
+            raise ProvenanceError(
+                f"response_id {response_id!r} already records different immutable fields: "
+                f"{', '.join(differences)}")
+        return response_id
+
+    conn.execute(
+        """INSERT INTO classification_responses
+           (response_id, run_id, paper_id, attempt, provider_response_id,
+            raw_path, status, metadata_json, created_at)
+           VALUES (:response_id, :run_id, :paper_id, :attempt,
+                   :provider_response_id, :raw_path, :status, :metadata_json,
+                   :created_at)""",
+        payload,
+    )
+    if commit:
+        conn.commit()
+    return response_id
+
+
+def judgment_exists_for_response_task(conn: sqlite3.Connection, *, response_id: str,
+                                      task: str) -> bool:
+    """Whether this exact response has already become this task's judgment."""
+    return conn.execute(
+        "SELECT 1 FROM judgments WHERE response_id = ? AND task = ?",
+        (response_id, task),
+    ).fetchone() is not None
+
+
+def response_judgment_tasks(conn: sqlite3.Connection, response_id: str) -> tuple[str, ...]:
+    """Stable task list already ingested from a raw/provider response."""
+    return tuple(row["task"] for row in conn.execute(
+        "SELECT task FROM judgments WHERE response_id = ? ORDER BY task", (response_id,)))
 
 
 # ------------------------------------------------------------------ labels
@@ -285,27 +628,78 @@ def next_judgment_index(conn: sqlite3.Connection, paper_id: str, task: str) -> i
 def insert_judgment(conn: sqlite3.Connection, *, paper_id: str, task: str, pass_name: str,
                     model_used: str, decision: str, reasoning: str, promptbook_evidence: str,
                     confidence: float | None, promptbook_version: str,
-                    judgment_index: int | None = None) -> int:
+                    judgment_index: int | None = None, run_id: str | None = None,
+                    response_id: str | None = None, commit: bool = True) -> int:
     """Append one judgment. Returns its judgment_index.
 
     Pass `judgment_index` explicitly when replaying an interrupted batch: the
     UNIQUE constraint then makes a re-inserted row fail rather than silently
     become a second judgment, which would inflate the accuracy denominator.
+
+    New reportable rows must provide both ``run_id`` and ``response_id`` after
+    registering their immutable run environment and raw/provider response.  The
+    pair is optional only for legacy rows preserved by the provenance migration.
+    ``commit=False`` is for an all-or-nothing combined response; callers then
+    own the surrounding transaction or use :func:`insert_judgments_atomically`.
     """
     if task not in TASKS:
         raise ValueError(f"unknown task {task!r}; expected one of {TASKS}")
+    if (run_id is None) != (response_id is None):
+        raise ProvenanceError(
+            "run_id and response_id must be supplied together (or both omitted for legacy data)")
+    if run_id is not None:
+        response = conn.execute(
+            "SELECT run_id, paper_id FROM classification_responses WHERE response_id = ?",
+            (response_id,),
+        ).fetchone()
+        if response is None:
+            raise ProvenanceError(
+                f"response_id {response_id!r} is not registered before its judgment")
+        if response["run_id"] != run_id:
+            raise ProvenanceError(
+                f"response_id {response_id!r} belongs to run {response['run_id']!r}, not {run_id!r}")
+        if response["paper_id"] != paper_id:
+            raise ProvenanceError(
+                f"response_id {response_id!r} belongs to paper {response['paper_id']!r}, not {paper_id!r}")
 
     index = judgment_index or next_judgment_index(conn, paper_id, task)
     conn.execute(
         """INSERT INTO judgments
            (paper_id, task, judgment_index, pass_name, model_used, decision,
-            reasoning, promptbook_evidence, confidence, promptbook_version, timestamp)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            reasoning, promptbook_evidence, confidence, promptbook_version,
+            run_id, response_id, timestamp)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (paper_id, task, index, pass_name, model_used, decision, reasoning,
-         promptbook_evidence, confidence, promptbook_version, _now()),
+         promptbook_evidence, confidence, promptbook_version, run_id,
+         response_id, _now()),
     )
-    conn.commit()
+    if commit:
+        conn.commit()
     return index
+
+
+def insert_judgments_atomically(conn: sqlite3.Connection,
+                                judgments: list[Mapping[str, Any]]) -> list[int]:
+    """Insert an all-or-nothing set of task judgments from one response.
+
+    This is the persistence boundary for the combined power/data route: a bad
+    second half rolls back the first half, yielding zero judgments rather than
+    an invalid partially-combined scientific record.  A savepoint works both
+    as a stand-alone operation and inside a caller's larger transaction.
+    """
+    if not judgments:
+        return []
+    conn.execute("SAVEPOINT combined_judgment_insert")
+    try:
+        indices = [insert_judgment(conn, commit=False, **dict(record))
+                   for record in judgments]
+    except Exception:
+        conn.execute("ROLLBACK TO SAVEPOINT combined_judgment_insert")
+        conn.execute("RELEASE SAVEPOINT combined_judgment_insert")
+        raise
+    conn.execute("RELEASE SAVEPOINT combined_judgment_insert")
+    conn.commit()
+    return indices
 
 
 def latest_judgments(conn: sqlite3.Connection, task: str,
@@ -315,10 +709,16 @@ def latest_judgments(conn: sqlite3.Connection, task: str,
     Scope to a `promptbook_version` to ask what a specific promptbook
     concluded, which is what the regression step compares between commits.
     """
+    # `classification_runs` carries its own `task` and `promptbook_version`, so
+    # once that table is LEFT JOINed the bare column names are ambiguous and
+    # SQLite refuses the query.  The subquery sees only `judgments` and stays
+    # unqualified; the outer clause is qualified to `j`.
     where = "task = ?"
+    outer_where = "j.task = ?"
     params: list = [task]
     if promptbook_version:
         where += " AND promptbook_version = ?"
+        outer_where += " AND j.promptbook_version = ?"
         params.append(promptbook_version)
 
     # The same filter is applied twice on purpose: once to pick each paper's
@@ -326,14 +726,21 @@ def latest_judgments(conn: sqlite3.Connection, task: str,
     # Filtering only the subquery would let a paper's judgment from a different
     # promptbook version come back as its "latest".
     return conn.execute(
-        f"""SELECT j.* FROM judgments j
+        f"""SELECT j.*, r.config_fingerprint AS provenance_config_fingerprint,
+                      r.transport AS provenance_transport,
+                      r.route AS provenance_route,
+                      r.effort AS provenance_effort,
+                      r.source_path AS provenance_source_path,
+                      r.request_config_sha256 AS provenance_request_config_sha256
+                 FROM judgments j
+            LEFT JOIN classification_runs r ON r.run_id = j.run_id
             JOIN (SELECT paper_id, MAX(judgment_index) AS top
                     FROM judgments
                    WHERE {where}
                 GROUP BY paper_id) latest
               ON j.paper_id = latest.paper_id
              AND j.judgment_index = latest.top
-           WHERE {where}""",
+           WHERE {outer_where}""",
         params + params,
     ).fetchall()
 

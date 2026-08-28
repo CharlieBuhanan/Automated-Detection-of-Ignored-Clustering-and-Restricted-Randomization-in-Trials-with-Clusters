@@ -29,11 +29,16 @@ FLAGS YOU WILL ACTUALLY USE
     --round     round number from build_rounds.csv           (required)
     --dry-run   plan only: resolve the round, check every wall, spawn nothing
     --limit N   first N papers only. For smoke tests
-    --resume    skip papers that already have a successful raw file (F4)
+    --resume    re-run only process/checker failures that remain below the
+                three-attempt budget; clean raw replies await checker approval
     --force     re-run a round that already has raw files (F5). Off by default
                 because re-running double-inserts judgments
     --claude    path to the CLI, if it is not on PATH (F11)
     --workers   concurrent papers, default 6. One paper per process, always
+    --serial    one paper at a time, no worker pool (alias --no-parallel).
+                Slower by roughly --workers, but the spend arrives at a pace
+                you can read, and Ctrl-C stops on the paper actually running
+                instead of after the pool drains
     --model     override the pinned model. You almost never want this
 
 WHERE THINGS LAND
@@ -63,6 +68,7 @@ import csv
 import io
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -74,6 +80,7 @@ import reading_room as rr                              # noqa: E402
 
 RESULTS = ROOT / "results" / "04_classification"
 RAW_ROOT = RESULTS / "raw"
+CHECKED_ROOT = RESULTS / "checked"
 LEDGER = RESULTS / "retry_ledger.csv"
 
 INDEX_COLUMNS = ["paper_id", "token", "task", "round", "promptbook_version",
@@ -124,6 +131,10 @@ def main() -> int:
                         help="Re-run a round that already has raw files (F5)")
     parser.add_argument("--claude", default="claude", help="Path to the CLI")
     parser.add_argument("--workers", type=int, default=6)
+    parser.add_argument("--serial", "--no-parallel", action="store_true",
+                        dest="serial",
+                        help="One paper at a time, no worker pool. It overrides "
+                             "--workers rather than arguing with it")
     parser.add_argument("--model", default=rr.MODEL)
     parser.add_argument("--timeout", type=int, default=rr.TIMEOUT_SECONDS)
     args = parser.parse_args()
@@ -181,10 +192,42 @@ def main() -> int:
               f"Use --resume to fill gaps, or --force to re-run from scratch.")
         return 1
 
-    done = {r["paper_id"] for r in existing if r.get("exit_code") == "0"}
-    if args.resume and done:
-        papers = [p for p in papers if p.paper_id not in done]
-        print(f"  --resume     : {len(done)} already done, {len(papers)} to go")
+    # A clean subprocess exit proves only that bytes were saved.  It does not
+    # prove the bytes parse or obey the promptbook.  Pair the latest raw index
+    # row with the latest checker report so --resume repairs parse/semantic
+    # failures instead of silently skipping them forever.
+    latest = rr.latest_attempts_by_paper(existing)
+    checked = read_csv(CHECKED_ROOT / f"{args.task}_r{args.round}.csv")
+    attempt_by_paper: dict[str, int] = {}
+    if args.resume or args.force:
+        selected, accepted, awaiting, terminal = [], 0, 0, 0
+        for paper in papers:
+            prior = latest.get(paper.paper_id)
+            state = rr.retry_state_for_attempt(prior, checked)
+            if args.force and prior is not None:
+                # --force deliberately makes another attempt, but it is not a
+                # loophole around F2's bounded spend.
+                if rr.attempt_number(prior) >= rr.MAX_ATTEMPTS:
+                    state = {"state": rr.TERMINAL_REVIEW_REQUIRED,
+                             "should_run": False, "next_attempt": None,
+                             "failure_kind": state.get("failure_kind", "")}
+                else:
+                    state = {"state": "forced_retry", "should_run": True,
+                             "next_attempt": rr.attempt_number(prior) + 1,
+                             "failure_kind": ""}
+            if state["should_run"]:
+                selected.append(paper)
+                attempt_by_paper[paper.paper_id] = state["next_attempt"]
+            elif state["state"] == "accepted":
+                accepted += 1
+            elif state["state"] == "awaiting_check":
+                awaiting += 1
+            elif state["state"] == rr.TERMINAL_REVIEW_REQUIRED:
+                terminal += 1
+        papers = selected
+        label = "--force" if args.force else "--resume"
+        print(f"  {label:<13}: {accepted} accepted, {awaiting} awaiting checker, "
+              f"{terminal} review-required, {len(papers)} to go")
 
     if args.limit:
         papers = papers[:args.limit]
@@ -238,7 +281,10 @@ def main() -> int:
               f"\n{bar}")
         return 0
 
-    print(f"  workers      : {args.workers}\n{bar}")
+    workers_note = ("1  (--serial: no pool, one paper at a time)"
+                    if args.serial else str(args.workers))
+    print(f"  workers      : {workers_note}")
+    print(bar)
 
     started_at = now()
     index_rows, log_rows, ledger_rows = list(existing), [], []
@@ -255,19 +301,43 @@ def main() -> int:
             prompt = rr.build_prompt(promptbook=promptbook, token=token,
                                      text=body.text, task=args.task)
         attempt = rr.run_paper(prompt, room=room, token=token,
-                               paper_id=paper.paper_id, model=args.model,
+                               paper_id=paper.paper_id,
+                               attempt=attempt_by_paper.get(paper.paper_id, 1),
+                               model=args.model,
                                claude=args.claude, timeout=args.timeout,
                                repo_root=ROOT)
         attempt.raw_path = rr.write_raw(attempt, raw_dir)
         return paper, body, attempt
 
-    with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = {pool.submit(one_paper, paper, body): paper
-                   for paper, body in prepared}
-        for i, future in enumerate(as_completed(futures), 1):
-            paper = futures[future]
+    # Both strategies yield `(paper, call)`, where `call()` returns the
+    # triple `one_paper` produced or re-raises what it raised. One shared
+    # result-handling body below is the point: serial mode must not become a
+    # second runner that quietly drifts from the parallel one.
+    def serially():
+        """One paper at a time, in round order, on this thread.
+
+        Not merely `--workers 1`. With no pool in the picture a Ctrl-C lands
+        on the paper actually running, so an operator watching a round go
+        wrong stops it there rather than after the queue drains -- the
+        difference between losing one paper's spend and losing the round's.
+        """
+        for paper, body in prepared:
+            yield paper, lambda p=paper, b=body: one_paper(p, b)
+
+    def in_parallel():
+        """`--workers` papers in flight, each result handled as it lands."""
+        with ThreadPoolExecutor(max_workers=args.workers) as pool:
+            futures = {pool.submit(one_paper, paper, body): paper
+                       for paper, body in prepared}
+            for future in as_completed(futures):
+                yield futures[future], future.result
+
+    # `closing` so an early exit shuts the generator down -- and with it the
+    # pool's `with` block -- rather than leaving it to the garbage collector.
+    with closing(serially() if args.serial else in_parallel()) as runner:
+        for i, (paper, call) in enumerate(runner, 1):
             try:
-                paper, body, attempt = future.result()
+                paper, body, attempt = call()
             except rr.Refuse as exc:
                 print(f"  [{i:>3}/{len(prepared)}] REFUSE {paper.paper_id}: {exc}")
                 log_rows.append({"paper_id": paper.paper_id, "task": args.task,
@@ -312,15 +382,24 @@ def main() -> int:
                 "attempt": attempt.attempt, "exit_code": attempt.exit_code,
                 "duration_seconds": attempt.duration,
                 **rr.paper_provenance(attempt.stdout)})
-            ledger_rows.append({
-                "timestamp": now(), "task": args.task, "round": args.round,
-                "paper_id": paper.paper_id, "token": attempt.token,
-                "attempt": attempt.attempt,
-                "outcome": "ok" if attempt.ok else "failure",
-                "failure_kind": "" if attempt.ok else rr.FAILURE_PROCESS,
-                "detail": detail, "exit_code": attempt.exit_code,
-                "duration_seconds": attempt.duration,
-                "raw_path": str(attempt.raw_path.relative_to(ROOT))})
+            # Successful process output is finalized by checker 21, which can
+            # distinguish a real judgment from parse/semantic failure.  Record
+            # process failures here because no checker pass can recover their
+            # absent/incomplete response.  This keeps one ledger row per raw
+            # attempt rather than an optimistic runner row plus a checker row.
+            if not attempt.ok:
+                terminal_status = (rr.TERMINAL_REVIEW_REQUIRED
+                                   if attempt.attempt >= rr.MAX_ATTEMPTS else "")
+                ledger_rows.append({
+                    "timestamp": now(), "task": args.task, "round": args.round,
+                    "paper_id": paper.paper_id, "token": attempt.token,
+                    "attempt": attempt.attempt, "outcome": "failure",
+                    "failure_kind": rr.FAILURE_PROCESS, "detail": detail,
+                    "exit_code": attempt.exit_code,
+                    "duration_seconds": attempt.duration,
+                    "raw_path": str(attempt.raw_path.relative_to(ROOT)),
+                    "retry_eligible": "no" if terminal_status else "yes",
+                    "terminal_status": terminal_status})
 
     # C1/C2 papers never reached the CLI; they still need a row, or the round's
     # denominator quietly shrinks.
@@ -332,7 +411,8 @@ def main() -> int:
 
     write_csv(raw_dir / "index.csv", INDEX_COLUMNS, index_rows)
     write_csv(raw_dir / "run_log.csv", RUN_LOG_COLUMNS, log_rows)
-    rr.append_ledger(LEDGER, ledger_rows)
+    if ledger_rows:
+        rr.append_ledger(LEDGER, ledger_rows)
 
     # G2. The CLI auto-updates. A round that straddled an update ran its early
     # papers under one program and its late ones under another, and nothing in
@@ -378,12 +458,8 @@ def main() -> int:
           + ")")
     print(f"  cost    -> ${cost:.2f} reported by the CLI "
           f"(blank where it reported none -- never defaulted to 0, G7)")
-    if combined:
-        print("\n  Next: combined response checking/persistence (the following "
-              "implementation step).")
-    else:
-        print(f"\n  Next: python scripts/21_check_responses.py --task {args.task} "
-              f"--round {args.round}")
+    print(f"\n  Next: python scripts/21_check_responses.py --task {args.task} "
+          f"--round {args.round}")
     return 0
 
 

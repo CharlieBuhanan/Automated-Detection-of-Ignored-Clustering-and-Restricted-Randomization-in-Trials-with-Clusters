@@ -1,13 +1,15 @@
 # Reading Room — test plan
 
-**89 cases. Written before the implementation, on purpose.**
+**91 legacy CLI cases plus 6 combined/API-boundary additions. Written before
+the implementation, on purpose.**
 
 A leak in this harness is silent: a contaminated accuracy number looks exactly
 like a clean one. So the tests are the specification, and
 `scripts/20_reading_room.py` / `21_check_responses.py` are written to pass them.
 
-> **Status, 2026-08-27 (third revision): 88 of 89 cases covered, 397 tests
-> passing.** `python -m pytest ReadingRoom/tests/ -q`
+> **Status, 2026-08-28:** the prior full suite passed 419 tests. The additions
+> below must be green before any live preflight or batch submission.
+> `python -m pytest ReadingRoom/tests/ -q`
 >
 > **A13-A17 and G1-G12 are built and green.** A13-A16 are argv assertions; A17
 > and group G are driven by an extended `fake_claude.py` that now emits the real
@@ -171,14 +173,14 @@ Structurally valid but substantively wrong. These are the quiet failures.
 | E11 | Response names a real `paper_id` the model was never told | Fail the round — evidence of a leak | **FATAL** |
 | E12 | Response cites another paper by name/author | Flag for human review; log as a possible leak | HANDLE |
 
-## F. Retries, concurrency, and the ledger (F1-F12)
+## F. Retries, concurrency, and the ledger (F1-F14)
 
 DC24: the retry rate is a reportable number, so it has to be right.
 
 | # | Input / condition | Expected handling | Sev |
 |---|---|---|---|
 | F1 | First attempt fails to parse, second succeeds | Judgment recorded, 1 retry logged for that paper | HANDLE |
-| F2 | Three consecutive parse failures | Give up on the paper, log `undecidable`, keep the round | HANDLE |
+| F2 | Three consecutive parse failures | Give up on the request, retain all raw replies and ledger rows, and mark it terminal `review_required`; create no synthetic `undecidable` judgment | HANDLE |
 | F3 | Retry ledger has one row per *attempt*, not per paper | Asserted — the rate is per attempt | HANDLE |
 | F4 | Round interrupted (Ctrl-C) halfway | Completed papers keep their raw files; resumable | HANDLE |
 | F5 | Re-running a completed round | Refuse without an explicit flag — would double-insert | **REFUSE** |
@@ -189,6 +191,8 @@ DC24: the retry rate is a reportable number, so it has to be right.
 | F10 | CLI exits non-zero (rate limit / quota) | Retry with backoff; distinguish from a parse failure in the ledger | HANDLE |
 | F11 | CLI not on `PATH` | Refuse before touching any paper | **REFUSE** |
 | F12 | Disk full while writing a raw response | Fail loudly; never leave a half-written raw file scored | **REFUSE** |
+| F13 | An `exit_code == 0` reply fails parsing/semantics | Resume selects it for a narrow retry; completion is validation-aware, not process-exit-aware | HANDLE |
+| F14 | Retry attempt follows a failed attempt | The next raw/ledger row carries the incremented attempt number and preserves the predecessor | HANDLE |
 
 ## G. Provenance and environment capture (G1-G12)
 
@@ -259,9 +263,10 @@ these):
 | C. Paper text | 12 | Real extraction output, injection, encoding |
 | D. Response parsing | 14 | `src/schemas.py` contract, both routes |
 | E. Semantic validation | 12 | Quiet failures that still look valid |
-| F. Retries / ledger | 12 | DC24's reportable rate, DC19 append-only |
+| F. Retries / ledger | 14 | DC24's reportable rate, DC19 append-only |
 | G. Provenance | 12 | The number is traceable to the conditions that made it |
-| **Total** | **89** | |
+| H. Combined/API boundary | 6 | Atomic two-task results, idempotence, transport, and G11 |
+| **Total** | **97** | |
 
 ## Build order
 
@@ -294,9 +299,34 @@ forgeable by the fake**, or the offline suite is testing a shape the real stream
 does not have — `test_the_fake_cli_emits_the_shape_the_harness_reads` asserts
 exactly that, so the fake cannot drift away from the real CLI unnoticed.
 
-Still open: **G11 belongs to `evaluate.py`**, which is unwritten.
-`compare_run_environments()` is implemented and tested here, so wiring it in is a
-call and not a design.
+**G11 is an evaluator/provenance contract, not an unwritten evaluator.**
+`compare_run_environments()` is implemented and tested here. The current
+read-only evaluator can report a snapshot, but request-level run, response,
+route, effort, and prompt-hash provenance must be persisted before it can admit
+a history/plateau comparison. The API migration adds that storage and tests a
+hard refusal for any G11 mismatch; legacy high/new-medium reuse remains an
+explicit mixed exploratory view.
+
+## H. Post-gate combined route and API-boundary additions
+
+These additions complement the legacy 91-case CLI harness. The corresponding
+implementation tests use temporary SQLite databases and fake clients; none may
+make a network call.
+
+| # | Input / condition | Expected handling | Sev |
+|---|---|---|---|
+| H1 | Valid combined response | Validate isolated power and data halves and persist exactly two task rows atomically | HANDLE |
+| H2 | Either combined half fails schema, semantics, rule prefix, or cross-task-reference policy | Persist zero task rows; retain raw evidence and create a retry/review-required record | HANDLE |
+| H3 | Re-ingesting the same response | Explicit no-op/refusal; no duplicate judgment, response, or ledger row | **REFUSE** |
+| H4 | API request construction | Pin `anthropic==1.0.0`; require `output_config.effort == "medium"` and native `output_config.format`; reject a result tool or `tool_choice` | **REFUSE** |
+| H5 | Two evaluation inputs differ in model, effort, route, system-prompt hash, promptbook hash/version, or schema/template version | Emit a stratified snapshot if requested, but refuse a pooled G11/history/plateau comparison | **REFUSE** |
+| H6 | Retries exhaust after schema/semantic/transport failures | Preserve each raw reply and terminal state without inventing an `undecidable` scientific judgment | HANDLE |
+
+Where these live: `test_h_combined_schema.py` (H1/H2 parsing), `test_i_combined_route.py`
+(H1/H2 prompt construction and routing), `test_j_evaluate.py` (H5 snapshot-vs-pooled
+refusal, and the read-only metrics), `test_k_api_contract.py` (H4, via `src/api_contract.py`
+-- the offline request builder that constructs no client and makes no network call).
+H3 and H6 are asserted in `test_f_retries.py` alongside the rest of the retry budget.
 
 The fake CLI is a real shim on `PATH`, not a monkeypatched `subprocess.run`.
 That is deliberate: the thing most worth testing is that a genuine child process

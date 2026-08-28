@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -30,16 +31,53 @@ SUMMARY_COLUMNS = [
     "judged_eligible", "missing", "coverage", "scored", "scoreable_coverage",
     "true_positive", "true_negative", "false_positive", "false_negative",
     "accuracy", "sensitivity", "specificity", "precision", "negative_predictive_value",
-    "f1", "balanced_accuracy", "cohen_kappa", "undecidable", "wrong_text",
+    "f1", "balanced_accuracy", "cohen_kappa",
+    "accuracy_ci95_low", "accuracy_ci95_high",
+    "sensitivity_ci95_low", "sensitivity_ci95_high",
+    "specificity_ci95_low", "specificity_ci95_high",
+    "cohen_kappa_ci95_method", "undecidable", "wrong_text",
     "unlabeled_judgments", "confidence_n", "confidence_min", "confidence_max",
-    "confidence_mean", "distinct_confidences", "models", "pass_names",
+    "confidence_mean", "distinct_confidences", "calibration_n",
+    "calibration_empirical_accuracy", "calibration_gap", "decision_confidence_brier",
+    "expected_calibration_error", "models", "pass_names",
+    "configuration_status", "configuration_fingerprints", "run_ids",
+    "configuration_sources", "efforts", "routes", "transports",
 ]
 
 CASE_COLUMNS = [
     "task", "split", "paper_id", "promptbook_version", "judgment_index",
     "pass_name", "model_used", "truth", "decision", "confidence", "status",
-    "outcome", "reasoning", "promptbook_evidence",
+    "outcome", "reasoning", "promptbook_evidence", "run_id", "response_id",
+    "configuration_fingerprint", "configuration_source", "effort", "route",
+    "transport",
 ]
+
+CALIBRATION_COLUMNS = [
+    "task", "split", "promptbook_version", "configuration_status",
+    "bin_lower", "bin_upper", "n", "mean_confidence", "empirical_accuracy",
+    "calibration_gap",
+]
+
+THRESHOLD_COLUMNS = [
+    "task", "split", "promptbook_version", "configuration_status", "threshold",
+    "confidence_n", "low_confidence_n", "low_confidence_rate",
+    "retained_n", "retained_accuracy", "retained_sensitivity",
+    "retained_specificity",
+]
+
+HISTORY_COLUMNS = [
+    "generated_at", "task", "split", "promptbook_version", "eligible",
+    "scored", "accuracy", "sensitivity", "specificity", "cohen_kappa",
+    "configuration_status", "configuration_fingerprint", "run_ids",
+    "configuration_sources", "comparable_to_previous", "comparison_note",
+]
+
+CONFIDENCE_THRESHOLDS = tuple(round(value / 100, 2) for value in range(50, 100, 5))
+CALIBRATION_BIN_WIDTH = 0.10
+
+
+class ConfigurationRefusal(RuntimeError):
+    """A report is not a clean configuration for a DC17 history comparison."""
 
 
 def _ratio(numerator: int, denominator: int) -> float | None:
@@ -49,6 +87,153 @@ def _ratio(numerator: int, denominator: int) -> float | None:
 
 def _rounded(value: float | None) -> float | None:
     return round(value, 4) if value is not None else None
+
+
+def _wilson_interval(successes: int, total: int, *, z: float = 1.959963984540054) -> tuple[float | None, float | None]:
+    """Two-sided 95% Wilson binomial interval, or ``(None, None)`` at n=0.
+
+    Wilson is stable for the small, imbalanced calibration batches here; the
+    normal/Wald interval can report impossible negative rates or false 100%
+    certainty with the same data.
+    """
+    if not total:
+        return None, None
+    p = successes / total
+    z_squared = z * z
+    denominator = 1 + z_squared / total
+    centre = (p + z_squared / (2 * total)) / denominator
+    half_width = (z / denominator) * math.sqrt(
+        p * (1 - p) / total + z_squared / (4 * total * total))
+    return max(0.0, centre - half_width), min(1.0, centre + half_width)
+
+
+def _configuration_summary(judgments: list[Any]) -> dict[str, Any]:
+    """Describe whether the selected latest judgments are one known experiment.
+
+    Evaluation itself stays useful for historical/legacy rows, but an unknown
+    or mixed configuration cannot become a DC17 plateau/history observation.
+    This is intentionally based on every selected persisted judgment, not only
+    correct ones or only the scoreable subset.
+    """
+    if not judgments:
+        return {
+            "configuration_status": "no_judgments",
+            "configuration_fingerprints": "",
+            "run_ids": "",
+            "configuration_sources": "",
+            "efforts": "",
+            "routes": "",
+            "transports": "",
+        }
+
+    run_ids = sorted({str(row["run_id"]) for row in judgments if row["run_id"]})
+    fingerprints = sorted({str(row["provenance_config_fingerprint"])
+                           for row in judgments if row["provenance_config_fingerprint"]})
+    sources = sorted({str(row["provenance_source_path"])
+                      for row in judgments if row["provenance_source_path"]})
+    efforts = sorted({str(row["provenance_effort"])
+                      for row in judgments if row["provenance_effort"]})
+    routes = sorted({str(row["provenance_route"])
+                     for row in judgments if row["provenance_route"]})
+    transports = sorted({str(row["provenance_transport"])
+                         for row in judgments if row["provenance_transport"]})
+    unprovenanced = any(
+        not row["run_id"] or not row["provenance_config_fingerprint"]
+        for row in judgments)
+    if unprovenanced:
+        status = "mixed_with_unprovenanced" if fingerprints else "unprovenanced_legacy"
+    elif len(fingerprints) != 1:
+        status = "mixed_configuration"
+    else:
+        status = "comparable"
+    if not sources and unprovenanced:
+        sources = ["legacy/unprovenanced"]
+    return {
+        "configuration_status": status,
+        "configuration_fingerprints": ";".join(fingerprints),
+        "run_ids": ";".join(run_ids),
+        "configuration_sources": ";".join(sources),
+        "efforts": ";".join(efforts),
+        "routes": ";".join(routes),
+        "transports": ";".join(transports),
+    }
+
+
+def _calibration_summary(confidence_correct: list[tuple[float, int]]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Decision-confidence calibration, with fixed bins suitable for CSV/plots.
+
+    Model confidence is confidence in the chosen decision, not a calibrated
+    probability of the positive class.  Thus the Brier score below is for
+    *decision correctness* and threshold rows model a review policy of
+    ``confidence < threshold``.
+    """
+    if not confidence_correct:
+        return ({
+            "calibration_n": 0,
+            "calibration_empirical_accuracy": None,
+            "calibration_gap": None,
+            "decision_confidence_brier": None,
+            "expected_calibration_error": None,
+        }, [])
+    n = len(confidence_correct)
+    mean_confidence = mean(value for value, _ in confidence_correct)
+    empirical_accuracy = mean(correct for _, correct in confidence_correct)
+    brier = mean((confidence - correct) ** 2 for confidence, correct in confidence_correct)
+    bins: list[dict[str, Any]] = []
+    weighted_gap = 0.0
+    # Make 1.0 fall in the final bin rather than create an eleventh bin.
+    for bin_index in range(int(1 / CALIBRATION_BIN_WIDTH)):
+        lower = round(bin_index * CALIBRATION_BIN_WIDTH, 2)
+        upper = round((bin_index + 1) * CALIBRATION_BIN_WIDTH, 2)
+        values = [(confidence, correct) for confidence, correct in confidence_correct
+                  if lower <= confidence < upper or
+                  (bin_index == int(1 / CALIBRATION_BIN_WIDTH) - 1 and confidence == 1.0)]
+        if not values:
+            continue
+        bin_mean_confidence = mean(confidence for confidence, _ in values)
+        bin_accuracy = mean(correct for _, correct in values)
+        gap = bin_mean_confidence - bin_accuracy
+        weighted_gap += len(values) / n * abs(gap)
+        bins.append({
+            "bin_lower": lower,
+            "bin_upper": upper,
+            "n": len(values),
+            "mean_confidence": _rounded(bin_mean_confidence),
+            "empirical_accuracy": _rounded(bin_accuracy),
+            "calibration_gap": _rounded(gap),
+        })
+    return ({
+        "calibration_n": n,
+        "calibration_empirical_accuracy": _rounded(empirical_accuracy),
+        "calibration_gap": _rounded(mean_confidence - empirical_accuracy),
+        "decision_confidence_brier": _rounded(brier),
+        "expected_calibration_error": _rounded(weighted_gap),
+    }, bins)
+
+
+def _threshold_summary(confidence_cases: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Show review load and retained binary performance at fixed thresholds."""
+    rows: list[dict[str, Any]] = []
+    n = len(confidence_cases)
+    for threshold in CONFIDENCE_THRESHOLDS:
+        low = [case for case in confidence_cases if case["confidence"] < threshold]
+        retained = [case for case in confidence_cases if case["confidence"] >= threshold]
+        tp = sum(case["outcome"] == "true_positive" for case in retained)
+        tn = sum(case["outcome"] == "true_negative" for case in retained)
+        fp = sum(case["outcome"] == "false_positive" for case in retained)
+        fn = sum(case["outcome"] == "false_negative" for case in retained)
+        retained_n = len(retained)
+        rows.append({
+            "threshold": threshold,
+            "confidence_n": n,
+            "low_confidence_n": len(low),
+            "low_confidence_rate": _rounded(_ratio(len(low), n)),
+            "retained_n": retained_n,
+            "retained_accuracy": _rounded(_ratio(tp + tn, retained_n)),
+            "retained_sensitivity": _rounded(_ratio(tp, tp + fn)),
+            "retained_specificity": _rounded(_ratio(tn, tn + fp)),
+        })
+    return rows
 
 
 def _format_metric(value: Any, *, percent: bool = False) -> str:
@@ -70,6 +255,8 @@ class TaskEvaluation:
     promptbook_version: str | None
     metrics: dict[str, Any]
     cases: list[dict[str, Any]]
+    calibration_bins: list[dict[str, Any]]
+    threshold_rows: list[dict[str, Any]]
 
     def summary_row(self) -> dict[str, Any]:
         """Flat, CSV-ready summary with stable column names."""
@@ -132,6 +319,8 @@ def evaluate_task(conn, task: str, *, split: str = db.SPLIT_BUILD,
         "unlabeled_judgments": 0,
     }
     confidences: list[float] = []
+    confidence_correct: list[tuple[float, int]] = []
+    confidence_cases: list[dict[str, Any]] = []
     models: set[str] = set()
     pass_names: set[str] = set()
 
@@ -147,6 +336,9 @@ def evaluate_task(conn, task: str, *, split: str = db.SPLIT_BUILD,
                 "truth": truth, "decision": "", "confidence": "",
                 "status": "missing", "outcome": "missing", "reasoning": "",
                 "promptbook_evidence": "",
+                "run_id": "", "response_id": "", "configuration_fingerprint": "",
+                "configuration_source": "", "effort": "", "route": "",
+                "transport": "",
             })
             continue
 
@@ -167,6 +359,11 @@ def evaluate_task(conn, task: str, *, split: str = db.SPLIT_BUILD,
             outcome = _classification_outcome(truth=truth, decision=decision)
             counts[outcome] += 1
             status = "scored"
+            if confidence is not None:
+                confidence_value = float(confidence)
+                confidence_correct.append((confidence_value, int(
+                    outcome in ("true_positive", "true_negative"))))
+                confidence_cases.append({"confidence": confidence_value, "outcome": outcome})
         else:
             # The database is permissive enough to contain historical bad data.
             # Do not classify an unknown decision as a miss or make up a metric.
@@ -182,6 +379,13 @@ def evaluate_task(conn, task: str, *, split: str = db.SPLIT_BUILD,
             "status": status, "outcome": outcome,
             "reasoning": judgment["reasoning"],
             "promptbook_evidence": judgment["promptbook_evidence"],
+            "run_id": judgment["run_id"] or "",
+            "response_id": judgment["response_id"] or "",
+            "configuration_fingerprint": judgment["provenance_config_fingerprint"] or "",
+            "configuration_source": judgment["provenance_source_path"] or "",
+            "effort": judgment["provenance_effort"] or "",
+            "route": judgment["provenance_route"] or "",
+            "transport": judgment["provenance_transport"] or "",
         })
 
     # Latest judgments outside the requested eligible set are not scoreable.
@@ -200,6 +404,13 @@ def evaluate_task(conn, task: str, *, split: str = db.SPLIT_BUILD,
             "confidence": judgment["confidence"], "status": "unlabeled",
             "outcome": "unlabeled_judgment", "reasoning": judgment["reasoning"],
             "promptbook_evidence": judgment["promptbook_evidence"],
+            "run_id": judgment["run_id"] or "",
+            "response_id": judgment["response_id"] or "",
+            "configuration_fingerprint": judgment["provenance_config_fingerprint"] or "",
+            "configuration_source": judgment["provenance_source_path"] or "",
+            "effort": judgment["provenance_effort"] or "",
+            "route": judgment["provenance_route"] or "",
+            "transport": judgment["provenance_transport"] or "",
         })
 
     tp, tn = counts["true_positive"], counts["true_negative"]
@@ -231,6 +442,13 @@ def evaluate_task(conn, task: str, *, split: str = db.SPLIT_BUILD,
     else:
         cohen_kappa = None
 
+    accuracy_low, accuracy_high = _wilson_interval(tp + tn, scored)
+    sensitivity_low, sensitivity_high = _wilson_interval(tp, tp + fn)
+    specificity_low, specificity_high = _wilson_interval(tn, tn + fp)
+    calibration, calibration_bins = _calibration_summary(confidence_correct)
+    threshold_rows = _threshold_summary(confidence_cases)
+    configuration = _configuration_summary(judgments)
+
     metrics = {
         "eligible": len(eligible),
         "persisted_judgments": len(judgments),
@@ -251,6 +469,16 @@ def evaluate_task(conn, task: str, *, split: str = db.SPLIT_BUILD,
         "f1": _rounded(f1),
         "balanced_accuracy": _rounded(balanced_accuracy),
         "cohen_kappa": _rounded(cohen_kappa),
+        "accuracy_ci95_low": _rounded(accuracy_low),
+        "accuracy_ci95_high": _rounded(accuracy_high),
+        "sensitivity_ci95_low": _rounded(sensitivity_low),
+        "sensitivity_ci95_high": _rounded(sensitivity_high),
+        "specificity_ci95_low": _rounded(specificity_low),
+        "specificity_ci95_high": _rounded(specificity_high),
+        # Kappa needs a paired bootstrap or another resampling design to get a
+        # defensible interval.  It is intentionally not given a pseudo-binomial
+        # Wilson interval just because accuracy has one.
+        "cohen_kappa_ci95_method": "not_estimated",
         "undecidable": counts["undecidable"],
         "wrong_text": counts["wrong_text"],
         "unlabeled_judgments": counts["unlabeled_judgments"],
@@ -261,10 +489,14 @@ def evaluate_task(conn, task: str, *, split: str = db.SPLIT_BUILD,
         "distinct_confidences": len(set(confidences)),
         "models": ";".join(sorted(models)),
         "pass_names": ";".join(sorted(pass_names)),
+        **calibration,
+        **configuration,
     }
     return TaskEvaluation(task=task, split=split,
                           promptbook_version=promptbook_version,
-                          metrics=metrics, cases=cases)
+                          metrics=metrics, cases=cases,
+                          calibration_bins=calibration_bins,
+                          threshold_rows=threshold_rows)
 
 
 def evaluate_tasks(conn, tasks: Iterable[str] = db.TASKS, *,
@@ -276,6 +508,43 @@ def evaluate_tasks(conn, tasks: Iterable[str] = db.TASKS, *,
             for task in tasks]
 
 
+def _calibration_rows(results: Iterable[TaskEvaluation]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for result in results:
+        summary = result.summary_row()
+        for bin_row in result.calibration_bins:
+            rows.append({
+                "task": result.task,
+                "split": result.split,
+                "promptbook_version": summary["promptbook_version"],
+                "configuration_status": summary["configuration_status"],
+                **bin_row,
+            })
+    return rows
+
+
+def _threshold_rows(results: Iterable[TaskEvaluation]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for result in results:
+        summary = result.summary_row()
+        for threshold_row in result.threshold_rows:
+            rows.append({
+                "task": result.task,
+                "split": result.split,
+                "promptbook_version": summary["promptbook_version"],
+                "configuration_status": summary["configuration_status"],
+                **threshold_row,
+            })
+    return rows
+
+
+def _write_csv(path: Path, *, columns: list[str], rows: Iterable[dict[str, Any]]) -> None:
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=columns, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def write_evaluation(output_dir: Path, results: Iterable[TaskEvaluation], *,
                      generated_at: str | None = None) -> dict[str, Path]:
     """Write CSV, JSON, and Markdown reporting artifacts; never write SQLite."""
@@ -285,23 +554,32 @@ def write_evaluation(output_dir: Path, results: Iterable[TaskEvaluation], *,
     generated_at = generated_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
     summaries = [result.summary_row() for result in results]
     cases = [case for result in results for case in result.cases]
+    calibration_rows = _calibration_rows(results)
+    threshold_rows = _threshold_rows(results)
 
     summary_csv = output_dir / "summary.csv"
-    with summary_csv.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=SUMMARY_COLUMNS, extrasaction="ignore")
-        writer.writeheader()
-        writer.writerows(summaries)
+    _write_csv(summary_csv, columns=SUMMARY_COLUMNS, rows=summaries)
 
     cases_csv = output_dir / "cases.csv"
-    with cases_csv.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=CASE_COLUMNS, extrasaction="ignore")
-        writer.writeheader()
-        writer.writerows(cases)
+    _write_csv(cases_csv, columns=CASE_COLUMNS, rows=cases)
+
+    calibration_csv = output_dir / "confidence_calibration.csv"
+    _write_csv(calibration_csv, columns=CALIBRATION_COLUMNS, rows=calibration_rows)
+
+    thresholds_csv = output_dir / "confidence_thresholds.csv"
+    _write_csv(thresholds_csv, columns=THRESHOLD_COLUMNS, rows=threshold_rows)
 
     summary_json = output_dir / "summary.json"
     summary_json.write_text(json.dumps({
         "generated_at": generated_at,
         "results": summaries,
+        "calibration_bins": calibration_rows,
+        "confidence_thresholds": threshold_rows,
+        "notes": {
+            "confidence": "Confidence is confidence in the chosen decision.",
+            "threshold": "low_confidence means confidence < threshold; retained rows have confidence >= threshold.",
+            "intervals": "Accuracy, sensitivity, and specificity use two-sided 95% Wilson intervals. Kappa interval is not estimated.",
+        },
     }, indent=2) + "\n", encoding="utf-8")
 
     report = output_dir / "report.md"
@@ -332,6 +610,33 @@ def write_evaluation(output_dir: Path, results: Iterable[TaskEvaluation], *,
             ))
     lines += [
         "",
+        "Binary denominators are explicit: accuracy uses TP + TN + FP + FN; "
+        "sensitivity uses TP + FN; specificity uses TN + FP. For exclusion, "
+        "FP is a false exclusion and FN is a false keep. `undecidable`, "
+        "`wrong_text`, and missing judgments are reported separately.",
+        "",
+        "## 95% Wilson intervals",
+        "",
+        "| Task | Accuracy interval | Sensitivity interval | Specificity interval |",
+        "|---|---|---|---|",
+    ]
+    for row in summaries:
+        lines.append(
+            "| {task} | [{accuracy_low}, {accuracy_high}] | [{sensitivity_low}, {sensitivity_high}] | [{specificity_low}, {specificity_high}] |".format(
+                task=row["task"],
+                accuracy_low=_format_metric(row["accuracy_ci95_low"], percent=True),
+                accuracy_high=_format_metric(row["accuracy_ci95_high"], percent=True),
+                sensitivity_low=_format_metric(row["sensitivity_ci95_low"], percent=True),
+                sensitivity_high=_format_metric(row["sensitivity_ci95_high"], percent=True),
+                specificity_low=_format_metric(row["specificity_ci95_low"], percent=True),
+                specificity_high=_format_metric(row["specificity_ci95_high"], percent=True),
+            ))
+    lines += [
+        "",
+        "Kappa has no interval here: a binomial Wilson interval would be invalid "
+        "for chance-corrected agreement. A paired bootstrap must be specified "
+        "separately if an interval is needed for publication.",
+        "",
         "## Confusion matrices",
         "",
         "| Task | TP | TN | FP | FN | Undecidable | Wrong text | Missing | Unlabelled judgments |",
@@ -354,18 +659,125 @@ def write_evaluation(output_dir: Path, results: Iterable[TaskEvaluation], *,
             f"| {row['task']} | {row['models'] or '—'} | {row['pass_names'] or '—'} |")
     lines += [
         "",
-        "The current `judgments` table does not store effort or runner route. "
-        "Do not infer high/medium comparability from this report alone; verify "
-        "historical effort from each run's `run_environment.json` until request-level "
-        "provenance migration is implemented.",
+        "| Task | Configuration | Effort(s) | Route(s) | Transport(s) | Run ID(s) | Source(s) |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for row in summaries:
+        lines.append(
+            "| {task} | {status} | {efforts} | {routes} | {transports} | {run_ids} | {sources} |".format(
+                task=row["task"], status=row["configuration_status"],
+                efforts=row["efforts"] or "none", routes=row["routes"] or "none",
+                transports=row["transports"] or "none", run_ids=row["run_ids"] or "none",
+                sources=row["configuration_sources"] or "none"))
+    lines += [
+        "",
+        "Only `comparable` means one fully recorded configuration. Mixed or legacy "
+        "rows remain useful descriptive evidence, but are refused for DC17/G11 "
+        "promptbook-history/plateau comparisons.",
+        "",
+        "## Confidence calibration and review thresholds",
+        "",
+        "Confidence is confidence in the chosen decision. `confidence_calibration.csv` "
+        "contains fixed bins; `confidence_thresholds.csv` treats `confidence < threshold` "
+        "as a review candidate and reports retained binary performance. These are "
+        "descriptive build-set sweeps, not a tuned production threshold.",
         "",
         "## Files",
         "",
-        "- `summary.csv`: one row per task for Excel/R/plotting.",
-        "- `cases.csv`: paper-level truth, prediction, confidence, and error class.",
-        "- `summary.json`: machine-readable aggregate metrics.",
+        "- `summary.csv`: one row per task for Excel/R/plotting, including configuration and intervals.",
+        "- `cases.csv`: paper-level truth, prediction, confidence, error class, run, and response ID.",
+        "- `confidence_calibration.csv`: fixed-bin calibration data.",
+        "- `confidence_thresholds.csv`: review-load/retained-performance sweep from 0.50 to 0.95.",
+        "- `summary.json`: machine-readable aggregates, calibration, and threshold rows.",
     ]
     report.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     return {"summary_csv": summary_csv, "cases_csv": cases_csv,
+            "calibration_csv": calibration_csv, "thresholds_csv": thresholds_csv,
             "summary_json": summary_json, "report": report}
+
+
+def require_history_eligible(results: Iterable[TaskEvaluation]) -> None:
+    """Refuse a DC17 history publication for mixed or unknown configuration."""
+    invalid = []
+    for result in results:
+        summary = result.summary_row()
+        if summary["configuration_status"] != "comparable":
+            invalid.append(
+                f"{result.task}: {summary['configuration_status']} "
+                f"(runs={summary['run_ids'] or 'none'})")
+    if invalid:
+        raise ConfigurationRefusal(
+            "Refusing to append promptbook accuracy history: a DC17/G11 row must "
+            "come from one fully provenanced configuration. " + "; ".join(invalid))
+
+
+def append_accuracy_history(history_path: Path, results: Iterable[TaskEvaluation], *,
+                            generated_at: str | None = None) -> Path:
+    """Explicitly append clean configuration rows to promptbook history.
+
+    All results are validated before the file opens for write.  A changed
+    configuration is retained as a new observation but marked as an
+    incomparable boundary, so a plateau calculation cannot bridge it.
+    """
+    results = list(results)
+    require_history_eligible(results)
+    generated_at = generated_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    history_path = Path(history_path)
+    existing: list[dict[str, str]] = []
+    if history_path.is_file():
+        with history_path.open(encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            if reader.fieldnames != HISTORY_COLUMNS:
+                raise ConfigurationRefusal(
+                    f"{history_path} has an incompatible history header; migrate it "
+                    "deliberately instead of silently changing a published record")
+            existing = list(reader)
+
+    rows: list[dict[str, Any]] = []
+    for result in results:
+        summary = result.summary_row()
+        config_fingerprint = summary["configuration_fingerprints"]
+        duplicate = any(
+            row["task"] == result.task and row["split"] == result.split and
+            row["promptbook_version"] == summary["promptbook_version"] and
+            row["run_ids"] == summary["run_ids"]
+            for row in existing)
+        if duplicate:
+            raise ConfigurationRefusal(
+                f"{result.task}/{result.split} with these run IDs is already in "
+                f"{history_path}; refusing a duplicate history observation")
+        previous = next((row for row in reversed(existing)
+                         if row["task"] == result.task and row["split"] == result.split),
+                        None)
+        comparable_to_previous = bool(previous and
+                                      previous["configuration_status"] == "comparable" and
+                                      previous["configuration_fingerprint"] == config_fingerprint)
+        if previous is None:
+            note = "first fully-provenanced observation for this task/split"
+        elif comparable_to_previous:
+            note = "same configuration as previous row; eligible for DC17 comparison"
+        else:
+            note = "configuration changed; DC17 comparison to previous row is forbidden"
+        rows.append({
+            "generated_at": generated_at,
+            "task": result.task,
+            "split": result.split,
+            "promptbook_version": summary["promptbook_version"],
+            "eligible": summary["eligible"],
+            "scored": summary["scored"],
+            "accuracy": summary["accuracy"],
+            "sensitivity": summary["sensitivity"],
+            "specificity": summary["specificity"],
+            "cohen_kappa": summary["cohen_kappa"],
+            "configuration_status": summary["configuration_status"],
+            "configuration_fingerprint": config_fingerprint,
+            "run_ids": summary["run_ids"],
+            "configuration_sources": summary["configuration_sources"],
+            "comparable_to_previous": "yes" if comparable_to_previous else "no",
+            "comparison_note": note,
+        })
+
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+    _write_csv(history_path, columns=HISTORY_COLUMNS, rows=[*existing, *rows])
+    return history_path

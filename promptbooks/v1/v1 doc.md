@@ -1,9 +1,11 @@
 # Promptbook v1 — version log
 
 Template: [`_TEMPLATE doc.md`](../_TEMPLATE%20doc.md). **Tables, not prose.**
-Machine-readable numbers live in
-`results/04_classification/promptbook_accuracy_history.csv`; anything below must
-match a row there.
+Machine-readable **reporting** numbers live in
+`results/04_classification/promptbook_accuracy_history.csv`; any reportable row
+below must match one there. Paid raw-response provenance is separately retained
+in its round environment and raw artifacts, even before it qualifies for a
+history row.
 
 ---
 
@@ -14,21 +16,21 @@ match a row there.
 | Version | `v1` |
 | Created | 2026-08-27 |
 | Parent | `v0` |
-| Git commit | set when v1 is frozen |
+| Git commit | captured in each run environment; v1 must not be edited in place |
 | Model used to build it | none — written from Deb's rulings and a harness finding, not from misses |
 | Route | Reading Room (`scripts/20_reading_room.py`) |
-| Status | **active**, never run |
+| Status | **run-frozen**; paid Reading Room use exists, but no homogeneous reporting-history row yet |
 
-**No accuracy delta is reportable for this version.** `v0` was never scored —
-`promptbook_accuracy_history.csv` does not exist yet, so there is no row for this
-one to be compared against. The repo rule's "commit the version bump with the
-accuracy delta" is satisfied vacuously here and resumes at `v2`. **`v1` is the
-first version that will be run.**
+**No DC17 accuracy delta is reportable for this version yet.** `v0` was never
+scored and `promptbook_accuracy_history.csv` does not exist, so there is no
+configuration-homogeneous history row to compare. That does not make `v1`
+editable: paid raw and accepted evidence already binds its exact hash. Any later
+wording or criterion change goes in `v2`; a later homogeneous medium-effort run
+may create the first reporting row.
 
 **`v1` is not shaped by a miss.** Every change below comes from Deb's 2026-08-27
 rulings on criteria `v0` flagged as contested, plus one environment change from a
-harness probe. Nothing here was written against a round result, because no round
-has been run. `v2` is the first version that can be.
+harness probe. No change below was written against the later paid round results.
 
 ## This directory absorbed the old `v2`
 
@@ -37,7 +39,7 @@ has been run. `v2` is the first version that can be.
 | What happened | An earlier `v1` and `v2` were cut on 2026-08-27, hours apart. Neither was ever run. They were collapsed into this single `v1` the same day |
 | Why | Both bumps were made before any paper was judged, so neither has a number attached and neither can be compared to anything. Three directories recording one un-run state is version noise, not provenance |
 | What was lost | Nothing. Both are in git history — `91403fa` cut the old `v1`, `37130f4` the old `v2` |
-| The rule going forward | **A new `promptbooks/vN/` requires a human-verified rubric change** — a criterion a reviewer has ruled on, or a rule written from a pattern of real misses. Wording, formatting and token-trimming edits happen **in place** until the version has been run against something. Once a version has a row in `promptbook_accuracy_history.csv` it is frozen for good, because from then on an edit invalidates a published number. See DC15 |
+| The rule going forward | Before a first paid/raw request, **a new `promptbooks/vN/` requires a human-verified rubric change** — a criterion a reviewer has ruled on, or a rule written from a pattern of real misses. Wording, formatting, and token trimming may happen in place only in that draft phase. The first paid/raw request makes the version run-frozen; a history row is a later reporting milestone, not the event that freezes paid evidence. See DC53 |
 
 ## What changed, and why
 
@@ -65,13 +67,14 @@ decides a paper.
 
 ## Run environment pinned by this version
 
-Recorded per round in `run_environment.json`; a change to any row after `v1` has
-been run is a `v2`.
+Recorded per round in `run_environment.json`. A configuration change creates a
+separate provenance stratum and cannot be pooled for G11/DC17; it requires `v2`
+only when the promptbook bytes change.
 
 | | |
 |---|---|
 | Model | `claude-sonnet-5` (complete ID — no dated snapshot is exposed by the CLI or the API) |
-| Effort | `high` — pinned identically on the Reading Room (`--effort high`) and the Batch API (`output_config.effort`) |
+| Effort | Legacy Reading Room round 1 used `high`; all new production calls are pinned to `medium`. They share frozen v1 text but are distinct configuration strata, and mixed reuse is exploratory only |
 | Thinking | adaptive, the only on-mode on Sonnet 5. Not separately configurable from the CLI; `budget_tokens` is removed on this model |
 | System prompt | `ReadingRoom/prompts/system_prompt.txt`, pinned and `sha256` logged. **Not** the Claude Code default. One line, because a newline in it silently drops later argv flags on Windows |
 | Tools | none — `--tools ""`, `permissions.deny`, and an assertion on the CLI's reported `tools` array |
@@ -99,7 +102,11 @@ Run 1 is a proof of concept, so it uses the first rounds only, not all 7.
 
 ## Rounds run against this version
 
-None. `v1` has never been executed.
+`v1` has paid Reading Room evidence: exclusion round 1 has 49 accepted
+judgments; data-analysis round 1 has 49 raw replies, of which 40 passed the
+checker and await persistence, one failed the reasoning-length/schema check,
+and eight had process failures. These legacy high-effort results are evidence
+of run-freezing, not reportable medium-effort or plateau rows.
 
 | Round | Date | Split | Task | n | Accuracy | Δ vs prev | `undecidable` | `wrong_text` | Parse retries |
 |---|---|---|---|---|---|---|---|---|---|
@@ -107,7 +114,7 @@ None. `v1` has never been executed.
 
 ## Misses not generalized
 
-None yet — nothing has been run.
+No v1 miss has yet been generalized into a rule after the paid rounds.
 
 | Paper | Task | Human said | Model said | Why it was left alone |
 |---|---|---|---|---|

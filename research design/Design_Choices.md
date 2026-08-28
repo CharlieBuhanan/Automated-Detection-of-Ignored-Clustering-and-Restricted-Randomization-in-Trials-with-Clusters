@@ -84,39 +84,52 @@ Everything else has been settled; the decisions are recorded as DC1-DC55 below.
 - **DC13 — `reasoning` and `promptbook_evidence` are separate fields.** `reasoning` is the argument;
   `promptbook_evidence` is which rule it rests on. Keeping them apart makes a miss diagnosable: rule
   misapplied vs. missing vs. wrong — three different fixes.
-- **DC14 — Structured output, validated by pydantic, on both routes.** API runs force it with
-  `tool_choice`, which makes a malformed reply impossible. The `claude -p` CLI route (DC22) cannot
-  force it, so there the prompt asks for JSON and the wrapper validates and re-prompts on a parse
-  failure. Free-text JSON is never *trusted* — it is always parsed into the same pydantic model.
+- **DC14 — Schema-constrained output, validated locally, on both routes.** API classification requests
+  use native JSON Schema structured output only: `output_config.format` with
+  `type: "json_schema"`, the task's schema, and `output_config.effort: "medium"`. They do **not**
+  use a client tool declaration or `tool_choice`. The `claude -p` CLI route (DC22) cannot impose that
+  provider constraint, so its prompt asks for JSON and the wrapper validates and re-prompts on a parse
+  failure. Provider-constrained syntax is still not scientific validation: every reply is parsed into
+  the same Pydantic model and passes token-binding, rule-ID, and task-semantic checks. There is no
+  silent fallback from the API route to free-text JSON or forced tool use.
 - **DC24 — Every parse failure and retry is logged**, with paper_id and attempt count, never silently
   retried. Retries are not randomly distributed: a paper that makes the model hedge or wrap its JSON
   in prose is usually a genuinely borderline paper, so they concentrate on exactly the cases accuracy
-  is most sensitive to. Unlogged that is invisible bias; logged it is a reportable rate.
+  is most sensitive to. Unlogged that is invisible bias; logged it is a reportable rate. After the
+  configured attempts are exhausted, record a terminal `review_required` / retry-exhausted state and
+  preserve all raw replies. Do **not** invent an `undecidable` judgment: that is a model abstention,
+  not a transport or parsing failure (DC12).
 
 ### Method and storage
 
 - **DC15 — Promptbooks are markdown in `promptbooks/vN/`, one directory per version.** Built
-  empirically from misses, not written up front. `promptbooks/CURRENT` names the active version; a
-  rule change means copying `vN/` to `vN+1/`, never editing in place, because a judgment records
-  `promptbook_version` and a rule that moved under a fixed version makes every earlier judgment
-  unreproducible. Each version bump is its own commit with the accuracy delta in the message, and
-  each carries a tables-only `vN doc.md` recording what changed, why, and which papers it was
-  written against. **Amended by DC53.**
-- **DC53 — A version freezes when it is *run*, not when it is written, and a new directory needs a
-  human-verified rubric change.** DC15 as originally stated made every edit a version bump, which
-  produced an un-run `v1` and an un-run `v2` within hours of each other on 2026-08-27, neither with a
-  number attached and neither comparable to anything. They were collapsed back into one `v1`. Two
-  rules replace the blanket one:
-  1. A version is frozen once it has a row in `results/04_classification/promptbook_accuracy_history.csv`.
-     After that DC15 applies in full and unamended — an edit would invalidate a published number.
-  2. Before that, edits happen **in place**. A new `vN+1/` requires a **human-verified rubric
-     change**: a criterion a reviewer has ruled on, or a rule written from a pattern of misses
-     (DC23 — never one paper). Wording, formatting and token-trimming are not rubric changes.
+  empirically from misses, not written up front. `promptbooks/CURRENT` names the active version; after
+  a version is run-frozen, a rule change means copying `vN/` to `vN+1/`, never editing in place,
+  because a judgment records `promptbook_version` and a rule that moved under a fixed version makes
+  every earlier judgment unreproducible. Each version bump is its own commit; include an accuracy delta in the message only
+  when a comparable reporting row exists. Each version carries a tables-only `vN doc.md` recording
+  what changed, why, and which papers it was written against. **Amended by DC53.**
+- **DC53 — A version has separate draft, run-frozen, and reporting states.** DC15 as originally
+  stated made every edit a version bump, which produced an un-run `v1` and an un-run `v2` within hours
+  of each other on 2026-08-27, neither with a number attached and neither comparable to anything. They
+  were collapsed back into one `v1`.
 
-  **What this costs:** the working tree no longer holds a directory per draft state, so an
-  intermediate wording of an un-run promptbook is recoverable from git history rather than from
-  `ls`. That is the intended trade — the thing DC15 protects is the link between a *number* and the
-  bytes that produced it, and an un-run version has no number to protect.
+  1. A version is a **draft** until the first paid/raw model request is launched. Draft edits happen
+     **in place**. A new `vN+1/` during this phase requires a **human-verified rubric change**: a
+     criterion a reviewer has ruled on, or a rule written from a pattern of misses (DC23 — never one
+     paper). Wording, formatting, and token trimming are not rubric changes.
+  2. At the first paid/raw request, capture the promptbook hash and make the version **run-frozen**.
+     It is immutable from then on, even if every reply later fails validation. This preserves the bytes
+     needed to validate, retry, reuse, and audit the paid raw evidence. Any subsequent wording or rule
+     change copies `vN/` to `vN+1/`.
+  3. A row in `results/04_classification/promptbook_accuracy_history.csv` is a separate
+     **reporting** milestone: it may be added only for an accepted, configuration-homogeneous,
+     comparable result. It does not make an already run-frozen version mutable again, nor does the
+     absence of a history row permit an in-place edit.
+
+  **What this costs:** the working tree does not hold a directory per pre-run draft state, so a draft's
+  intermediate wording is recoverable from git history rather than from `ls`. Once money has been
+  spent, the bytes are protected independently of whether a reportable accuracy row exists.
 - **DC16 — Opus builds, Sonnet runs.** Opus 5 for the promptbook loop (one-time, high-stakes); Sonnet 5
   for the full run with an Opus second pass on low confidence. Every promptbook gets a Sonnet check
   once it plateaus on Opus — otherwise the gap surfaces after thousands of calls.
@@ -196,9 +209,9 @@ Everything else has been settled; the decisions are recorded as DC1-DC55 below.
   behind a flag saying the model is seeing a paper *and* a correction. Concatenation happens at
   prompt-assembly time, so DC6 and DC7 hold — the cache still records exactly what was parsed.
 - **DC35 — One promptbook file per task; the wrapper adapts it per route.** The file is the single
-  source of truth. For an API run the answer-format table becomes the forced `tool_choice` schema;
-  for a CLI run it is rendered as a JSON instruction and repeated after the article text. The
-  criteria are byte-identical either way, so the two routes cannot drift.
+  source of truth. For an API run the answer-format table becomes the native
+  `output_config.format` JSON Schema; for a CLI run it is rendered as a JSON instruction and repeated
+  after the article text. The criteria are byte-identical either way, so the two routes cannot drift.
 - **DC36 — Extracted text is scanned for bad parses before any classification spend.** Seven offline
   checks (`scripts/11_scan_text_integrity.py`, PLAN.md step 2b). Thresholds were tuned against their
   own false positives, which outnumbered true positives 11:1 on the first pass — the report records

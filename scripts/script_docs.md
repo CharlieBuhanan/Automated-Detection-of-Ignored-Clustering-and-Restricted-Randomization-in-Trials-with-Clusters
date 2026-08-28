@@ -95,3 +95,5 @@ Read-only. It never calls a model and never changes `data/review.db`.
 - Keep missing, `undecidable`, `wrong_text`, and unlabelled rows visible
 - Calculate the confusion matrix, accuracy, sensitivity, specificity, precision, F1, balanced accuracy, and Cohen's kappa
 - Write a Markdown dashboard, summary CSV/JSON, and paper-level cases CSV
+- Produce a read-only snapshot only: it does not append `promptbook_accuracy_history.csv` or make a DC17/G11 plateau claim
+- Once request-level route/effort/run/prompt-hash provenance is migrated, require a homogeneous configuration before any explicit history append; label legacy-high/new-medium reuse as exploratory mixed configuration
