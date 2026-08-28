@@ -4,6 +4,7 @@ WHAT IT DOES
     Reads the raw files `20_reading_room.py` saved and puts each one through the
     same ordered gauntlet, every step assuming the previous one passed:
 
+        0.  collapse index.csv to the LATEST attempt per paper
         1.  exit code 0                        else -> retry ledger
         2.  ZERO tool_use / tool_result        else -> DISCARD THE WHOLE ROUND
         3.  JSON parses (note a ``` fence)
@@ -79,6 +80,41 @@ def read_csv(path: Path) -> list[dict]:
         return list(csv.DictReader(handle))
 
 
+def latest_attempt_per_paper(index: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Collapse the append-only index to the one attempt that counts per paper.
+
+    `index.csv` is appended to, never rewritten, so after a `--resume` a paper's
+    earlier failure still sits above its later success. Scoring every row reports
+    the same paper twice -- once ok, once as a process failure -- and re-logs to
+    the retry ledger a failure the rerun already cleared. That corrupts DC24's
+    retry rate at the exact moment it is meant to be read, and DC24 is only
+    meaningful if the ledger says which failures were real.
+
+    "Latest" cannot key on `attempt` alone: nothing increments it (MAX_ATTEMPTS
+    is defined but unused, so every row a resumed paper gets is `attempt 1`
+    again). Append order is the real chronology, so file position is what breaks
+    the tie -- with `attempt` and `started_at` ahead of it, so this keeps working
+    unchanged the day a real retry loop starts numbering them.
+
+    Returns (kept, superseded). The superseded rows are not discarded silently:
+    main() prints the count, and the raw files behind them stay on disk.
+    """
+    best: dict[str, tuple[int, str, int]] = {}
+    for position, row in enumerate(index):
+        try:
+            attempt = int(row.get("attempt") or 0)
+        except (TypeError, ValueError):
+            attempt = 0
+        key = (attempt, row.get("started_at") or "", position)
+        paper_id = row.get("paper_id", "")
+        if paper_id not in best or key > best[paper_id]:
+            best[paper_id] = key
+    winners = {key[2] for key in best.values()}
+    kept = [row for position, row in enumerate(index) if position in winners]
+    superseded = [row for position, row in enumerate(index) if position not in winners]
+    return kept, superseded
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Validate a Reading Room round and write its judgments.")
@@ -97,6 +133,7 @@ def main() -> int:
     index = read_csv(raw_dir / "index.csv")
     if not index:
         raise rr.Refuse(f"{raw_dir / 'index.csv'} is empty: nothing to check")
+    index, superseded = latest_attempt_per_paper(index)
 
     # G1, before anything is read: a round nobody can trace back to the model,
     # effort, CLI version and prompt hashes that produced it is not a reportable
@@ -129,6 +166,9 @@ def main() -> int:
     print(f"{bar}\nCHECK RESPONSES -- {args.task} round {args.round}\n{bar}")
     print(f"  promptbook : {version} ({len(known_rules)} rules)")
     print(f"  responses  : {len(index)}")
+    if superseded:
+        print(f"  superseded : {len(superseded)} earlier attempt(s) ignored "
+              f"(latest attempt per paper; raw files kept on disk)")
     print(f"  ran under  : {environment.get('model')} / effort "
           f"{environment.get('effort')} / CLI "
           f"{environment.get('claude_code_version')} / commit "
