@@ -1,4 +1,4 @@
-# Promptbook v1 — version log
+# Promptbook v2 — version log
 
 Template: [`_TEMPLATE doc.md`](../_TEMPLATE%20doc.md). **Tables, not prose.**
 Machine-readable numbers live in
@@ -11,98 +11,63 @@ match a row there.
 
 | | |
 |---|---|
-| Version | `v1` |
+| Version | `v2` |
 | Created | 2026-08-27 |
-| Parent | `v0` |
-| Git commit | set when v1 is frozen |
-| Model used to build it | none — written from Deb's rulings, not from misses |
-| Route | — |
+| Parent | `v1` |
+| Git commit | set when v2 is frozen |
+| Model used to build it | none — written from a harness finding, not from misses |
+| Route | Reading Room (`scripts/20_reading_room.py`) |
 | Status | **active**, never run |
 
-**v1 is still not shaped by a miss.** Every change below comes from Deb's
-2026-08-27 rulings on criteria v0 flagged as contested, not from a round result.
-v2 is the first version that can be written against actual disagreements.
+**No accuracy delta is reportable for this bump.** `v1` was frozen and never
+scored — `promptbook_accuracy_history.csv` does not exist yet, so there is no
+`v1` row for a `v2` row to be compared against. The repo rule's "commit the
+version bump with the accuracy delta" is satisfied vacuously here and resumes at
+`v3`. **v2 is the first version that will be run.**
 
 ## What changed, and why
 
 | Rule | Change | Reason | Papers it corrects | Round |
 |---|---|---|---|---|
-| E3 stepped wedge | **OFF → ON** | Deb ruled stepped wedge is an exclusion (DC48). v0 kept them because NHLBI excluded 9 but kept and scored 5, and a wrong exclusion is unrecoverable (DC11); Deb settled the criterion rather than the inconsistency | 9 rows NHLBI excluded for it | — |
-| E17 random duplicate drop | **wording strengthened** | Deb confirmed 2026-08-27: the model must **never** drop a paper at random, for any reason. Generalized from "not this criterion" to "never randomly, ever" | — | — |
-| D14 longitudinality | **CONTESTED → settled, does not count** | Deb: follow Ignore02 rule 6, which counts only clustering and restricted randomization (DC49). Also added explicitly to D13's *must not count* list | — | — |
-| P17 longitudinality | **CONTESTED → settled, does not count** | Same ruling, same fold into P16. v0 left this one contested in parallel with D14 | — | — |
-| E5 secondary analysis | unchanged, **marked confirmed** | Deb confirmed self-declared-only is what she wants for now, knowingly incomplete (DC28) | — | — |
-| P2 / D3 protocol citation | unchanged, already confirmed | Carried from v0 (DC40) | — | — |
+| *(none — no criterion changed)* | — | Every numbered rule is byte-identical to `v1` | — | — |
+| **Prompt block: new "Your reading conditions" paragraph** (all three tasks) | **added** | The room's isolation was true but unstated. Under `v1` the model was told nothing about its environment, so a refusal or a hedge ("I would need to check the protocol") was indistinguishable from a judgment. Stating the conditions makes the abstention rules (`undecidable`, `wrong_text`) mean what they say: no further information is reachable, so a hard call is still a call | — | — |
+
+## Why the prompt changed at all
+
+| Trigger | Detail |
+|---|---|
+| Harness probe, 2026-08-27 | CLI 2.1.197 `system/init` returns `"tools":[]` under `--tools ""`. The "no tools" claim in the prompt is now **verified**, not asserted — see `ReadingRoom/README.md` |
+| Run-environment change | `v2` is the first version run with a **pinned minimal system prompt** replacing Claude Code's ~12,200-token agentic default. Without the default persona the model no longer has any implicit statement of its situation, so the promptbook has to carry it |
+| Rule for the future | The reading-conditions paragraph is **environment description, not a criterion.** It is never cited in `promptbook_evidence` and never decides a paper. A change to it is still a version bump, because it changes the bytes sent |
+
+## Run environment pinned by this version
+
+Recorded per round in `run_environment.json`; a change to any row is a `v3`.
+
+| | |
+|---|---|
+| Model | `claude-sonnet-5` (complete ID — no dated snapshot is exposed by the CLI or the API) |
+| Effort | `high` — pinned identically on the Reading Room (`--effort high`) and the Batch API (`output_config.effort`) |
+| Thinking | adaptive, the only on-mode on Sonnet 5. Not separately configurable from the CLI; `budget_tokens` is removed on this model |
+| System prompt | pinned minimal, stored in the repo, `sha256` logged. **Not** the Claude Code default |
+| Tools | none — `--tools ""`, `permissions.deny`, and an assertion on the CLI's reported `tools` array |
+| Turns | `--max-turns 1` |
 
 ## Rounds available
 
-Cut 2026-08-26 by `scripts/17_assign_build_rounds.py` into
-`results/04_classification/build_rounds.csv`, fixed before any judging so no round can be
-re-drawn after seeing a result (DC47). Membership is deterministic from `sha256(seed + paper_id)`.
+Unchanged from `v1`. Cut 2026-08-26 by `scripts/17_assign_build_rounds.py` into
+`results/04_classification/build_rounds.csv`, fixed before any judging so no
+round can be re-cut to flatter a number (DC47).
 
-| Task | Build papers | Rounds | Shape |
-|---|---:|---:|---|
-| exclusion | 338 | 7 | 6×50 + 38, each **18 survivor / 32 excluded** |
-| power_analysis | 123 | 3 | 50 / 50 / 23 |
-| data_analysis | 123 | 3 | 50 / 50 / 23 |
-
-Run 1 is a proof of concept, so it uses the first rounds only, not all 7.
-
-**Holdout shrank to 144 (52 survivors)** on 2026-08-27 when `XHFTHUCG` was dropped to the
-expert-review pile (DC50). Build is untouched at 338, so no round changed size — a dropped paper
-shrinks its round, it never triggers a re-cut (DC47).
-
-## Rounds run against this version
-
-None. v1 has never been executed.
-
-| Round | Date | Split | Task | n | Accuracy | Δ vs prev | `undecidable` | `wrong_text` | Parse retries |
-|---|---|---|---|---|---|---|---|---|---|
-| — | — | — | — | — | — | — | — | — | — |
-
-## Misses not generalized
-
-None yet — nothing has been run.
-
-| Paper | Task | Human said | Model said | Why it was left alone |
-|---|---|---|---|---|
+| Task | Rounds | Sizes |
+|---|---|---|
+| exclusion | 7 | 6×50 + 38, less the three that run short after script 18 |
+| power_analysis | 3 | 50 / 50 / 23 |
+| data_analysis | 3 | 50 / 50 / 23 |
 
 ## Known expected misses
 
-Cases where the promptbook is *deliberately* wrong against the human labels, so they are not
-mistaken for promptbook faults.
-
-> **Read this before proposing any promptbook rule from a stepped-wedge miss.** Deb ruled
-> 2026-08-27 that stepped wedge **is** an exclusion (DC48), so from v1 on the model excludes them.
-> NHLBI applied that criterion inconsistently — 9 excluded, **5 kept and fully scored** — and the 5
-> stay in the scored set as accepted misses by decision, *not* dropped (DC51). So a miss whose
-> `promptbook_evidence` is `E3` is **presumed correct until checked against the list below**: the
-> label is what is wrong, not the rule. Never write, loosen, or revert a rule off one of these five.
-> They are also not evidence for DC23's pattern requirement — exclude them before counting a shape
-> as repeated, or the loop will "learn" its way back to E3 OFF from five known-bad labels.
-
-> **The same caution applies to longitudinality.** D14/P17 now say repeated measures does not make
-> an analysis incorrect (DC49). Any miss where the label says `no` and the reviewer's comment names
-> repeated measures, time, or exchangeability is expected — check `data_comment` before treating it
-> as a rule fault.
-
-| Shape | Why the promptbook disagrees on purpose | Papers |
+| Task | Papers | Why the label disagrees on purpose |
 |---|---|---|
-| Stepped-wedge kept and scored by NHLBI | E3 ON (DC48). These 5 are labelled *keep*; the model excludes them. Accepted misses, kept in the scored set (DC51) | 5 — `3JVAWNIE` Bernabe-Ortiz, `TT7PIVLD` Ciccone, `7NYXSVAI` Douin (build); `QMLU4TM8` Courtright, `8H9BUEWH` Fiscella (holdout) |
-| Longitudinality scored incorrect | D14/P17 settled (DC49): follow Ignore02 rule 6. NHLBI scored repeated-measures errors incorrect anyway | 1 known — `MQF2Y5AM` Altinger (holdout); more may surface, 41 labelled rows carry `n_long` ≥ 2 |
-
-**Cost floor, exclusion task:** −0.9pp on build (3 of 338) and −1.4pp on holdout (2 of 144).
-Compare a round's Δ against that floor, not against 0 — it is most of one plateau step (DC17).
-
-`XHFTHUCG` (Cattamanchi) was on v0's list and is **no longer an expected miss**: it left the corpus
-entirely on 2026-08-27 (DC50), so it is not scored at all.
-
-## Plateau check
-
-Plateau = two consecutive rounds each improving accuracy by under 1pp (DC17).
-
-| Task | Last two Δ | Plateaued? | Sonnet check run? | Sonnet accuracy |
-|---|---|---|---|---|
-| exclusion | — | no | no | — |
-| power_analysis | — | no | no | — |
-| data_analysis | — | no | no | — |
+| exclusion | *(none)* | The 5 analyzed stepped-wedge papers NHLBI kept were moved to the expert-review pile by `scripts/18_drop_expert_review.py` (DC52), so `v2` carries no accepted-miss floor |
+| data_analysis | `MQF2Y5AM` Altinger | D14: NHLBI scored it incorrect for longitudinality; Deb ruled longitudinality does not count (DC49) |

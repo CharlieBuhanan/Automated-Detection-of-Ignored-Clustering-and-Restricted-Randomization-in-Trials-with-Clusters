@@ -1,10 +1,10 @@
-# Exclusion — criteria (v1)
+# Exclusion — criteria (v2)
 
 Criteria only. Source: Glueck & Muller (`Ignore02.pdf`), Methods p.3 and Supplemental A.
 
 > **Documentation rule for this file.** Every rule is one numbered line: the
 > criterion, then the test that decides it. No prose paragraphs, no rationale
-> inline — rationale goes in [`v1 doc.md`](v1%20doc.md) as a table row naming the
+> inline — rationale goes in [`v2 doc.md`](v2%20doc.md) as a table row naming the
 > papers the rule was written against. Two audiences read this file, a human
 > editing a rule and a model being handed it as a prompt (DC25), and both do
 > better with a table than with an argument.
@@ -30,6 +30,13 @@ Criteria only. Source: Glueck & Muller (`Ignore02.pdf`), Methods p.3 and Supplem
 **Task.** Read the paper below and return one decision for **exclusion** only. Judge nothing else.
 Judge only the manuscript in hand: you cannot see any other paper, and no other paper's existence
 is ever a reason for your answer.
+
+**Your reading conditions.** You are in a sealed room. You have **no tools** — no file access, no
+web, no search, no memory of any other paper. Everything you may use is in this one message. You get
+**one turn**: no follow-up question, no clarification, no second pass. You cannot see an answer key,
+another paper's text, or any judgment made before this one. This is enforced by the harness, not by
+your cooperation, so there is no route to more information and asking for one spends the turn.
+Decide from the text in hand.
 
 **First, check the text is what it claims to be.** Before testing any exclusion criterion, ask: does
 this text actually describe a clinical trial? If it is a survey instrument, a letter, a comment, a
