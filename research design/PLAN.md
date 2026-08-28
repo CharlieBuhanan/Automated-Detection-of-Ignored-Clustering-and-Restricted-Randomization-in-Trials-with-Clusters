@@ -141,7 +141,37 @@ have plateaued. Those wait for run 2.
       Wording, formatting and token trimming are not rubric changes.
       Recorded in [Design_Choices.md](Design_Choices.md) as DC53 and in
       [.claude/CLAUDE.md](../.claude/CLAUDE.md)'s Repo Rules.
-- [ ] Still unwritten: `promptbook_builder.py`, `evaluate.py`, `two_pass.py`, and the run log /
+- [x] **Reuse every valid judgment already purchased, decided 2026-08-28.** New build-set planning
+      must anti-join against accepted judgments before creating any API request. This definitely
+      includes the 49 validated `exclusion` judgments already persisted in `data/review.db`, and it
+      includes valid `power_analysis` or `data_analysis` judgments wherever they are available.
+      A raw response is not reusable merely because the process exited 0: it becomes accepted only
+      after schema, semantic, token-binding, promptbook-version, and provenance checks pass and the
+      judgment is persisted. Current inventory: 49 exclusion judgments are accepted; data-analysis
+      round 1 contains 49 paid raw responses (41 exit-0 candidates and 8 process failures) but has
+      not yet been checked or written; no power-analysis responses exist. Validate and persist the
+      data candidates before the API planner decides what is missing.
+
+      Reuse is task-granular. For a build survivor with both analysis judgments, send no request;
+      with only data, send a legacy power-only request; with only power, send data-only; with
+      neither, use the combined route. This is an explicit cost-saving exception to the normal
+      combined-route preference. Preserve each judgment's original model/effort/route provenance.
+      The existing calls ran at `high` while all new calls run at `medium`, so a pooled reuse-first
+      build score is developmental and must be reported as mixed-configuration. It cannot establish
+      a DC17/G11 plateau or be described as a clean medium-effort estimate. The final holdout remains
+      one untouched, internally consistent medium-effort run.
+- [ ] **Implement the build-set Message Batches API path and offline validation.** Full architecture,
+      paid-call guards, reuse matrix, artifact layout, evaluation contract, cost controls, and test
+      cases are in [API_BUILD_SET_IMPLEMENTATION.md](API_BUILD_SET_IMPLEMENTATION.md). This handoff
+      stops before any synchronous preflight or batch submission; paid calls require a later,
+      explicit approval after the frozen request manifest and estimated maximum cost are reviewed.
+- [x] **Read-only evaluation dashboard written, 2026-08-28.** `src/evaluate.py` and
+      `scripts/22_evaluate.py` evaluate persisted judgments without calling a model or changing
+      SQLite. They write Markdown, CSV, and JSON reports showing coverage, the yes/no confusion
+      matrix, accuracy, sensitivity, specificity, precision, F1, balanced accuracy, confidence
+      summaries, and Cohen's kappa. The current report lands in
+      `results/04_classification/evaluation/current_build_v1/`.
+- [ ] Still unwritten: `promptbook_builder.py`, `two_pass.py`, and the run log /
       accuracy history in `results/04_classification/`.
 
 ### Write-up and corpus documentation
@@ -789,6 +819,9 @@ and run the combined post-gate power + data route.
 - [x] **`NBBD4EVE`'s parent found and confirmed out of scope** — does not belong in the study (DC38).
 - [ ] Promptbook loop on exclusion against the build split until plateau; Sonnet check
 - [ ] Refactor and validate combined power + data analysis on gate survivors
+- [ ] Validate/persist all reusable Reading Room responses, then freeze the API build-set request
+      manifest after task-granular anti-join (never repurchase an accepted paper/task judgment)
+- [ ] Implement and pass the offline API-build test plan in `API_BUILD_SET_IMPLEMENTATION.md`
 - [ ] Tune the two-pass confidence threshold on the build split
 - [ ] Gate run (job 1), record survivors
 - [ ] Analysis run (job 2) on survivors

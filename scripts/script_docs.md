@@ -85,3 +85,13 @@ Cuts the build split into fixed rounds so two rounds are comparable (DC47).
 - Interleave strata so every 50-window holds both in proportion
 - Cut exclusion into 7 rounds, power/data into 3 each
 - Write results/04_classification/build_rounds.csv
+
+## Script 22 — evaluate persisted judgments
+
+Read-only. It never calls a model and never changes `data/review.db`.
+
+- Select one task or all three, the build or holdout split, and optionally a promptbook version
+- Read the latest persisted judgment per paper/task
+- Keep missing, `undecidable`, `wrong_text`, and unlabelled rows visible
+- Calculate the confusion matrix, accuracy, sensitivity, specificity, precision, F1, balanced accuracy, and Cohen's kappa
+- Write a Markdown dashboard, summary CSV/JSON, and paper-level cases CSV

@@ -34,6 +34,20 @@ python scripts/21_check_responses.py --task exclusion --round 1 --write
 `--task` is `exclusion | power_analysis | data_analysis`. Every flag is in each
 script's `--help`. **Nothing reaches `data/review.db` without `--write`.**
 
+## Evaluate persisted judgments
+
+The evaluator is read-only: it neither calls a model nor changes SQLite. It
+writes a Markdown dashboard plus CSV and JSON artifacts containing coverage,
+the confusion matrix, accuracy, sensitivity, specificity, precision, F1, and
+Cohen's kappa.
+
+```bash
+py -3 scripts/22_evaluate.py --task all --split build --promptbook-version v1
+```
+
+Use `--no-write` to display the same table without creating artifacts. Open
+`summary.csv` or `cases.csv` in Excel/R for plotting and paper-level review.
+
 Needs the CLI on `PATH` (`npm install -g @anthropic-ai/claude-code`), or pass
 `--claude` with a full path. If it is missing the harness refuses before touching
 a single paper.
