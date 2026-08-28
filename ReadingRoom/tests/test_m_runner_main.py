@@ -33,6 +33,8 @@ def test_main_resume_and_force_select_the_right_attempts(monkeypatch, tmp_path, 
 
     monkeypatch.setattr(run, "RAW_ROOT", tmp_path / "raw")
     monkeypatch.setattr(run, "CHECKED_ROOT", tmp_path / "checked")
+    monkeypatch.setattr(run, "ROOT", tmp_path)
+    monkeypatch.setattr(run.rr, "CACHE_DIR", tmp_path / "cache")
     monkeypatch.setattr(run, "read_csv", lambda path: [prior] if path.name == "index.csv" else [])
     monkeypatch.setattr(run.rr, "resolve_promptbook", lambda *a, **k: ("v2", tmp_path / "book.md", "E1"))
     monkeypatch.setattr(run.rr, "load_labels", lambda conn: [])

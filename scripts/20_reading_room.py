@@ -107,7 +107,9 @@ RUN_LOG_COLUMNS = (["paper_id", "token", "task", "round", "stratum", "chars",
                     "duration_seconds"]
                    + rr.PROVENANCE_COLUMNS)                          # group G
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+def configure_stdout() -> None:
+    """Use UTF-8 for the executable without replacing a test runner's capture."""
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 
 def now() -> str:
@@ -515,6 +517,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    configure_stdout()
     try:
         sys.exit(main())
     except rr.Refuse as exc:
