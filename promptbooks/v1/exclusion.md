@@ -1,40 +1,13 @@
 # Exclusion — criteria (v1)
 
-> **Documentation rule for this file.** Every rule is one numbered line: the
-> criterion, then the test that decides it. No prose paragraphs, no rationale
-> inline — rationale goes in [`v1 doc.md`](v1%20doc.md) as a table row naming the
-> papers the rule was written against. Two audiences read this file, a human
-> editing a rule and a model being handed it as a prompt (DC25), and both do
-> better with a table than with an argument.
->
-> **Never edit a frozen version.** To change a rule, copy this directory to the
-> next `vN/`, edit there, update `promptbooks/CURRENT`, and log the change in
-> that version's doc. A judgment records `promptbook_version`, so a rule that
-> changed under a fixed version makes every earlier judgment unreproducible.
+**Objective.** You are screening papers for a systematic review of cluster-randomized trials. You decide whether a paper is eligible to be reviewed at all.
 
-
-`yes` = exclude, `no` = keep. Test E1-E16 in order; first hit decides and goes in
-`promptbook_evidence`. No hit → `no`.
-
-## Prompt
-
-> Everything in this block is sent to the model verbatim, before the paper text.
-> Structure follows ISO-ScreenPrompt (Cao et al. 2024): objective → numbered criteria →
-> article → instructions repeated *after* the article. The repeat is not optional — Cao
-> found instructions placed only before a full text get lost in long context.
-
-**Objective.** You are screening papers for a systematic review of cluster-randomised trials. You decide whether a paper is eligible to be reviewed at all.
-
-**Task.** Read the paper below and return one decision for **exclusion** only. Judge nothing else.
-Judge only the manuscript in hand: you cannot see any other paper, and no other paper's existence
-is ever a reason for your answer.
+**Task.** Read the paper below and return one decision for **exclusion**, based on the criteria below. Judge nothing else.
 
 **Your reading conditions.** You are in a sealed room. You have **no tools** — no file access, no
 web, no search, no memory of any other paper. Everything you may use is in this one message. You get
 **one turn**: no follow-up question, no clarification, no second pass. You cannot see an answer key,
-another paper's text, or any judgment made before this one. This is enforced by the harness, not by
-your cooperation, so there is no route to more information and asking for one spends the turn.
-Decide from the text in hand.
+another paper's text, or any judgment made before this one.
 
 **First, check the text is what it claims to be.** Before testing any exclusion criterion, ask: does
 this text actually describe a clinical trial? If it is a survey instrument, a letter, a comment, a
@@ -42,7 +15,8 @@ form, an abstract-only stub, or anything else that is not itself a study report,
 — do not force it into `yes`/`no`. This is a data problem, not a screening judgment: the wrong PDF
 may have been fetched for this record.
 
-**Criteria.** Otherwise, test the numbered criteria below in order. The first one that matches decides.
+**Criteria.** Otherwise, test the numbered criteria below in order. `yes` = exclude, `no` = keep.
+The first one that matches decides and goes in `promptbook_evidence`. No hit → `no`.
 
 **Think it through step by step** before answering: first confirm the text describes a study at all,
 then work through the criteria in order, say what the paper shows for each, then commit.
@@ -58,13 +32,11 @@ then work through the criteria in order, say what the paper shows for each, then
 
 `undecidable` is an abstention for genuinely unreadable text, **not** for a hard call. A difficult
 paper still gets a `yes` or a `no`. `wrong_text` is a *different* abstention — the text is readable,
-but it isn't the paper. Both route to human review; keeping them separate tells the reviewer which
-kind of check to run (read closely and decide, vs. check Zotero for the right PDF).
+but it isn't the paper.
 
 ---
-## Search-stage
 
-NCI's PubMed query removed these, so no NCI paper carries them; NHLBI's reviewers caught them by hand.
+## Search-stage
 
 1. **E1. Preprint** — no journal version of record.
 2. **E2. Methodology journal** — *BMC Med Res Methodol*, *Comput Stat Data Anal*, *Stat Med*,
@@ -72,24 +44,17 @@ NCI's PubMed query removed these, so no NCI paper carries them; NHLBI's reviewer
 3. **E3. Stepped-wedge design** — exclude. Clusters cross over from control to intervention on a
    staggered schedule, so every cluster receives the intervention and the contrast is partly
    within-cluster over time. *Test: does the design section describe a stepped wedge, a staggered
-   rollout, or sequential crossover of clusters in steps?* Say so in `reasoning`; the label may
-   disagree, and that is expected.
+   rollout, or sequential crossover of clusters in steps?*
 4. **E4. "Secondary" in the title** — literal string test, narrower than E5.
 
-> The query's other term blocklist (`"estimates"`, `"two-group"`, `"formulae"`, and eleven more) is
-> not reproduced. PubMed matched those against a citation record; against full text they would
-> exclude nearly every trial. E8 covers the intent.
-
 ## Full text
-
-The seven reasons Ignore02's reviewers recorded.
 
 5. **E5. Secondary analysis — self-declared only.** Exclude when *this paper* says so: it calls
    itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness,
    process evaluation, or long-term follow-up; **or** it points to another publication for the
    primary result; **or** it reports no primary outcome at all.
    *Test: does the text in front of you say the primary analysis is elsewhere or absent?*
-   **Never infer it from another paper in the corpus** — you cannot see the corpus.
+   **Never infer it from another paper** — you cannot see any other paper.
 6. **E6. Baseline-only** — no post-randomization treatment effect estimated.
 7. **E7. Implementation study** — studies adoption, reach, fidelity, or scale-up rather than the
    effect on participants.
@@ -99,48 +64,25 @@ The seven reasons Ignore02's reviewers recorded.
     *Individuals randomized within existing clusters still counts — keep.*
 11. **E11. Qualitative only** — no quantitative treatment-effect estimate.
 
-## NHLBI additions
+## Further exclusions
 
-12. **E13. Pilot or feasibility study** — exclude. Ignore02 is **silent** on pilots (not among its
-    eight PRISMA reasons); this is an NHLBI addition. **Confirmed by Deb.**
-13. **E14. Cohort study** — E9/E10 renamed.
-14. **E15. Review article** — E8 renamed.
+12. **E13. Pilot or feasibility study** — exclude.
+13. **E14. Cohort study.**
+14. **E15. Review article.**
 15. **E16. Comment, letter, or editorial.**
 
 ## Not a criterion
 
 Both of these are **cross-paper** judgments. You see one paper at a time and cannot know what else
-is in the set, so neither is ever a reason to exclude. Duplicate authors and superseded papers are
-handled in post-hoc data cleaning, not here.
+is in the set, so neither is ever a reason to exclude.
 
-16. **E12. Protocol paper.** NHLBI excluded these because the trial's outcomes paper exists elsewhere
-    in the set. That is a fact about the corpus, not the paper — **never exclude for this.** A
-    protocol paper is judged on its own text like any other. (Ignore02 kept them and scored the data
-    analysis incorrect under D4.)
-17. **E17. Random duplicate drop.** Ignore02 used `randuni` to keep one of several same-first-author
-    papers. A coin flip, unreproducible from text — **never exclude for this.** More generally:
-    **never drop a paper at random, for any reason.** If your only argument for excluding is that
-    some other paper resembles this one, the answer is `no`. **Confirmed by Deb.**
-
-The 41 labelled rows carrying these two reasons were removed from the scored set by
-`scripts/10_drop_nonjudgeable_exclusions.py` rather than counted as misses.
+16. **E12. Protocol paper.** Excluding one requires knowing that the trial's outcomes paper exists
+    elsewhere. That is a fact about a set you cannot see, not about the paper — **never exclude for
+    this.** A protocol paper is judged on its own text like any other.
+17. **E17. Random duplicate drop.** **Never drop a paper at random, for any reason.** If your only
+    argument for excluding is that some other paper resembles this one, the answer is `no`.
 
 ## Abstention
 
 18. **E18.** `undecidable` only when the text is missing, truncated, or unreadable. A hard call is
     still a call.
-
-## Settled
-
-- **E3 is ON as of v1** (Deb, 2026-08-27; DC48). v0 kept stepped-wedge papers because NHLBI applied
-  the criterion inconsistently — 9 excluded, 5 kept and fully scored — and a wrong exclusion is
-  unrecoverable (DC11). Deb settled the criterion rather than the inconsistency. **The 5 kept papers
-  are still labelled *keep*, so this rule disagrees with them on purpose**; they stay in the scored
-  set as accepted misses (DC51) and are listed in [`v1 doc.md`](v1%20doc.md)'s *Known expected
-  misses*. Never revise E3 off one of them.
-- **E12** was retired to *Not a criterion* above: excluding a protocol paper requires knowing its
-  outcomes paper exists, which the model cannot see. **Confirmed by Deb**: the outcomes paper is
-  instead marked incorrect if it cites the protocol for its power or data analysis — see P2/D3.
-- **E17** was retired to *Not a criterion* above. **Confirmed by Deb, 2026-08-27: the model must
-  never drop a paper at random**, for any reason. A coin flip is not a criterion and is not
-  reproducible from text.

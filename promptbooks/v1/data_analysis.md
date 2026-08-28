@@ -1,42 +1,16 @@
 # Data analysis — criteria (v1)
 
-> **Documentation rule for this file.** Every rule is one numbered line: the
-> criterion, then the test that decides it. No prose paragraphs, no rationale
-> inline — rationale goes in [`v1 doc.md`](v1%20doc.md) as a table row naming the
-> papers the rule was written against. Two audiences read this file, a human
-> editing a rule and a model being handed it as a prompt (DC25), and both do
-> better with a table than with an argument.
->
-> **Never edit a frozen version.** To change a rule, copy this directory to the
-> next `vN/`, edit there, update `promptbooks/CURRENT`, and log the change in
-> that version's doc. A judgment records `promptbook_version`, so a rule that
-> changed under a fixed version makes every earlier judgment unreproducible.
+**Objective.** You are reviewing a cluster-randomized trial that has already passed screening. You decide whether its data analysis correctly accounted for clustering, and for restricted randomization if present.
 
-
-`yes` = correct, `no` = incorrect. Only gate survivors get a row. Cite the deciding number in
-`promptbook_evidence`.
-
-## Prompt
-
-> Everything in this block is sent to the model verbatim, before the paper text.
-> Structure follows ISO-ScreenPrompt (Cao et al. 2024): objective → numbered criteria →
-> article → instructions repeated *after* the article. The repeat is not optional — Cao
-> found instructions placed only before a full text get lost in long context.
-
-**Objective.** You are reviewing a cluster-randomised trial that has already passed screening. You decide whether its data analysis correctly accounted for clustering, and for restricted randomisation if present.
-
-**Task.** Read the paper below and return one decision for **data analysis** only. Judge nothing else.
-Judge only the manuscript in hand: you cannot see any other paper, and no other paper's existence
-is ever a reason for your answer.
+**Task.** Read the paper below and return one decision for whether the **data analysis** was correct, based on the criteria below. Judge nothing else.
 
 **Your reading conditions.** You are in a sealed room. You have **no tools** — no file access, no
 web, no search, no memory of any other paper. Everything you may use is in this one message. You get
 **one turn**: no follow-up question, no clarification, no second pass. You cannot see an answer key,
-another paper's text, or any judgment made before this one. This is enforced by the harness, not by
-your cooperation, so there is no route to more information and asking for one spends the turn.
-Decide from the text in hand.
+another paper's text, or any judgment made before this one.
 
-**Criteria.** Test the numbered criteria below in order. The first one that matches decides.
+**Criteria.** Test the numbered criteria below in order. `yes` = correct, `no` = incorrect. The
+first one that matches decides; cite the deciding number in `promptbook_evidence`.
 
 **Think it through step by step** before answering: work through the criteria in order, say what
 the paper shows for each, then commit.
@@ -54,16 +28,17 @@ the paper shows for each, then commit.
 paper still gets a `yes` or a `no`.
 
 ---
+
 ## Scope
 
 1. **D1. Primary outcomes only** — analyses estimating or testing the treatment effect on the
    primary outcome(s). Ignore secondary outcomes, subgroups, baseline tables.
 2. **D2. Conjunctive — every one must be correct.** All reported primary-outcome analyses must pass
    D5-D12, including sensitivity, per-protocol, and unadjusted re-analyses; one failure decides the
-   paper. *Anchor:* `4B9BMDV7` — a correct mixed model, then t-tests at the end — is `no`.
+   paper. *Anchor:* a correct mixed model followed by t-tests at the end is `no`.
 3. **D3. This manuscript only** — its text plus its own supplement. An analysis described in a
    protocol paper, registry record, or prior report does not count, however confidently cited: if
-   this manuscript points to its protocol for the analysis, that is `no`. **Confirmed by Deb.**
+   this manuscript points to its protocol for the analysis, that is `no`.
 4. **D4. Absent or undescribed is `no`** — including "outcomes were compared between arms."
 
 ## Clustering
@@ -77,10 +52,9 @@ paper still gets a `yes` or a `no`.
    aggregation.
 7. **D7. A fixed effect for the cluster does not count.** Cluster indicators shift each cluster's
    mean but leave the residuals independent, so the correlation is never modelled and the standard
-   errors stay too small. Two labelled papers score `no` for this, one of them a mixed model —
-   *which* effect is random is what matters.
-8. **D8. Every level counts.** Clinic but not physician, school but not classroom → `no`. The most
-   common failure in the NHLBI extraction.
+   errors stay too small. This catches mixed models too — *which* effect is random is what matters.
+8. **D8. Every level counts.** Clinic but not physician, school but not classroom → `no`. This is a
+   common failure — check each level explicitly.
 
 ## Restricted randomization
 
@@ -89,10 +63,10 @@ paper still gets a `yes` or a `no`.
 10. **D10. Accounting for it** means the pair or stratum enters as a random effect or blocking
     factor, or the analysis is of within-pair differences, or the working correlation reflects the
     matched sets, or the stratification variables are adjusted for.
-11. **D11. Clustering handled, restriction ignored, is `no`.** Roughly forty labelled rows take this
-    shape. Both sources of correlation, or neither.
-12. **D12. Restriction handled while clustering ignored does not occur.** None of the 96 papers did
-    this; reaching that conclusion means re-read.
+11. **D11. Clustering handled, restriction ignored, is `no`.** A common pattern. Both sources of
+    correlation, or neither.
+12. **D12. Restriction handled while clustering ignored is essentially never real.** If you reach
+    that conclusion, re-read.
 
 ## What must not count
 
@@ -102,11 +76,8 @@ paper still gets a `yes` or a `no`.
     the same subjects, compound symmetry, an assumed-exchangeable working correlation over time**,
     the wrong link function, no multiplicity adjustment, missing-data handling, adjusted vs
     unadjusted, unequal cluster sizes, ITT vs per-protocol, no reported ICC.
-14. **D14. Longitudinality does not count — settled** (Deb, 2026-08-27; DC49). Ignore02 rule 6
-    counts exactly two things, and repeated measures is not one of them. A paper that handles
-    clustering and restriction but ignores that its outcomes repeat over time is **`yes`**. NHLBI
-    scored at least one such paper incorrect anyway (`MQF2Y5AM`, Altinger), so expect the label to
-    disagree there; that is a known accepted miss, not a fault in this rule.
+14. **D14. Longitudinality does not count.** A paper that handles clustering and restriction but
+    ignores that its outcomes repeat over time is **`yes`**.
 
 ## Abstention
 
