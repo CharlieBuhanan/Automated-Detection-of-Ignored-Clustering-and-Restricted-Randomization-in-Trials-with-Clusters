@@ -353,6 +353,8 @@ other test in this file and silently fails that one.
 | I8 | The consumer breaks on paper 2 of 50 | Papers 3-50 are never spawned. This is the sealing-breach stop, reduced to its mechanism | HANDLE |
 | I11-I13 | A pooled round | Every item once; genuinely concurrent; everything submitted up front, so stopping early saves nothing — which is why the breach stop is serial-only | HANDLE |
 | I14 | `runner_for` | One dispatch point; the two modes are told apart by *when* work starts | HANDLE |
+| M1 | Runner `main()` with `--resume` / `--force` | CLI flags select retryable and forced attempts end-to-end | HANDLE |
+| M2 | Runner `main()` receives a serial sealing breach | Saves the breached response, returns discarded, and never spawns the next paper | HANDLE |
 | I15-I19 | The running token counter | Sum all three input fields plus output; `None`, never `0`, when the stream reported no usage (G7); read end-to-end off a real captured stream | HANDLE |
 
 ## J. Reference stripping (J1-J16)
