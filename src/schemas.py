@@ -1,4 +1,4 @@
-"""The Decision schema: the one object every task returns, on every route.
+"""The judgment schemas shared by the CLI and Batch API routes.
 
 Both routes produce the same object, and both are validated here:
 
@@ -13,13 +13,14 @@ accept, which is the whole point of DC14. If a field is optional here it is
 optional everywhere; if a value is rejected here it is rejected everywhere.
 
 Nothing in this module knows about Claude, HTTP, or files. It takes text or a
-dict and either returns a Decision or explains why it could not.
+dict and either returns a judgment object or explains why it could not.
 """
 
 from __future__ import annotations
 
 import json
 import re
+from copy import deepcopy
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -27,6 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 # module stays free of the storage layer -- but a mismatch would be a real bug,
 # so db.py's CHECK constraint is the backstop.
 TASKS = ("exclusion", "power_analysis", "data_analysis")
+ANALYSIS_TASKS = ("power_analysis", "data_analysis")
 
 # `wrong_text` is exclusion-only (DC41). Power and data analysis only ever see
 # gate survivors, which have already passed that check, so offering it there
@@ -123,6 +125,64 @@ class Decision(BaseModel):
         return self.decision in ("undecidable", "wrong_text")
 
 
+class CombinedAnalysisDecision(BaseModel):
+    """The two post-gate judgments returned from one paper call (DC54).
+
+    The two nested decisions deliberately remain ordinary :class:`Decision`
+    instances. That makes every per-task constraint identical to a separate
+    call, while this enclosing model makes a partial response impossible to
+    accept. ``paper_id`` carries the blinded token on the CLI route; it is
+    omitted from the Batch API tool schema because that wrapper already owns it.
+    """
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    paper_id: str | None = None
+    power_analysis: Decision
+    data_analysis: Decision
+
+    @model_validator(mode="before")
+    @classmethod
+    def _nested_decisions_cannot_supply_metadata(cls, value):
+        """The wrapper owns task binding and the blinded-token echo.
+
+        ``Decision`` exposes those optional fields for the legacy single-task
+        CLI parser. They must not become a second, contradictory token or task
+        channel inside a combined response.
+        """
+        if not isinstance(value, dict):
+            return value
+        for task in ANALYSIS_TASKS:
+            nested = value.get(task)
+            if not isinstance(nested, dict):
+                continue
+            forbidden = sorted({"task", "paper_id"}.intersection(nested))
+            if forbidden:
+                raise ValueError(
+                    f"{task} must not supply wrapper-owned field(s): "
+                    f"{', '.join(forbidden)}")
+        return value
+
+    @model_validator(mode="after")
+    def _bind_and_validate_task_decisions(self) -> CombinedAnalysisDecision:
+        """Bind both nested objects to their fixed tasks and shared token.
+
+        Binding by re-validating, rather than assigning fields directly, keeps
+        the exclusion-only ``wrong_text`` guard in :class:`Decision` active.
+        A bad half therefore invalidates the whole combined attempt (DC54).
+        """
+        for task in ANALYSIS_TASKS:
+            nested = getattr(self, task)
+            payload = nested.model_dump()
+            payload.update({"task": task, "paper_id": self.paper_id})
+            setattr(self, task, Decision.model_validate(payload))
+        return self
+
+    def task_decisions(self) -> dict[str, Decision]:
+        """Return the two persisted task judgments in their stable order."""
+        return {task: getattr(self, task) for task in ANALYSIS_TASKS}
+
+
 class ParseFailure(Exception):
     """The model's reply could not be read as a Decision.
 
@@ -184,6 +244,53 @@ def parse_decision(raw: str, *, task: str | None = None,
         raise ParseFailure(str(exc), raw=raw, paper_id=paper_id) from exc
 
 
+def parse_combined_analysis(raw: str, *, paper_id: str | None = None
+                            ) -> tuple[CombinedAnalysisDecision, bool]:
+    """Parse one post-gate reply into both task judgments.
+
+    The return shape mirrors :func:`parse_decision`. Any malformed, missing, or
+    task-invalid half raises one ``ParseFailure`` carrying the original response
+    so the caller retries the combined call atomically.
+    """
+    text, was_fenced = _strip_fences(raw)
+    if not text:
+        raise ParseFailure("empty reply", raw=raw, paper_id=paper_id)
+
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ParseFailure(f"not valid JSON: {exc}", raw=raw, paper_id=paper_id) from exc
+
+    if not isinstance(payload, dict):
+        raise ParseFailure(
+            f"expected a JSON object, got {type(payload).__name__}", raw=raw,
+            paper_id=paper_id)
+
+    payload.setdefault("paper_id", paper_id)
+    try:
+        return CombinedAnalysisDecision.model_validate(payload), was_fenced
+    except Exception as exc:
+        raise ParseFailure(str(exc), raw=raw, paper_id=paper_id) from exc
+
+
+def _decision_input_schema(task: str) -> dict:
+    """JSON Schema for one model-supplied, task-bound decision."""
+    schema = Decision.model_json_schema()
+    properties = {key: deepcopy(value) for key, value in schema["properties"].items()
+                  if key not in ("task", "paper_id")}
+    allowed = [decision for decision in DECISIONS
+               if task == "exclusion" or decision not in EXCLUSION_ONLY_DECISIONS]
+    properties["decision"] = {"type": "string", "enum": list(allowed),
+                              "description": " | ".join(allowed)}
+    properties["reasoning"]["maxLength"] = REASONING_MAX_CHARS
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": ["decision", "reasoning", "promptbook_evidence", "confidence"],
+        "additionalProperties": False,
+    }
+
+
 def tool_schema(task: str) -> dict:
     """The forced `tool_choice` schema for a Batch API run of one task.
 
@@ -195,23 +302,26 @@ def tool_schema(task: str) -> dict:
     if task not in TASKS:
         raise ValueError(f"unknown task {task!r}; expected one of {TASKS}")
 
-    schema = Decision.model_json_schema()
-    properties = {k: v for k, v in schema["properties"].items()
-                  if k not in ("task", "paper_id")}
-
-    allowed = [d for d in DECISIONS
-               if task == "exclusion" or d not in EXCLUSION_ONLY_DECISIONS]
-    properties["decision"] = {"type": "string", "enum": list(allowed),
-                              "description": " | ".join(allowed)}
-    properties["reasoning"]["maxLength"] = REASONING_MAX_CHARS
-
     return {
         "name": f"record_{task}_decision",
         "description": f"Record the {task} judgment for the paper above.",
+        "input_schema": _decision_input_schema(task),
+    }
+
+
+def combined_analysis_tool_schema() -> dict:
+    """The forced Batch API tool schema for one post-gate combined call (DC54)."""
+    return {
+        "name": "record_combined_analysis_decisions",
+        "description": (
+            "Record independent power-analysis and data-analysis judgments for "
+            "the one gate-surviving paper above."),
         "input_schema": {
             "type": "object",
-            "properties": properties,
-            "required": ["decision", "reasoning", "promptbook_evidence", "confidence"],
+            "properties": {
+                task: _decision_input_schema(task) for task in ANALYSIS_TASKS
+            },
+            "required": list(ANALYSIS_TASKS),
             "additionalProperties": False,
         },
     }

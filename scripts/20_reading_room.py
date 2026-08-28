@@ -17,11 +17,15 @@ QUICK START
     python scripts/20_reading_room.py --task exclusion --round 1
     python scripts/21_check_responses.py --task exclusion --round 1
 
+    # Opt into one post-gate call returning both analysis judgments.
+    python scripts/20_reading_room.py --task combined_analysis --round 1
+
     Then re-run the WHOLE build split before reading any accuracy number -- the
     Human Labelled Set is the regression suite, not just the latest batch.
 
 FLAGS YOU WILL ACTUALLY USE
-    --task      exclusion | power_analysis | data_analysis   (required)
+    --task      exclusion | power_analysis | data_analysis | combined_analysis
+                combined_analysis is opt-in; the three legacy routes remain
     --round     round number from build_rounds.csv           (required)
     --dry-run   plan only: resolve the round, check every wall, spawn nothing
     --limit N   first N papers only. For smoke tests
@@ -105,7 +109,7 @@ def read_csv(path: Path) -> list[dict]:
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Run one promptbook round in the sealed Reading Room.")
-    parser.add_argument("--task", required=True, choices=db.TASKS)
+    parser.add_argument("--task", required=True, choices=rr.READING_ROOM_ROUTES)
     parser.add_argument("--round", required=True, type=int)
     parser.add_argument("--dry-run", action="store_true",
                         help="Resolve the round and check every wall; spawn nothing")
@@ -129,7 +133,16 @@ def main() -> int:
 
     # ---------------------------------------------------------------- resolve
     # Everything that can refuse, refuses here -- before a process exists.
-    version, book_path, promptbook = rr.resolve_promptbook(args.task, root=ROOT)
+    combined = args.task == rr.COMBINED_ANALYSIS_ROUTE
+    if combined:
+        version, book_paths, promptbooks = rr.resolve_combined_analysis_promptbooks(
+            root=ROOT)
+        promptbook_record = rr.combined_analysis_promptbook(
+            power_analysis=promptbooks["power_analysis"],
+            data_analysis=promptbooks["data_analysis"])
+    else:
+        version, book_path, promptbook = rr.resolve_promptbook(args.task, root=ROOT)
+        promptbook_record = promptbook
 
     conn = db.connect()
     try:
@@ -138,10 +151,19 @@ def main() -> int:
         conn.close()
     verdicts = rr.load_verdicts()
 
-    plan = rr.load_round(args.task, args.round, labels=labels, verdicts=verdicts)
+    if combined:
+        plan = rr.load_combined_analysis_round(
+            args.round, labels=labels, verdicts=verdicts)
+    else:
+        plan = rr.load_round(args.task, args.round, labels=labels, verdicts=verdicts)
 
     print(f"{bar}\nREADING ROOM -- {args.task} round {args.round}\n{bar}")
-    print(f"  promptbook   : {version}  ({book_path.relative_to(ROOT)})")
+    if combined:
+        print(f"  promptbooks  : {version}")
+        for task in rr.schemas.ANALYSIS_TASKS:
+            print(f"    {task:<14}: {book_paths[task].relative_to(ROOT)}")
+    else:
+        print(f"  promptbook   : {version}  ({book_path.relative_to(ROOT)})")
     print(f"  model        : {args.model}")
     print(f"  papers       : {plan.n}"
           + (f"  (nominal {rr.ROUND_SIZE}; short rounds are proceeded with, "
@@ -224,8 +246,14 @@ def main() -> int:
 
     def one_paper(paper, body):
         token = rr.new_token(body.text)
-        prompt = rr.build_prompt(promptbook=promptbook, token=token,
-                                 text=body.text, task=args.task)
+        if combined:
+            prompt = rr.build_combined_analysis_prompt(
+                power_promptbook=promptbooks["power_analysis"],
+                data_promptbook=promptbooks["data_analysis"],
+                token=token, text=body.text)
+        else:
+            prompt = rr.build_prompt(promptbook=promptbook, token=token,
+                                     text=body.text, task=args.task)
         attempt = rr.run_paper(prompt, room=room, token=token,
                                paper_id=paper.paper_id, model=args.model,
                                claude=args.claude, timeout=args.timeout,
@@ -321,7 +349,7 @@ def main() -> int:
         task=args.task, round_no=args.round,
         argv=rr.build_argv(model=args.model, settings_path=room.settings_path,
                            claude=rr.find_claude(args.claude)),
-        promptbook_version=version, promptbook_text=promptbook,
+        promptbook_version=version, promptbook_text=promptbook_record,
         settings_path=room.settings_path, tools_offered=probe.tools,
         claude_code_version=probe.claude_code_version, model=args.model,
         started_at=started_at, finished_at=now(), repo_root=ROOT)
@@ -350,8 +378,12 @@ def main() -> int:
           + ")")
     print(f"  cost    -> ${cost:.2f} reported by the CLI "
           f"(blank where it reported none -- never defaulted to 0, G7)")
-    print(f"\n  Next: python scripts/21_check_responses.py --task {args.task} "
-          f"--round {args.round}")
+    if combined:
+        print("\n  Next: combined response checking/persistence (the following "
+              "implementation step).")
+    else:
+        print(f"\n  Next: python scripts/21_check_responses.py --task {args.task} "
+              f"--round {args.round}")
     return 0
 
 

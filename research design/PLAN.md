@@ -121,8 +121,11 @@ have plateaued. Those wait for run 2.
          effort, thinking mode, `claude_code_version`, verbatim argv, sha256 of system prompt /
          settings / promptbook, git commit, observed tool list, host/OS/python) and per-paper
          columns (`request_id`, durations, full token usage, cost, `stop_reason`, service tier).
-      4. **Effort pinned to `high` on both sides** — `--effort high` on the Reading Room,
-         `output_config.effort` on the Batch API. Same level or the promptbook is tuned on nothing.
+      4. **Effort will be pinned to `medium` on both sides** — `--effort medium` in the
+         Reading Room and `output_config.effort: medium` in the Batch API. The prior `high`
+         setting exhausted the subscription quota during one calibration batch; medium is the
+         production configuration and must be used for every new refinement, validation, and
+         holdout call. Same level on both sides or the promptbook is tuned on nothing.
       5. **No dated model snapshot exists.** `claude-sonnet-5` *is* the complete ID; the write-up
          must say "`claude-sonnet-5`, CLI 2.1.197" and not imply a pinned snapshot.
       **Blocks the first scored round.** Order to build them is in TEST_PLAN's *Build order*,
@@ -234,10 +237,53 @@ paper count, the task count, and the gating. The real shape is two sequential ba
 ```
 job 1:  1306 x 1 (exclusion)                 = 1306 calls
         + Opus review of low-confidence gate calls
-job 2:  <survivors> x 2 (power, data)        = 2 x however many survive
+job 2:  <survivors> x 1 (combined power + data) = 1 x however many survive
 ```
 
 Survivor count is unknown until job 1 finishes; it determines job 2's size and cost.
+The combined call contains two isolated rule blocks and returns two separately validated
+judgments; it does not combine the gate with either analysis and never contains more than one
+paper. This avoids sending the same full text twice while retaining task-level outcomes.
+
+### Combined post-gate analysis: implementation plan
+
+This is the intended production path, not an optional optimization. It replaces two full-text
+post-gate calls with one full-text call, while preserving two task-specific judgments in the
+database and in every accuracy report.
+
+1. **Freeze the contract.** Define `CombinedAnalysisDecision`: the blinded token plus one complete
+   `Decision` for `power_analysis` and one for `data_analysis`. Each subdecision keeps its own
+   decision, reasoning, evidence rule ID, and confidence. Neither field may refer to the other
+   task's conclusion.
+2. **Build the combined prompt from the existing two promptbooks.** Keep `power_analysis.md` and
+   `data_analysis.md` as independent rule sources, delimit their sections, require two answers in
+   a fixed order, and send the paper text once. The exclusion promptbook and prompt remain wholly
+   separate.
+3. **Extend the schema and validators.** Add a combined tool schema for the Batch API and a
+   fence-tolerant CLI parser. Validate each subdecision with the existing task-specific allowed
+   values, rule-prefix checks, reasoning cap, confidence range, and token echo. A malformed or
+   missing half is a failed combined attempt, never a fabricated null judgment.
+4. **Refactor Reading Room execution.** Add a post-gate combined task/route that samples only
+   build survivors, still starts one sealed process per paper, and runs at `medium` effort. Keep
+   the preflight, zero-tool assertion, raw stream capture, retry ledger, and one-paper isolation
+   unchanged.
+5. **Write two rows from one valid response.** Persist one `power_analysis` and one
+   `data_analysis` judgment for the same paper, sharing a run/response identifier. Preserve the
+   existing task names so labels, per-task accuracy, confidence thresholds, and downstream exports
+   remain task-specific.
+6. **Make retries and review atomic.** If either subdecision fails validation or either confidence
+   crosses the review threshold, repeat the *combined* call and record both returned judgments as
+   one review attempt. Do not re-send the same paper for only one analysis task.
+7. **Change the calibration and holdout flow.** After the gate reaches its stopping rule, run one
+   combined build round over all gate-survivor build papers; score power and data separately from
+   that shared response. The final holdout uses the identical combined configuration once.
+8. **Test before spending a full round.** Add schema, prompt-construction, persistence, partial
+   failure, retry, provenance, and no-cross-task-reference tests; then pass preflight and a
+   two-paper smoke test before the first scored combined round. Recalculate token use and the
+   Batch API budget from the resulting run log before launching production.
+
+The former separate power and data Reading Room routes remain the implementation baseline only
+until this plan is complete; they are not to be used for new scored production work.
 
 **The gate gets a second pass, the other tasks get one too — but the gate's matters more.** There are no
 human labels for the 1306, so a paper's fate rests on the model's own exclusion call, and a
@@ -678,15 +724,16 @@ scored as misses.
    low-confidence calls, then apply the gate (`keep`). Record the survivor count and the
    drop reason per paper — this is a study result in its own right, not just plumbing.
 
-11. **Analysis run** — batch job 2: power_analysis + data_analysis across the survivors only, same
-    two-pass. Merge in SQLite/pandas and export.
+11. **Analysis run** — batch job 2: one combined power + data call across the survivors only,
+    with two independently validated judgments and an atomic two-pass review. Merge in
+    SQLite/pandas and export task-specific results.
 
 12. **Holdout** — run the holdout once, end to end, with the exact production config. Report that number.
 
 ## Phase order
 
-**Do not parallelize across tasks.** Take `exclusion` to a plateau before touching `power_analysis`,
-then `data_analysis`.
+**Do not parallelize the gate with post-gate analysis.** Take `exclusion` to a plateau, then refine
+and run the combined post-gate power + data route.
 
 - [x] Repo, `requirements.txt`, `.env`, git init
 - [x] `src/pdf_extract.py` — two-stage: `extract_head_text()` for identity, `extract_pdf_text()` for the full pass
@@ -741,7 +788,7 @@ then `data_analysis`.
       (`J2RUD3YQ` — no full text exists, only a conference-abstract supplement; DC43).
 - [x] **`NBBD4EVE`'s parent found and confirmed out of scope** — does not belong in the study (DC38).
 - [ ] Promptbook loop on exclusion against the build split until plateau; Sonnet check
-- [ ] Same for power_analysis, then data_analysis
+- [ ] Refactor and validate combined power + data analysis on gate survivors
 - [ ] Tune the two-pass confidence threshold on the build split
 - [ ] Gate run (job 1), record survivors
 - [ ] Analysis run (job 2) on survivors
@@ -803,8 +850,9 @@ wall rested on a **wrong belief about what a flag means**, which is why the
 The wrapper writes the JSON, not Claude. That removes the whole class of "did it corrupt the output
 file" failure, and it means the model has no write target to be confused about.
 
-**Conditions pinned to match the batch run**: `claude-sonnet-5`, `--effort high`
-(`output_config.effort` on the Batch API side), adaptive thinking — the only mode
+**Target conditions, to be pinned in the runner before the next scored round**:
+`claude-sonnet-5`, `--effort medium` (`output_config.effort: medium` on the Batch
+API side), adaptive thinking — the only mode
 on this model, with no CLI switch and `budget_tokens` removed. A promptbook
 refined under one configuration and shipped under another is tuned on nothing,
 so a change to any of these is a promptbook version bump.

@@ -148,7 +148,7 @@ or a reused `--session-id`.
 | | | Why this value |
 |---|---|---|
 | Model | `claude-sonnet-5` | Pinned to the model the **batch** run uses. A promptbook refined against one model and shipped against another is tuned on nothing |
-| Effort | `high` | `--effort` here, `output_config.effort` on the Batch API — the same level on both sides, for the same reason |
+| Effort | `medium` | `--effort` here, `output_config.effort` on the Batch API — the same level on both sides, for the same reason |
 | Thinking | adaptive | The only on-mode on Sonnet 5. Not settable from the CLI, and `budget_tokens` is removed on this model |
 | System prompt | pinned minimal, hashed | `prompts/system_prompt.txt`. **One line** — see live finding 7 |
 | Tools | none, asserted | `--tools ""` + `permissions.deny` + `init.tools == []` |

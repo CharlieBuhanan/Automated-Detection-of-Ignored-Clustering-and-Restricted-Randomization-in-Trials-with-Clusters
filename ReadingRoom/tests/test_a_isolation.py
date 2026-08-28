@@ -449,9 +449,9 @@ def test_a15_verify_argv_accepts_an_explicit_expected_prompt(tmp_path):
 # ---------------------------------------------------------------- A16: --effort
 
 
-def test_a16_effort_is_pinned_high_on_both_routes():
+def test_a16_effort_is_pinned_medium_on_both_routes():
     """`--effort` here, `output_config.effort` on the Batch API. Same level."""
-    assert rr.EFFORT == "high"
+    assert rr.EFFORT == "medium"
 
 
 def test_a16_build_argv_pins_the_effort():
@@ -467,7 +467,7 @@ def test_a16_missing_effort_is_refused(tmp_path):
         rr.verify_argv(argv)
 
 
-@pytest.mark.parametrize("level", ["low", "medium", "xhigh", "max", "", "High"])
+@pytest.mark.parametrize("level", ["low", "high", "xhigh", "max", "", "Medium"])
 def test_a16_any_other_effort_level_is_refused(level, tmp_path):
     argv = rr.build_argv(settings_path=tmp_path / "s.json")
     argv[argv.index("--effort") + 1] = level

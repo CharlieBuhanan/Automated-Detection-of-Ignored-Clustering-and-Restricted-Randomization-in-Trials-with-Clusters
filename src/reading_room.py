@@ -59,11 +59,15 @@ PROMPTBOOKS = ROOT / "promptbooks"
 MODEL = "claude-sonnet-5"
 
 # A16. Pinned for the same reason MODEL is, and pinned identically on both
-# routes: `--effort high` here, `output_config.effort` on the Batch API. `high`
-# is the API default and the recommended floor for judgment-sensitive work. The
-# CLI accepts it but never echoes it back in any stream event, so this records
-# *intent* -- G11 is what catches it changing between two rounds.
-EFFORT = "high"
+# routes: `--effort medium` here, `output_config.effort: medium` on the Batch
+# API. The CLI accepts it but never echoes it back in any stream event, so this
+# records *intent* -- G11 is what catches it changing between two rounds.
+EFFORT = "medium"
+
+# An execution route, not a fourth database task. Opting into this route makes
+# one post-gate call and returns the two ordinary analysis-task decisions.
+COMBINED_ANALYSIS_ROUTE = "combined_analysis"
+READING_ROOM_ROUTES = db.TASKS + (COMBINED_ANALYSIS_ROUTE,)
 
 # A15. The pinned minimal system prompt, passed verbatim as `--system-prompt`.
 #
@@ -905,6 +909,24 @@ def resolve_promptbook(task: str, *, root: Path = ROOT) -> tuple[str, Path, str]
     return version, book, book.read_text(encoding="utf-8")
 
 
+def resolve_combined_analysis_promptbooks(*, root: Path = ROOT
+                                          ) -> tuple[str, dict[str, Path], dict[str, str]]:
+    """Resolve both independent rule sources for the combined route (DC54)."""
+    resolved = {
+        task: resolve_promptbook(task, root=root)
+        for task in schemas.ANALYSIS_TASKS
+    }
+    versions = {version for version, _, _ in resolved.values()}
+    if len(versions) != 1:
+        raise Refuse(
+            "the combined analysis promptbooks resolved to different versions: "
+            f"{sorted(versions)} (DC54)")
+    version = versions.pop()
+    paths = {task: resolved[task][1] for task in schemas.ANALYSIS_TASKS}
+    texts = {task: resolved[task][2] for task in schemas.ANALYSIS_TASKS}
+    return version, paths, texts
+
+
 def load_rounds_csv(path: Path = ROUNDS_CSV) -> list[dict]:
     path = Path(path)
     if not path.is_file():
@@ -1026,6 +1048,41 @@ def load_round(task: str, round_no: int, *,
                          f"Rounds are cut once and never re-drawn (B5/DC47)")
 
     return RoundPlan(task=task, round=int(round_no), papers=kept, skipped=skipped)
+
+
+def load_combined_analysis_round(round_no: int, *,
+                                 labels: dict[str, dict],
+                                 verdicts: dict[str, str],
+                                 rounds_csv: Path = ROUNDS_CSV,
+                                 cache_dir: Path = CACHE_DIR) -> RoundPlan:
+    """Load the shared post-gate sample and refuse if its two sources drift.
+
+    The already-frozen power and data round rows remain the membership source.
+    Both are loaded through the ordinary B-group checks, then compared exactly.
+    That preserves the legacy routes while ensuring one combined call never
+    silently substitutes one task's sample for the other's.
+    """
+    plans = {
+        task: load_round(task, round_no, labels=labels, verdicts=verdicts,
+                         rounds_csv=rounds_csv, cache_dir=cache_dir)
+        for task in schemas.ANALYSIS_TASKS
+    }
+    power = plans["power_analysis"]
+    data = plans["data_analysis"]
+    power_membership = [(p.paper_id, p.stratum) for p in power.papers]
+    data_membership = [(p.paper_id, p.stratum) for p in data.papers]
+    if power_membership != data_membership or power.skipped != data.skipped:
+        raise Refuse(
+            "power_analysis and data_analysis round membership differs; one "
+            "combined call cannot represent two samples (DC54)")
+
+    papers = [
+        RoundPaper(paper_id=p.paper_id, task=COMBINED_ANALYSIS_ROUTE,
+                   round=p.round, stratum=p.stratum, text_path=p.text_path)
+        for p in power.papers
+    ]
+    return RoundPlan(task=COMBINED_ANALYSIS_ROUTE, round=int(round_no),
+                     papers=papers, skipped=list(power.skipped))
 
 
 # ------------------------------------------------- C: the paper text on stdin
@@ -1193,6 +1250,44 @@ Rules for the reply, all of them checked:
   decide. It is an abstention, not a category, and a round full of them is a
   failed round."""
 
+COMBINED_RESPONSE_INSTRUCTIONS = """Now record TWO independent judgments for paper {token}, in this fixed order:
+power_analysis first, then data_analysis.
+
+Reply with ONE JSON object and nothing else. No prose before it, no prose after
+it, no ``` fence.
+
+{{
+  "paper_id": "{token}",
+  "power_analysis": {{
+    "decision": "yes" | "no" | "undecidable",
+    "reasoning": "power-analysis reasoning, {reasoning_max} characters or fewer",
+    "promptbook_evidence": "power rule id(s), e.g. P3",
+    "confidence": a number from 0.0 to 1.0
+  }},
+  "data_analysis": {{
+    "decision": "yes" | "no" | "undecidable",
+    "reasoning": "data-analysis reasoning, {reasoning_max} characters or fewer",
+    "promptbook_evidence": "data rule id(s), e.g. D3",
+    "confidence": a number from 0.0 to 1.0
+  }}
+}}
+
+Rules for the reply, all of them checked:
+- Exactly the three top-level keys shown; exactly four keys in each judgment.
+- "paper_id" must be exactly {token}, copied from above.
+- Apply only the POWER_ANALYSIS rule block to power_analysis and cite P rules.
+- Apply only the DATA_ANALYSIS rule block to data_analysis and cite D rules.
+- Decide each task independently. Neither reasoning nor evidence may refer to
+  the other task's conclusion.
+- Each decision is "yes", "no", or "undecidable"; nothing else.
+- Each reasoning is required and capped at {reasoning_max} characters.
+- Each promptbook_evidence is required and names a rule that exists in its own
+  promptbook block. Prose with no rule id is rejected.
+- Each confidence is your real confidence in that task for THIS paper.
+- Judge only the paper above. Do not name, cite, or compare another paper.
+- Use "undecidable" only when the paper genuinely lacks readable information
+  needed for that task. It is an abstention, not a category."""
+
 # The rule-id prefix each task's promptbook uses (schemas.RULE_ID matches E/P/D).
 TASK_RULE_PREFIX = {"exclusion": "E", "power_analysis": "P", "data_analysis": "D"}
 
@@ -1224,6 +1319,31 @@ def build_prompt(*, promptbook: str, token: str, text: str, task: str) -> str:
         example_rule=f"{TASK_RULE_PREFIX[task]}3", wrong_text_note=note)
     return PROMPT_TEMPLATE.format(promptbook=promptbook.strip(), token=token,
                                   text=text, instructions=instructions)
+
+
+def combined_analysis_promptbook(*, power_analysis: str,
+                                 data_analysis: str) -> str:
+    """Delimit the two rule sources so neither task inherits the other's rules."""
+    return (
+        "BEGIN POWER_ANALYSIS PROMPTBOOK -- use only for power_analysis\n"
+        f"{power_analysis.strip()}\n"
+        "END POWER_ANALYSIS PROMPTBOOK\n\n"
+        "BEGIN DATA_ANALYSIS PROMPTBOOK -- use only for data_analysis\n"
+        f"{data_analysis.strip()}\n"
+        "END DATA_ANALYSIS PROMPTBOOK"
+    )
+
+
+def build_combined_analysis_prompt(*, power_promptbook: str,
+                                   data_promptbook: str, token: str,
+                                   text: str) -> str:
+    """One paper, two isolated rule blocks, two fixed-order answers (DC54)."""
+    promptbook = combined_analysis_promptbook(
+        power_analysis=power_promptbook, data_analysis=data_promptbook)
+    instructions = COMBINED_RESPONSE_INSTRUCTIONS.format(
+        token=token, reasoning_max=schemas.REASONING_MAX_CHARS)
+    return PROMPT_TEMPLATE.format(promptbook=promptbook, token=token, text=text,
+                                  instructions=instructions)
 
 
 # ----------------------------------------------------- F: spawning and retries

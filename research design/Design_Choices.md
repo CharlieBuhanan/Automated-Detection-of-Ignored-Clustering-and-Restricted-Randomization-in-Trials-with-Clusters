@@ -7,7 +7,7 @@ this is the index. Standing rules are in [CLAUDE.md](../.claude/CLAUDE.md).
 
 ## Open — still need a decision
 
-Everything else has been settled; the decisions are recorded as DC1-DC52 below.
+Everything else has been settled; the decisions are recorded as DC1-DC55 below.
 
 | | Question | Blocks |
 |---|---|---|
@@ -62,6 +62,20 @@ Everything else has been settled; the decisions are recorded as DC1-DC52 below.
   it *keeps* reach power/data analysis. A dropped paper gets **no row at all** — not a null, not
   "N/A". Same rule for the HLS, so power/data accuracy is computed only over gate survivors. In the
   labels this shows as 176 kept papers of 483, and only those 176 carry power/stats answers.
+- **DC54 — The gate remains separate; post-gate power and data analysis share one paper call.**
+  Decided 2026-08-28. DC9's one-prompt-per-task rule remains true for exclusion, but is superseded
+  for the two analyses after a paper passes DC10's gate. One combined prompt carries isolated power
+  and data rule blocks and returns two independent, task-specific judgments; neither may cite or
+  determine the other. The wrapper validates both, retries and reviews them atomically, and stores
+  one row per existing task name. This removes one repeated full-paper payload per survivor without
+  mixing the gate into analysis, mixing papers, or sacrificing task-specific accuracy and audit
+  trails.
+- **DC55 — Medium effort is the pinned production configuration.** Decided 2026-08-28. The Reading
+  Room and Batch API must both use `medium`; no new scored refinement, validation, production, or
+  holdout call may use the prior `high` setting. High effort consumed the five-hour subscription
+  allowance in one calibration batch, so its marginal quality is not affordable for this study.
+  A promptbook is meaningful only under the configuration that will ship, therefore this setting is
+  changed everywhere together and the runner must pass preflight before another scored call.
 - **DC11 — A false exclusion is unrecoverable**, so low-confidence gate calls get an Opus second pass
   **before** gating, not after.
 - **DC12 — `undecidable` is an abstention, not a third category.** It means the evidence is genuinely
