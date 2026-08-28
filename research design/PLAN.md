@@ -87,8 +87,52 @@ have plateaued. Those wait for run 2.
       `CLAUDE_CONFIG_DIR` away from the directory holding the credentials.
       The harness no longer trusts its own deny list: it asserts on the tool list the CLI *reports*,
       and a `preflight()` probe spawn checks it before a round is spent rather than after.
+- [ ] **Second probe of the CLI, 2026-08-27 — 17 new test cases, spec written, code not.**
+      A single throwaway call asking only *what metadata can we log?* turned up two more design
+      errors. Full table in [ReadingRoom/README.md](../ReadingRoom/README.md)'s *What the second
+      probe found*; the cases are A13-A17 and the new group **G** in
+      [TEST_PLAN.md](../ReadingRoom/tests/TEST_PLAN.md) (72 → 89 cases).
+      1. **`--tools ""` exists and actually empties the room** — `system/init` returned
+         `"tools":[]`. The harness had been using `permissions.deny`, believing no availability
+         filter existed. `--tools ""` becomes the mechanism; the deny list drops to a second layer.
+      2. **Every call was carrying ~12,200 tokens of Claude Code's default agentic system prompt**
+         (coding-assistant persona, tool instructions, cwd/git/env sections). The room was sealed
+         against files and **wide open to a persona** — the promptbook was being tuned against a
+         coding agent and shipped to a bare Batch API classifier. Fixed by a pinned minimal
+         `--system-prompt`, guarded by a token ceiling on the preflight probe (A17).
+      3. **Everything is now logged**, in two layers: a per-round `run_environment.json` (model,
+         effort, thinking mode, `claude_code_version`, verbatim argv, sha256 of system prompt /
+         settings / promptbook, git commit, observed tool list, host/OS/python) and per-paper
+         columns (`request_id`, durations, full token usage, cost, `stop_reason`, service tier).
+      4. **Effort pinned to `high` on both sides** — `--effort high` on the Reading Room,
+         `output_config.effort` on the Batch API. Same level or the promptbook is tuned on nothing.
+      5. **No dated model snapshot exists.** `claude-sonnet-5` *is* the complete ID; the write-up
+         must say "`claude-sonnet-5`, CLI 2.1.197" and not imply a pinned snapshot.
+      **Blocks the first scored round.** Order to build them is in TEST_PLAN's *Build order*,
+      round two; `fake_claude.py` has to grow a `usage` block first.
+- [ ] **Promptbook `v2` cut, 2026-08-27; `CURRENT` → `v2`.** No criterion changed — the only edit is
+      a new **"Your reading conditions"** paragraph in all three prompt blocks, stating that the
+      model has no tools, gets one turn, and can reach no answer key. It is environment description,
+      never cited in `promptbook_evidence`. Needed because the minimal system prompt removes the
+      only implicit statement of the model's situation. **No accuracy delta is reportable**: `v1`
+      was frozen and never scored, so there is no row to compare against — see
+      [`v2 doc.md`](../promptbooks/v2/v2%20doc.md). **Delete the stray `promptbooks/v2/v1 doc.md`**
+      copied in by mistake.
 - [ ] Still unwritten: `promptbook_builder.py`, `evaluate.py`, `two_pass.py`, and the run log /
       accuracy history in `results/04_classification/`.
+
+### Write-up and corpus documentation
+
+- [ ] **Refactor the corpus-breakdown `.tex` files.** Currently the breakdown is spread across
+      several tex sources with no single owner; consolidate before any of it goes to Deb.
+- [ ] **Corpus breakdown artifact** — a published page of the HLS/US split, the drop ladder, and
+      what each script removed and why. The full corpus-breakdown markdown named in `CLAUDE.md`
+      still does not exist; this replaces it.
+- [ ] **LaTeX doc for Deb's review**, one document covering the three open piles:
+      the **5 NCI/NHLBI label mismatches** (script 12, DC37), the **7 restricted-randomization
+      rows** whose `data_should` never names the restriction, and the **~5 stepped-wedge papers**
+      NHLBI kept and scored (O1/DC51, reversed by DC52). These are the same three piles listed under
+      *The expert-review list for Keith and Deb* above — this is the artifact that meeting reads.
 
 ### Two ways to lose work, both real, both now guarded
 
@@ -563,12 +607,16 @@ scored as misses.
 
    **Label leakage must be blocked structurally — `claude -p` is agentic, not a completion endpoint.**
    Run inside the repo it has file tools, and `data/ground_truth.csv`, `data/review.db`, and an
-   auto-loaded CLAUDE.md naming both are right there. Telling it not to look is not a control. Four rules,
+   auto-loaded CLAUDE.md naming both are right there. Telling it not to look is not a control. Five rules,
    enforced by the wrapper:
    - **Run from a scratch directory outside the repo** — no CLAUDE.md, no memory index, no relative path
      to the answers resolves. Never `--add-dir` the repo.
-   - **No tools, one turn** (`--max-turns 1`, empty allowed-tools) — makes it a pure text completion,
-     behaviorally identical to an API call.
+   - **No tools, one turn** (`--tools ""` and `--max-turns 1`, with `permissions.deny` behind them and
+     an assertion that the CLI reported zero tools) — makes it a pure text completion, behaviorally
+     identical to an API call. `--allowed-tools ""` is *not* this: it is a permission allowlist and
+     removes nothing.
+   - **No persona** (`--system-prompt`, pinned and hashed) — otherwise the call carries Claude Code's
+     own agentic system prompt and stops being behaviorally identical to the API call it is standing in for.
    - **Text on stdin, never a file path.** Write outputs outside the scratch cwd, so one paper's response
      is not readable by the next.
    - **Blind the identifier** — send a random token, keep the token→`paper_id` map in the wrapper, so a
@@ -714,17 +762,36 @@ filled-in form. Nothing else enters or leaves.
 file tools, and `data/ground_truth.csv`, `data/review.db`, and an auto-loaded CLAUDE.md naming both
 are sitting right there. Telling it not to look is not a control; removing the ability to look is.
 
-### The four walls
+### The five walls
+
+Revised 2026-08-27 after two live probes of the CLI. Both probes found that a
+wall rested on a **wrong belief about what a flag means**, which is why the
+"how" column now names the flag that actually does the work.
 
 | Wall | How | What it stops |
 |---|---|---|
-| **Empty room** | `cwd` is a scratch directory outside the repo. Never `--add-dir`. | No CLAUDE.md, no memory index, no relative path to the answers resolves |
-| **No hands** | `--max-turns 1`, empty `--allowed-tools` | Makes it a pure text completion. It cannot read a file even if it decides to |
+| **Empty room** | `cwd` is a fresh scratch directory per paper, outside the repo. Never `--add-dir`. A per-paper `CLAUDE_CONFIG_DIR` holding only the credentials | No CLAUDE.md, no memory index, no relative path to the answers resolves, no previous paper's transcript |
+| **No hands** | `--tools ""` (the availability filter), plus `permissions.deny`, plus `--max-turns 1`, plus an assertion that `system/init` reported `"tools":[]` | Makes it a pure text completion. **`--allowed-tools ""` is only a permission allowlist and removes nothing** — that was the first probe's finding |
+| **No persona** | `--system-prompt` pointing at a pinned minimal prompt, sha256'd into the run record | The model is a reader, not Claude Code the coding agent. Without this the room carries ~12,200 tokens of agentic system prompt the Batch API run will not have — **the second probe's finding** |
 | **Paper by hand** | Text on **stdin**, never a path. Output captured from stdout, written by the wrapper outside the scratch cwd | One paper's response is not readable by the next |
 | **No name** | Send a random token; the wrapper keeps token → `paper_id` | A leak is not lookup-able even if one happens |
 
 The wrapper writes the JSON, not Claude. That removes the whole class of "did it corrupt the output
 file" failure, and it means the model has no write target to be confused about.
+
+**Conditions pinned to match the batch run**: `claude-sonnet-5`, `--effort high`
+(`output_config.effort` on the Batch API side), adaptive thinking — the only mode
+on this model, with no CLI switch and `budget_tokens` removed. A promptbook
+refined under one configuration and shipped under another is tuned on nothing,
+so a change to any of these is a promptbook version bump.
+
+**Every run is recorded in two layers** — a per-round `run_environment.json` for
+the invariants and per-paper run-log columns for what varies. The CLI exposes no
+temperature and no seed, so identical bytes are unreachable and the write-up must
+not claim them; what is reproducible is the *procedure*, recorded completely
+enough to be set up again. Group **G** of the test plan fails a round whose
+record has a hole in it. Note that no dated model snapshot exists —
+`claude-sonnet-5` is the complete ID.
 
 ### Two scripts
 

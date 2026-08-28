@@ -1,13 +1,24 @@
 # Reading Room — test plan
 
-**72 cases. Written before the implementation, on purpose.**
+**89 cases. Written before the implementation, on purpose.**
 
 A leak in this harness is silent: a contaminated accuracy number looks exactly
 like a clean one. So the tests are the specification, and
 `scripts/20_reading_room.py` / `21_check_responses.py` are written to pass them.
 
-> **Status, 2026-08-27: 71 of 72 covered, 299 tests, all passing, all offline.**
-> `python -m pytest ReadingRoom/tests/ -q`
+> **Status, 2026-08-27 (second revision): 71 of 72 original cases covered, 302
+> tests passing.** `python -m pytest ReadingRoom/tests/ -q`
+>
+> **A13-A17 and the whole of G are specified but NOT yet implemented.** They come
+> from a second live probe of CLI 2.1.197 (see `ReadingRoom/README.md`, *What the
+> second probe found*), which showed that `--tools ""` is the real availability
+> filter and that every call was silently carrying Claude Code's ~12,200-token
+> agentic system prompt. The plan is written first, as it was the first time —
+> the implementation follows.
+>
+> **Do not run a scored round until A13-A17 and G1-G12 are green.** A round run
+> without them is not discardable-and-cheap; it is a number that looks fine and
+> cannot be traced.
 >
 > **A12 (the live canary) is not built — decided against, not forgotten.** It
 > was the only case that cost money and the only one that proved the walls
@@ -44,7 +55,7 @@ executable on `PATH`, so the suite is free to run and safe in CI.
 
 ---
 
-## A. Isolation — the four walls (A1-A12)
+## A. Isolation — the five walls (A1-A17)
 
 The only group where a failure is FATAL. These prove the room is sealed.
 
@@ -57,11 +68,22 @@ The only group where a failure is FATAL. These prove the room is sealed.
 | A5 | `--allowed-tools` non-empty | Refuse to launch | **REFUSE** |
 | A6 | `--max-turns` absent or > 1 | Refuse to launch | **REFUSE** |
 | A7 | `CLAUDE_CONFIG_DIR` unset, or pointing at the real user config | Refuse to launch | **REFUSE** |
-| A8 | A `CLAUDE.md` exists in the scratch cwd | Refuse to launch — the room is not empty | **REFUSE** |
+| A8 | A `CLAUDE.md` or a `.claude/` directory exists in the scratch cwd | Refuse to launch — the room is not empty | **REFUSE** |
 | A9 | `--resume` / `--continue` / reused `--session-id` in argv | Refuse to launch; each call is a fresh process | **REFUSE** |
 | A10 | MCP servers configured, or `--strict-mcp-config` missing | Refuse to launch | **REFUSE** |
 | A11 | Scratch dir is reused between two papers without being cleared | Refuse; one paper's traces must not outlive it | **REFUSE** |
 | A12 | ~~Canary: decoy flipped-label `ground_truth.csv` reachable, tools ON~~ | **Not built (2026-08-27).** Scoring function `canary_verdict()` is implemented and tested; the live run was cut | **FATAL** |
+| A13 | `--tools` absent from argv, or given a non-empty value | Refuse to launch. **`--tools ""` is the availability filter and the actual mechanism**; `--allowed-tools` (A5) is only a permission allowlist and removes nothing | **REFUSE** |
+| A14 | `system/init` reports a non-empty `tools` array | Discard the round. Checked against the list the CLI **observes**, never a hand-written name list, so a tool added in a future CLI needs no one to remember it | **FATAL** |
+| A15 | `--system-prompt` absent, or its bytes ≠ the pinned prompt file | Refuse to launch. Without it the model is Claude Code the coding agent, not a bare classifier, and the Batch API run is a different environment | **REFUSE** |
+| A16 | `--effort` absent, or ≠ the pinned level | Refuse to launch — effort must match what the Batch API run will pass | **REFUSE** |
+| A17 | Preflight probe's `input_tokens + cache_creation_input_tokens` exceeds the ceiling for its two-word prompt | Refuse the round before any paper — A15 passed but did not take effect. **Measured on CLI 2.1.197:** 12,198 tokens with the default system prompt, **183** with the pinned minimal one. The ceiling is a real number, not a guess; set it well below 12,198 and above 183 with headroom for a longer pinned prompt | **REFUSE** |
+
+**A13-A17 came from the second probe, 2026-08-27.** A13/A14 replace a wrong
+belief (`--allowed-tools ""` empties the room — it does not). A15/A17 close a
+confound nobody had noticed: the room was sealed against *files* but wide open to
+Claude Code's own ~12,200-token agentic system prompt, which the Batch API run
+will not have.
 
 ## B. Round and split selection (B1-B10)
 
@@ -159,21 +181,82 @@ DC24: the retry rate is a reportable number, so it has to be right.
 | F11 | CLI not on `PATH` | Refuse before touching any paper | **REFUSE** |
 | F12 | Disk full while writing a raw response | Fail loudly; never leave a half-written raw file scored | **REFUSE** |
 
+## G. Provenance and environment capture (G1-G12)
+
+**A number nobody can trace back to the conditions that produced it is not a
+result.** The CLI exposes neither temperature nor seed, so identical bytes are
+unreachable (see the README). What replaces them is a completely recorded
+*procedure* — and a recording with a hole in it fails here rather than being
+quietly written down.
+
+Captured in two layers. Per round, `run_environment.json` holds the invariants;
+per paper, the run-log row holds what varies.
+
+| # | Input / condition | Expected handling | Sev |
+|---|---|---|---|
+| G1 | `run_environment.json` missing when `21_check_responses.py` runs | Refuse to score — an unprovenanced round is not reportable | **REFUSE** |
+| G2 | `claude_code_version` differs between two papers in one round | Fail the round; the CLI auto-updated mid-run and the papers ran under two different programs | **FATAL** |
+| G3 | `system/init` `model` ≠ the pinned model | Fail the round | **FATAL** |
+| G4 | `system/init` carries no `claude_code_version` field | Refuse — provenance is not optional, and a CLI that omits it is one we have not verified | **REFUSE** |
+| G5 | No `result` event (process killed / timed out) | Retry the paper; there is no duration, usage, or cost to log and none may be invented | RETRY |
+| G6 | `request_id` absent from the assistant event | Retry — it is the only handle Anthropic support can trace | RETRY |
+| G7 | `total_cost_usd` or a usage field is absent | Log `null`, proceed. **Never fabricate, never default to 0** | HANDLE |
+| G8 | `permission_denials` is non-empty | Fail the round — something attempted an action, whether or not it succeeded | **FATAL** |
+| G9 | `stop_reason` = `max_tokens` | Retry, logged as a truncation and **distinct** from a parse failure in the ledger | RETRY |
+| G10 | Repo has uncommitted changes when the round starts | Record the commit as `<sha>-dirty`; never silently record a clean sha | HANDLE |
+| G11 | Two rounds' `run_environment.json` differ in model, effort, system-prompt hash, or promptbook version | Refuse to compare them in `evaluate.py`; a plateau computed across a config change is meaningless | **REFUSE** |
+| G12 | `fast_mode_state` ≠ `off`, or `usage.speed` ≠ `standard`, or `service_tier` ≠ `standard` | Fail the round — a different serving path is a different experiment | **FATAL** |
+
+**What `run_environment.json` must contain** (round invariants; G11 compares
+these):
+
+| Field | Source |
+|---|---|
+| `model` | pinned, and asserted against `system/init` |
+| `effort` | pinned; **passed, not echoed** — the CLI does not report it back, so this records intent and G11 catches a change |
+| `thinking` | `"adaptive"` — the only on-mode on Sonnet 5, not separately settable from the CLI |
+| `claude_code_version` | `system/init` |
+| `argv` | verbatim, minus nothing |
+| `system_prompt_sha256`, `system_prompt_path` | the pinned file |
+| `settings_sha256` | the generated settings file |
+| `promptbook_version`, `promptbook_sha256` | `promptbooks/CURRENT` and the task file |
+| `git_commit` | `<sha>` or `<sha>-dirty` (G10) |
+| `tools_offered` | the observed `system/init` array — must be `[]` (A14) |
+| `host`, `os`, `python_version`, `started_at`, `finished_at` | the machine that ran it |
+
+**Per-paper run-log columns** (what varies): `request_id`, `session_id`,
+`duration_ms`, `duration_api_ms`, `ttft_ms`, `num_turns`, `stop_reason`,
+`terminal_reason`, `input_tokens`, `output_tokens`, `cache_read_input_tokens`,
+`cache_creation_input_tokens`, `total_cost_usd`, `service_tier`, `inference_geo`,
+`context_window`, `max_output_tokens`, `attempt`, `exit_code`.
+
+**Not available, and the write-up must not claim otherwise:**
+
+| Wanted | Reality |
+|---|---|
+| A dated model snapshot (`claude-sonnet-5-2026xxxx`) | Does not exist. `claude-sonnet-5` **is** the complete ID; `system/init`, `message.model` and `modelUsage` all return the bare alias, and the API takes no date suffix |
+| Effort echoed back | Not in any stream event. We log what we passed |
+| Temperature / seed | Not exposed by the CLI at all |
+| A thinking on/off switch | No CLI flag. Sonnet 5 thinking is adaptive and `budget_tokens` is removed on this model; `--effort` is the only lever |
+
 ---
 
 ## Coverage summary
 
 | Group | Cases | What it protects |
 |---|---:|---|
-| A. Isolation | 12 | The accuracy number means anything at all |
+| A. Isolation | 17 | The accuracy number means anything at all |
 | B. Round / split | 10 | DC18 holdout, DC47 fixed rounds, DC10 gate |
 | C. Paper text | 12 | Real extraction output, injection, encoding |
 | D. Response parsing | 14 | `src/schemas.py` contract, both routes |
 | E. Semantic validation | 12 | Quiet failures that still look valid |
 | F. Retries / ledger | 12 | DC24's reportable rate, DC19 append-only |
-| **Total** | **72** | |
+| G. Provenance | 12 | The number is traceable to the conditions that made it |
+| **Total** | **89** | |
 
-## Build order — all done, in this order
+## Build order
+
+Round one — done, in this order:
 
 1. ~~**A + B first.**~~ `test_a_isolation.py`, `test_b_rounds.py`. Pure argv,
    path and CSV assertions, no model call.
@@ -181,6 +264,27 @@ DC24: the retry rate is a reportable number, so it has to be right.
 3. ~~**C, E, F** against a fake `claude` on `PATH`.~~ `test_c_paper_text.py`,
    `test_e_semantic.py`, `test_f_retries.py`, driven by `fake_claude.py`.
 4. ~~**A12 (the canary) last.**~~ **Cut.** See the status note at the top.
+
+Round two — specified, not yet built, in this order:
+
+5. **A13-A16 next**, into `test_a_isolation.py`. Pure argv assertions against
+   `build_argv` / `verify_argv`, so they cost nothing and fail loudly the moment
+   the argv changes shape. Do these first: they are the cheapest and they gate
+   everything below.
+6. **G2, G3, G4, G8, G12 into `test_g_provenance.py`**, driven by `fake_claude.py`
+   emitting doctored `system/init` and `result` events. These are the stream
+   assertions; the fake CLI already has the shape.
+7. **G1, G7, G9, G10 next** — file-level and ledger behaviour, no stream needed.
+8. **G11** last of the offline set: it compares two `run_environment.json` files
+   and belongs to `evaluate.py` rather than the harness.
+9. **A17 and G5, G6** need the fake CLI to grow a usage block and a
+   kill-mid-stream mode. Cheapest to do together, once.
+
+`fake_claude.py` must be extended before step 6: it currently replays a canned
+reply and does not emit `usage`, `permission_denials`, `fast_mode_state`, or a
+`claude_code_version`. **Every field the real CLI emits and the harness reads
+must be forgeable by the fake**, or the offline suite is testing a shape the real
+stream does not have — which is exactly the failure the first live run exposed.
 
 The fake CLI is a real shim on `PATH`, not a monkeypatched `subprocess.run`.
 That is deliberate: the thing most worth testing is that a genuine child process
