@@ -46,7 +46,9 @@ paper still gets a `yes` or a `no`.
 5. **D5. Accounting for clustering** means one of: a mixed model with a **random** effect for the
    randomization unit; GEE with the cluster as working-correlation unit; a cluster-level summary
    analysis; cluster-robust standard errors; a cluster-level permutation test; a Bayesian
-   hierarchical model with a cluster random effect.
+   hierarchical model with a cluster random effect. **Name the correlation unit from the analysis
+   text.** Do not credit the bare name of a method: the manuscript must say which unit the GEE,
+   robust SE, or random effect accounts for.
 6. **D6. Ignoring clustering** is an individual-level analysis with nothing above it — t-test,
    chi-square, Wilcoxon, ANCOVA, or a regression with no random effect, no clustered SEs, no
    aggregation.
@@ -67,6 +69,20 @@ paper still gets a `yes` or a `no`.
     correlation, or neither.
 12. **D12. Restriction handled while clustering ignored is essentially never real.** If you reach
     that conclusion, re-read.
+
+### Evidence anchors for D5-D10
+
+- **Fixed versus random (D7):** `fixed effects for physician and time` is not a
+  random physician effect. Do not relabel a fixed effect as random.
+- **Nested levels (D8):** List the randomization, delivery/provider, and
+  participant levels stated in the paper. Verify the analysis accounts for each
+  level that induces correlation. A hospital-level robust SE alone does not
+  establish that clinician-level correlation was handled.
+- **Restriction adjustment (D10):** An adjustment counts only when the primary
+  outcome model contains the same matching or stratification variable, or the
+  matched set itself. Do not substitute a random effect for the cluster, a
+  different covariate, balanced arms, or a generic statement that the model was
+  adjusted.
 
 ## What must not count
 

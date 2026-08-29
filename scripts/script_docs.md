@@ -112,3 +112,17 @@ Read-only. It never calls a model and never changes `data/review.db`.
 - Write a Markdown dashboard, summary CSV/JSON, and paper-level cases CSV
 - Produce a read-only snapshot only: it does not append `promptbook_accuracy_history.csv` or make a DC17/G11 plateau claim
 - Once request-level route/effort/run/prompt-hash provenance is migrated, require a homogeneous configuration before any explicit history append; label legacy-high/new-medium reuse as exploratory mixed configuration
+
+## Script 23 — review table per checked round
+
+Read-only. It never calls a model and never writes to `data/review.db`; output goes only to `results/04_classification/review_tables/`.
+
+- Take the checked report for one task/round as the spine, so one table covers exactly one promptbook version
+- Join the paper title, first author, year, journal and DOI from `data/zotero_manifest.csv`
+- Join the human answer from `validation_labels` via `db.expected_decision` — the same mapping Script 22 scores against, so `outcome` here and a row in its `cases.csv` cannot disagree
+- Classify each row as `true_positive` / `true_negative` / `false_positive` / `false_negative`, or name it `undecidable`, `wrong_text`, `failed` or `unlabelled` rather than folding it into the confusion matrix
+- Sort errors first, most confident first: a confident error is the one worth reading
+- `--all-rounds` builds every checked report into its own table, which is also how the two `power_analysis` round 1 reports are handled instead of refused as ambiguous
+- `--html` also writes a self-contained page: filter chips by outcome, and each cited rule expanded to its full text from the promptbook the round actually ran under
+- `--html <csv>` re-renders an existing review table with no database and no manifest; the CSV carries the task and promptbook version on every row
+- Degrade rather than refuse when a legacy round has no `run_environment.json`: the table still builds, and the page says the promptbook is unrecorded instead of claiming the rule was not found
