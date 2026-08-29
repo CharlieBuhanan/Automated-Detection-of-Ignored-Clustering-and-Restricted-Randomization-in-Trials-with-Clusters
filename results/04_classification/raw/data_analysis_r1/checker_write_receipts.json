@@ -5,6 +5,12 @@
       "ledger_rows": 41,
       "pass_name": "primary",
       "written_at": "2026-08-28T23:01:00+00:00"
+    },
+    "b990d7eee0e6eec54021ddb9c74bc9a505c68aea6c1181631f95751936326705": {
+      "judgments": 8,
+      "ledger_rows": 9,
+      "pass_name": "primary",
+      "written_at": "2026-08-29T00:58:32+00:00"
     }
   }
 }

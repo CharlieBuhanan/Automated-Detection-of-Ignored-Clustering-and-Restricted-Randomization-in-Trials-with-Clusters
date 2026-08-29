@@ -435,3 +435,15 @@ reasoning
 2026-08-29T00:18:06+00:00,power_analysis,1,JCPBMIPX,c57099ea6461d4bc,2,ok,,,0,4.09,results\04_classification\raw\power_analysis_v1_r1\c57099ea6461d4bc.attempt2.jsonl,,
 2026-08-29T00:18:06+00:00,power_analysis,1,FEHWGZSQ,6e64bafc0c12558a,2,ok,,,0,7.0,results\04_classification\raw\power_analysis_v1_r1\6e64bafc0c12558a.attempt2.jsonl,,
 2026-08-29T00:18:06+00:00,power_analysis,1,U7PLGE75,ba50ef7cb702cf4d,2,ok,,,0,3.34,results\04_classification\raw\power_analysis_v1_r1\ba50ef7cb702cf4d.attempt2.jsonl,,
+2026-08-29T00:58:32+00:00,data_analysis,1,FHVQQIX3,a050ba92162a205a,2,ok,,,0,15.03,results\04_classification\raw\data_analysis_r1\a050ba92162a205a.attempt2.jsonl,,
+2026-08-29T00:58:32+00:00,data_analysis,1,9DKJKFAS,746a5cfa621271eb,2,ok,,,0,10.08,results\04_classification\raw\data_analysis_r1\746a5cfa621271eb.attempt2.jsonl,,
+2026-08-29T00:58:32+00:00,data_analysis,1,H7N83IW2,91db7b326588926a,2,ok,,,0,7.73,results\04_classification\raw\data_analysis_r1\91db7b326588926a.attempt2.jsonl,,
+2026-08-29T00:58:32+00:00,data_analysis,1,LU33978L,76a144aff496736e,2,ok,,,0,9.23,results\04_classification\raw\data_analysis_r1\76a144aff496736e.attempt2.jsonl,,
+2026-08-29T00:58:32+00:00,data_analysis,1,TEXLFQSL,4a2b77609993bd14,2,ok,,,0,6.19,results\04_classification\raw\data_analysis_r1\4a2b77609993bd14.attempt2.jsonl,,
+2026-08-29T00:58:32+00:00,data_analysis,1,VMHXT33Z,ac66e68eafdb45d3,2,ok,,,0,11.5,results\04_classification\raw\data_analysis_r1\ac66e68eafdb45d3.attempt2.jsonl,,
+2026-08-29T00:58:32+00:00,data_analysis,1,JCPBMIPX,6eacef4cc142d0a5,2,ok,,,0,5.91,results\04_classification\raw\data_analysis_r1\6eacef4cc142d0a5.attempt2.jsonl,,
+2026-08-29T00:58:32+00:00,data_analysis,1,FEHWGZSQ,43dd1fefcd39ce39,2,failure,parse,"1 validation error for Decision
+reasoning
+  Value error, reasoning is 211 chars, cap is 200 [type=value_error, input_value=""Randomization stratified...triction ignored (D11)."", input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/value_error",0,8.53,results\04_classification\raw\data_analysis_r1\43dd1fefcd39ce39.attempt2.jsonl,yes,
+2026-08-29T00:58:32+00:00,data_analysis,1,U7PLGE75,4af6f51db13d368a,2,ok,,,0,14.19,results\04_classification\raw\data_analysis_r1\4af6f51db13d368a.attempt2.jsonl,,

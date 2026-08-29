@@ -48,3 +48,12 @@ FEHWGZSQ,9617fe258481159b,data_analysis,1,v1,claude-sonnet-5,1,1,1.7,results\04_
 84YU8UCD,de962d6e23c7cdfa,data_analysis,1,v1,claude-sonnet-5,1,0,14.05,results\04_classification\raw\data_analysis_r1\de962d6e23c7cdfa.attempt1.jsonl,2026-08-28T15:22:25+00:00
 UMV6NC2L,ec534681bce15607,data_analysis,1,v1,claude-sonnet-5,1,0,18.53,results\04_classification\raw\data_analysis_r1\ec534681bce15607.attempt1.jsonl,2026-08-28T15:22:30+00:00
 7M6ST2JQ,3cc1671d0ae04b82,data_analysis,1,v1,claude-sonnet-5,1,0,58.56,results\04_classification\raw\data_analysis_r1\3cc1671d0ae04b82.attempt1.jsonl,2026-08-28T15:22:58+00:00
+FHVQQIX3,a050ba92162a205a,data_analysis,1,v1,claude-sonnet-5,2,0,15.03,results\04_classification\raw\data_analysis_r1\a050ba92162a205a.attempt2.jsonl,2026-08-29T00:53:59+00:00
+9DKJKFAS,746a5cfa621271eb,data_analysis,1,v1,claude-sonnet-5,2,0,10.08,results\04_classification\raw\data_analysis_r1\746a5cfa621271eb.attempt2.jsonl,2026-08-29T00:54:10+00:00
+H7N83IW2,91db7b326588926a,data_analysis,1,v1,claude-sonnet-5,2,0,7.73,results\04_classification\raw\data_analysis_r1\91db7b326588926a.attempt2.jsonl,2026-08-29T00:54:17+00:00
+LU33978L,76a144aff496736e,data_analysis,1,v1,claude-sonnet-5,2,0,9.23,results\04_classification\raw\data_analysis_r1\76a144aff496736e.attempt2.jsonl,2026-08-29T00:54:27+00:00
+TEXLFQSL,4a2b77609993bd14,data_analysis,1,v1,claude-sonnet-5,2,0,6.19,results\04_classification\raw\data_analysis_r1\4a2b77609993bd14.attempt2.jsonl,2026-08-29T00:54:33+00:00
+VMHXT33Z,ac66e68eafdb45d3,data_analysis,1,v1,claude-sonnet-5,2,0,11.5,results\04_classification\raw\data_analysis_r1\ac66e68eafdb45d3.attempt2.jsonl,2026-08-29T00:54:44+00:00
+JCPBMIPX,6eacef4cc142d0a5,data_analysis,1,v1,claude-sonnet-5,2,0,5.91,results\04_classification\raw\data_analysis_r1\6eacef4cc142d0a5.attempt2.jsonl,2026-08-29T00:54:50+00:00
+FEHWGZSQ,43dd1fefcd39ce39,data_analysis,1,v1,claude-sonnet-5,2,0,8.53,results\04_classification\raw\data_analysis_r1\43dd1fefcd39ce39.attempt2.jsonl,2026-08-29T00:54:59+00:00
+U7PLGE75,4af6f51db13d368a,data_analysis,1,v1,claude-sonnet-5,2,0,14.19,results\04_classification\raw\data_analysis_r1\4af6f51db13d368a.attempt2.jsonl,2026-08-29T00:55:13+00:00
