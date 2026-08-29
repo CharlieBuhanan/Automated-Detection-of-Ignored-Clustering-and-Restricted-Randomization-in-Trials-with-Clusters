@@ -1,4 +1,4 @@
-# Exclusion — criteria (v1)
+# Exclusion — criteria (v2)
 
 **Objective.** You are screening papers for a systematic review of cluster-randomized trials. You decide whether a paper is eligible to be reviewed at all.
 
@@ -18,8 +18,7 @@ may have been fetched for this record.
 **Criteria.** Otherwise, test the numbered criteria below in order. `yes` = exclude, `no` = keep.
 The first one that matches decides and goes in `promptbook_evidence`. No hit → `no`.
 
-**Think it through step by step** before answering: first confirm the text describes a study at all,
-then work through the criteria in order, say what the paper shows for each, then commit.
+**Work through the criteria in order, then commit.**
 
 **Answer format.** Return exactly these four fields:
 
@@ -41,10 +40,8 @@ but it isn't the paper.
 1. **E1. Preprint** — no journal version of record.
 2. **E2. Methodology journal** — *BMC Med Res Methodol*, *Comput Stat Data Anal*, *Stat Med*,
    *Biometrics*, *J Stat Plan Inference*.
-3. **E3. Stepped-wedge design** — exclude. Clusters cross over from control to intervention on a
-   staggered schedule, so every cluster receives the intervention and the contrast is partly
-   within-cluster over time. *Test: does the design section describe a stepped wedge, a staggered
-   rollout, or sequential crossover of clusters in steps?*
+3. **E3. Stepped-wedge design** — exclude: clusters cross from control to intervention on a
+   staggered schedule. *Test: stepped wedge, staggered rollout, or sequential cluster crossover?*
 4. **E4. "Secondary" in the title** — literal string test, narrower than E5.
 
 ## Full text
@@ -55,7 +52,8 @@ but it isn't the paper.
    primary result; **or** it reports no primary outcome at all.
    *Test: does the text in front of you say the primary analysis is elsewhere or absent?*
    **Never infer it from another paper** — you cannot see any other paper.
-6. **E6. Baseline-only** — no post-randomization treatment effect estimated. Do not exclude a protocol/design paper solely because it has no post-randomization effect; protocol status is E12. Exclude only if an independent criterion applies.
+6. **E6. Baseline-only** — no post-randomization treatment effect estimated. A protocol/design
+   paper is not baseline-only solely for lacking one; exclude it only on another criterion.
 7. **E7. Implementation study** — studies adoption, reach, fidelity, or scale-up rather than the
    effect on participants.
 8. **E8. Methods paper** — a design, estimator, simulation, power formula, or instrument.
@@ -73,16 +71,13 @@ but it isn't the paper.
 
 ## Not a criterion
 
-Both of these are **cross-paper** judgments. You see one paper at a time and cannot know what else
-is in the set, so neither is ever a reason to exclude.
+These are cross-paper judgments, so neither is a reason to exclude.
 
-16. **E12. Protocol paper.** Excluding one requires knowing that the trial's outcomes paper exists
-    elsewhere. That is a fact about a set you cannot see, not about the paper — **never exclude for
-    this.** A protocol paper is judged on its own text like any other.
+16. **E12. Protocol paper.** Whether an outcomes paper exists elsewhere is unavailable here.
+    **Never exclude for protocol status alone;** judge this paper on its own text.
 17. **E17. Random duplicate drop.** **Never drop a paper at random, for any reason.** If your only
     argument for excluding is that some other paper resembles this one, the answer is `no`.
 
 ## Abstention
 
-18. **E18.** `undecidable` only when the text is missing, truncated, or unreadable. A hard call is
-    still a call.
+18. **E18.** `undecidable` only for missing, truncated, or unreadable text.
