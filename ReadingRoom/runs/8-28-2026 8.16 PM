@@ -1,0 +1,58 @@
+PS C:\Users\charl\OneDrive\Desktop\CU Anschutz Research\Cluster-Paper Review> py -3.12 scripts/20_reading_room.py --task power_analysis --round 1 --resume
+==========================================================================
+READING ROOM -- power_analysis round 1
+==========================================================================
+  promptbook   : v1  (promptbooks\v1\power_analysis.md)
+  model        : claude-sonnet-5
+  text         : data\extracted_text
+  papers       : 49  (nominal 50; short rounds are proceeded with, never re-cut -- DC47)
+    skipped 7NYXSVAI: manifest verdict=DROPPED
+  --resume     : 37 accepted, 0 awaiting checker, 0 review-required, 12 to go
+  room         : C:\Users\charl\AppData\Local\Temp\reading_room_r09qe921
+  preflight    : logged in, 0 tools offered (the room is empty)
+  system prompt: 271 billed input tokens on a two-word probe (A17 ceiling 2,000; the CLI default measured 12,198)
+  CLI version  : 2.1.197
+  effort       : medium  (pinned; the Batch API run passes the same level)
+  workers      : 1  (serial: no pool, one paper at a time)
+==========================================================================
+  [  1/12] ok              2RDD8DGI    4.5s   46,963 chars     24k tok  [refs_unprepared]
+  [  2/12] ok              UPVYYFVQ    3.5s  108,489 chars     84k tok  [refs_unprepared]
+  [  3/12] ok              UMV6NC2L    4.9s   74,924 chars    117k tok  [refs_unprepared]
+  [  4/12] ok              WD74R75C    3.3s   51,441 chars    143k tok  [refs_unprepared]
+  [  5/12] ok              9DKJKFAS    7.5s   88,330 chars    182k tok  [refs_unprepared]
+  [  6/12] ok              H7N83IW2    4.4s   47,691 chars    205k tok  [refs_unprepared]
+  [  7/12] ok              LU33978L    3.7s   54,250 chars    233k tok  [refs_unprepared]
+  [  8/12] ok              TEXLFQSL    6.1s   63,992 chars    264k tok  [refs_unprepared]
+  [  9/12] ok              VMHXT33Z    3.4s   57,782 chars    292k tok  [refs_unprepared]
+  [ 10/12] ok              JCPBMIPX    4.1s   51,103 chars    316k tok  [refs_unprepared]
+  [ 11/12] ok              FEHWGZSQ    7.0s   73,304 chars    351k tok  [refs_unprepared]
+  [ 12/12] ok              U7PLGE75    3.3s   51,246 chars    376k tok  [refs_unprepared]
+==========================================================================
+  tokens  -> 375,574 billed in+out across 12 call(s)
+DONE -- 12/12 responses saved
+==========================================================================
+  raw     -> results\04_classification\raw\power_analysis_v1_r1
+  ledger  -> results\04_classification\retry_ledger.csv
+  run env -> results\04_classification\raw\power_analysis_v1_r1\run_environment.json  (commit 98f6fbf47805-dirty)
+  cost    -> $2.57 reported by the CLI (blank where it reported none -- never defaulted to 0, G7)
+
+  Next: python scripts/21_check_responses.py --task power_analysis --round 1  py -3.12 scripts/21_check_responses.py --task power_analysis --round 1 --promptbook-version v1 --writeview> 
+==========================================================================
+CHECK RESPONSES -- power_analysis round 1
+==========================================================================
+  promptbook : v1 (18 rules)
+  responses  : 49
+  superseded : 12 earlier attempt(s) ignored (latest raw response per paper; evidence kept on disk)
+  ran under  : claude-sonnet-5 / effort medium / CLI 2.1.197 / commit 98f6fbf47805
+
+  passed     : 49
+  failed     : 0
+
+  decisions  : {'no': 41, 'yes': 8}
+  power_analysis undecidable: 0/49 (0.0%)
+  power_analysis confidence : 10 distinct value(s), 0.55-0.90
+
+  report -> results\04_classification\checked\power_analysis_v1_r1.csv
+
+  wrote 49 judgment(s) to data/review.db (promptbook v1, pass primary)
+PS C:\Users\charl\OneDrive\Desktop\CU Anschutz Research\Cluster-Paper Review> 

@@ -198,6 +198,8 @@ have plateaued. Those wait for run 2.
       5-hour subscription window in a single run. **The three levers below are the plan, in the
       order they are being done.** Together they take a full regression from ~5.2M tokens on
       subscription quota to ~4.1M on a separate budget that does not touch the 5-hour window.
+      Observed in the v1 power round: one request consumed roughly **1.6% of Claude Pro usage**;
+      treat this as an account-window estimate, not a token-to-percent conversion.
 
 - [x] **Lever 1 — strip references. Done 2026-08-28.** The free win, and the one that also
       improves accuracy. Measured over all 1783 cached papers: a standalone references heading is

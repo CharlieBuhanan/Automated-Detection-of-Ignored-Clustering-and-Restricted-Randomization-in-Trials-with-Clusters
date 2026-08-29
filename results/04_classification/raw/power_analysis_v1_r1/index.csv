@@ -48,3 +48,15 @@ VMHXT33Z,2d8a117b03d5218b,power_analysis,1,v1,claude-sonnet-5,1,1,1.86,results\0
 JCPBMIPX,b3f4577fe948f060,power_analysis,1,v1,claude-sonnet-5,1,1,1.78,results\04_classification\raw\power_analysis_v1_r1\b3f4577fe948f060.attempt1.jsonl,2026-08-28T23:58:31+00:00
 FEHWGZSQ,7139a9df1cd0d5cf,power_analysis,1,v1,claude-sonnet-5,1,1,1.83,results\04_classification\raw\power_analysis_v1_r1\7139a9df1cd0d5cf.attempt1.jsonl,2026-08-28T23:58:33+00:00
 U7PLGE75,242ca4b85161ce09,power_analysis,1,v1,claude-sonnet-5,1,1,1.75,results\04_classification\raw\power_analysis_v1_r1\242ca4b85161ce09.attempt1.jsonl,2026-08-28T23:58:35+00:00
+2RDD8DGI,c80f45278449c0cd,power_analysis,1,v1,claude-sonnet-5,2,0,4.51,results\04_classification\raw\power_analysis_v1_r1\c80f45278449c0cd.attempt2.jsonl,2026-08-29T00:12:47+00:00
+UPVYYFVQ,2d728052b000b35c,power_analysis,1,v1,claude-sonnet-5,2,0,3.53,results\04_classification\raw\power_analysis_v1_r1\2d728052b000b35c.attempt2.jsonl,2026-08-29T00:12:51+00:00
+UMV6NC2L,d36e0442d48e8689,power_analysis,1,v1,claude-sonnet-5,2,0,4.86,results\04_classification\raw\power_analysis_v1_r1\d36e0442d48e8689.attempt2.jsonl,2026-08-29T00:12:55+00:00
+WD74R75C,3aa068170061f447,power_analysis,1,v1,claude-sonnet-5,2,0,3.34,results\04_classification\raw\power_analysis_v1_r1\3aa068170061f447.attempt2.jsonl,2026-08-29T00:12:59+00:00
+9DKJKFAS,58227bad98f78733,power_analysis,1,v1,claude-sonnet-5,2,0,7.55,results\04_classification\raw\power_analysis_v1_r1\58227bad98f78733.attempt2.jsonl,2026-08-29T00:13:06+00:00
+H7N83IW2,d33986eafbee06a0,power_analysis,1,v1,claude-sonnet-5,2,0,4.41,results\04_classification\raw\power_analysis_v1_r1\d33986eafbee06a0.attempt2.jsonl,2026-08-29T00:13:11+00:00
+LU33978L,f3dfaa6e010ea112,power_analysis,1,v1,claude-sonnet-5,2,0,3.73,results\04_classification\raw\power_analysis_v1_r1\f3dfaa6e010ea112.attempt2.jsonl,2026-08-29T00:13:15+00:00
+TEXLFQSL,df85843d1c9b404e,power_analysis,1,v1,claude-sonnet-5,2,0,6.09,results\04_classification\raw\power_analysis_v1_r1\df85843d1c9b404e.attempt2.jsonl,2026-08-29T00:13:21+00:00
+VMHXT33Z,2c45e8be4a12bedc,power_analysis,1,v1,claude-sonnet-5,2,0,3.39,results\04_classification\raw\power_analysis_v1_r1\2c45e8be4a12bedc.attempt2.jsonl,2026-08-29T00:13:24+00:00
+JCPBMIPX,c57099ea6461d4bc,power_analysis,1,v1,claude-sonnet-5,2,0,4.09,results\04_classification\raw\power_analysis_v1_r1\c57099ea6461d4bc.attempt2.jsonl,2026-08-29T00:13:28+00:00
+FEHWGZSQ,6e64bafc0c12558a,power_analysis,1,v1,claude-sonnet-5,2,0,7.0,results\04_classification\raw\power_analysis_v1_r1\6e64bafc0c12558a.attempt2.jsonl,2026-08-29T00:13:35+00:00
+U7PLGE75,ba50ef7cb702cf4d,power_analysis,1,v1,claude-sonnet-5,2,0,3.34,results\04_classification\raw\power_analysis_v1_r1\ba50ef7cb702cf4d.attempt2.jsonl,2026-08-29T00:13:39+00:00
