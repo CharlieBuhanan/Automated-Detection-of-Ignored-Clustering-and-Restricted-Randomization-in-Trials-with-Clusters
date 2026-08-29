@@ -47,6 +47,9 @@ data/zotero_manifest.csv
 
 Research Claude Plan (Outline)*
 
+# One-off email draft for expert adjudication; source decisions live in the review logs.
+results/04_classification/evaluation/batch1_v1_supervisor/adjudication_packet.md
+
 # Working notes for Deb, not for the repo.
 Deb.md
 

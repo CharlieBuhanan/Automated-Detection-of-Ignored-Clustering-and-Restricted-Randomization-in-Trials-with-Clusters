@@ -75,23 +75,13 @@ Cases where the promptbook is *deliberately* wrong against the human labels, so 
 mistaken for promptbook faults.
 
 > **Read this before proposing any promptbook rule from a stepped-wedge miss.** Deb ruled
-> 2026-08-27 that stepped wedge **is** an exclusion (DC48), so from v1 on the model excludes them.
-> NHLBI applied that criterion inconsistently — 9 excluded, **5 kept and fully scored** — and the 5
-> stay in the scored set as accepted misses by decision, *not* dropped (O1). So a miss whose
-> `promptbook_evidence` is `E3` is **presumed correct until checked against the list below**: the
-> label is what is wrong, not the rule. Never write, loosen, or revert a rule off one of these five.
-> They are also not evidence for DC23's pattern requirement — exclude them before counting a shape
-> as repeated, or the loop will "learn" its way back to E3 OFF from five known-bad labels.
+> 2026-08-27 that stepped wedge **is** an exclusion (DC48). The five NHLBI rows kept and scored
+> despite that criterion were moved to expert review by DC52 and are not in the scored set. Never
+> loosen or revert E3 based on them.
 
 | Shape | Why the promptbook disagrees on purpose | Papers |
 |---|---|---|
-| Stepped-wedge kept and scored by NHLBI | E3 ON from v1 (DC48). These 5 are labelled *keep*; the model excludes them. Accepted misses, kept in the scored set (O1) | 5 — `3JVAWNIE` Bernabe-Ortiz, `TT7PIVLD` Ciccone, `7NYXSVAI` Douin (build); `QMLU4TM8` Courtright, `8H9BUEWH` Fiscella (holdout) |
 | Longitudinality scored incorrect | Settled 2026-08-27 (DC49): follow Ignore02 rule 6 — only clustering and restricted randomization count. NHLBI scored repeated-measures errors incorrect anyway | 1 known — `MQF2Y5AM` Altinger (holdout); more may surface, 41 labelled rows carry `n_long` ≥ 2 |
-| Cattamanchi's data label | `XHFTHUCG`: restricted randomization unaccounted for, scored `data_correct = yes` where ~40 of that shape scored `no`. Deb: the label is wrong. Bound for the expert-review pile (DC50) | 1 (holdout) |
-
-**Cost, if all are kept in the scored set:** exclusion −0.9pp on build (3/338) and −1.4pp on holdout
-(2/145); data analysis loses 2 holdout rows. The exclusion figure eats most of one plateau step, so
-compare Δ against it rather than against 0 (DC17).
 
 ## Plateau check
 
