@@ -239,7 +239,7 @@ def add_combined_decision_fields(record: dict,
 
 def persist_passed(*, passed: list[dict], environment: dict,
                    environment_path: Path, route: str, version: str,
-                   pass_name: str) -> int:
+                   pass_name: str) -> tuple[int, set[tuple[str, int]]]:
     """Register provenance and atomically persist every accepted task decision.
 
     Combined responses contribute two entries to one SQLite savepoint. Every
@@ -248,6 +248,7 @@ def persist_passed(*, passed: list[dict], environment: dict,
     if the checker receipt was lost.
     """
     conn = db.connect()
+    already_written: set[tuple[str, int]] = set()
     try:
         run_id = db.register_run_environment(
             conn, environment, source_path=environment_path,
@@ -267,9 +268,13 @@ def persist_passed(*, passed: list[dict], environment: dict,
                 metadata=metadata)
             existing = db.response_judgment_tasks(conn, response_id)
             if existing:
-                raise rr.Refuse(
-                    f"response {response_id} already has persisted task judgment(s) "
-                    f"{list(existing)}. Refusing duplicate checker write")
+                expected = set(task_decisions(record))
+                if set(existing) != expected:
+                    raise rr.Refuse(
+                        f"response {response_id} already has different persisted task judgment(s) "
+                        f"{list(existing)}")
+                already_written.add((record["paper_id"], record["attempt"]))
+                continue
             for task, decision in task_decisions(record).items():
                 inserts.append({
                     "paper_id": record["paper_id"], "task": task,
@@ -283,7 +288,7 @@ def persist_passed(*, passed: list[dict], environment: dict,
                     "run_id": run_id, "response_id": response_id,
                 })
         db.insert_judgments_atomically(conn, inserts)
-        return len(inserts)
+        return len(inserts), already_written
     finally:
         conn.close()
 
@@ -536,9 +541,11 @@ def main() -> int:
             f"this exact raw snapshot was already written at {prior.get('written_at')}; "
             "refusing duplicate judgment/ledger insertion")
 
-    inserted = persist_passed(
+    inserted, already_written = persist_passed(
         passed=passed, environment=environment, environment_path=environment_path,
         route=args.task, version=version, pass_name=args.pass_name)
+    ledger_rows = [row for row in ledger_rows
+                   if (row["paper_id"], rr.attempt_number(row)) not in already_written]
     if ledger_rows:
         rr.append_ledger(LEDGER, ledger_rows)
     write_receipt(receipt_path, receipts, snapshot=snapshot,

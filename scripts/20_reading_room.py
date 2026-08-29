@@ -159,6 +159,10 @@ def main() -> int:
                         help="One paper at a time. This is the default; the flag "
                              "is kept so existing commands keep working")
     parser.add_argument("--model", default=rr.MODEL)
+    parser.add_argument("--effort", default=rr.EFFORT, choices=["medium", "high"],
+                        help="Pinned production effort; high is allowed only for a matched legacy resume")
+    parser.add_argument("--resume-raw-dir", type=Path,
+                        help="Resume a legacy raw directory under its recorded configuration")
     parser.add_argument("--timeout", type=int, default=rr.TIMEOUT_SECONDS)
     args = parser.parse_args()
 
@@ -184,6 +188,23 @@ def main() -> int:
     # a later promptbook version cannot overwrite or mingle its evidence.
     raw_dir = RAW_ROOT / f"{args.task}_{version}_r{args.round}"
     text_cache = rr.cache_dir_for_promptbook_version(version)
+    run_effort = args.effort
+    preserve_environment = False
+    if args.resume_raw_dir:
+        if not args.resume:
+            raise rr.Refuse("--resume-raw-dir requires --resume")
+        candidate = args.resume_raw_dir.resolve()
+        if candidate.parent != RAW_ROOT.resolve() or not candidate.is_dir():
+            raise rr.Refuse("--resume-raw-dir must name an existing direct child of results/04_classification/raw")
+        environment = rr.load_run_environment(candidate / "run_environment.json")
+        recorded = {"promptbook_version": version, "model": args.model,
+                    "effort": args.effort, "task": args.task, "round": args.round}
+        mismatched = [key for key, value in recorded.items()
+                      if str(environment.get(key)) != str(value)]
+        if mismatched:
+            raise rr.Refuse("legacy resume configuration differs in " + ", ".join(mismatched))
+        raw_dir = candidate
+        preserve_environment = True
 
     conn = db.connect()
     try:
@@ -310,7 +331,7 @@ def main() -> int:
     # paper identically, so finding one on paper 1 of 50 wastes 49 papers' quota
     # and finding it on a two-word prompt wastes nothing.
     probe = rr.preflight(room, model=args.model, claude=args.claude,
-                         repo_root=ROOT)
+                         repo_root=ROOT, effort=run_effort)
     print(f"  preflight    : logged in, {len(probe.tools)} tools offered "
           f"(the room is empty)")
     print(f"  system prompt: {probe.input_tokens:,} billed input tokens on a "
@@ -318,7 +339,7 @@ def main() -> int:
           f"default measured 12,198)")
     if probe.claude_code_version:
         print(f"  CLI version  : {probe.claude_code_version}")
-    print(f"  effort       : {rr.EFFORT}  (pinned; the Batch API run passes the "
+    print(f"  effort       : {run_effort}  (pinned; the Batch API run passes the "
           f"same level)")
 
     if args.preflight_only:
@@ -354,7 +375,7 @@ def main() -> int:
                                attempt=attempt_by_paper.get(paper.paper_id, 1),
                                model=args.model,
                                claude=args.claude, timeout=args.timeout,
-                               repo_root=ROOT)
+                               repo_root=ROOT, effort=run_effort)
         attempt.raw_path = rr.write_raw(attempt, raw_dir)
         return paper, body, attempt
 
@@ -484,12 +505,13 @@ def main() -> int:
     environment = rr.build_run_environment(
         task=args.task, round_no=args.round,
         argv=rr.build_argv(model=args.model, settings_path=room.settings_path,
-                           claude=rr.find_claude(args.claude)),
+                           claude=rr.find_claude(args.claude), effort=run_effort),
         promptbook_version=version, promptbook_text=promptbook_record,
         settings_path=room.settings_path, tools_offered=probe.tools,
         claude_code_version=probe.claude_code_version, model=args.model,
         started_at=started_at, finished_at=now(), repo_root=ROOT)
-    rr.write_run_environment(raw_dir / "run_environment.json", environment)
+    if not preserve_environment:
+        rr.write_run_environment(raw_dir / "run_environment.json", environment)
 
     print(f"{bar}")
     if fatal:

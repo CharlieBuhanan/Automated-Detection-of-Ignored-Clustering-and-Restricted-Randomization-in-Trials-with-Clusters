@@ -32,6 +32,7 @@ later runs (DC57), which must be labelled when compared with that baseline.
 |---|---|---|
 | Input text is references-stripped (`data/extracted_text_stripped/`) | Reference titles can trigger criteria unrelated to the paper's study; stripping changes what the rubric reads | `exclusion_r1` remains the whole-text baseline; report version and preparation alongside comparisons |
 | E6 protocol/design exception | Three v1 E6 false exclusions treated protocol status as baseline-only | A protocol/design paper with no effect estimate is kept unless an independent criterion applies |
+| P3 evidence checklist; P10 block-design clarification | Four v1 power false positives treated incomplete or block-restricted calculations as adequate | `yes` requires explicit within-manuscript support; balanced block allocation is not simple randomization |
 
 Power and data promptbooks remain byte-identical to `v1`; exclusion adds the E6
 exception above. This is a draft until the v1 batch-1 review is complete.

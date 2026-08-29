@@ -37,8 +37,11 @@ paper still gets a `yes` or a `no`.
    protocol paper, registry record, or prior report does not count, however confidently cited: if
    this manuscript's power justification is "see our protocol paper," that is `no`, full stop —
    not `undecidable`.
-3. **P3. Correct requires all three:** the approach is ascertainable (P4-P6); clustering is
-   accounted for at every level (P7-P9); restricted randomization, if present, is too (P10-P13).
+3. **P3. Correct requires all three, stated in this manuscript:** the approach is ascertainable
+   (P4-P6); clustering is accounted for at every level (P7-P9); restricted randomization, if
+   present, is too (P10-P13). Before answering `yes`, identify text supporting the effect/approach,
+   cluster count, and ICC/design effect (or equivalent); do not infer a missing element from
+   balanced arms or a cited method.
 
 ## Clarity and presence
 
@@ -60,7 +63,9 @@ paper still gets a `yes` or a `no`.
 ## Restricted randomization
 
 10. **P10. Present if** clusters were pair-matched, matched into sets, stratified, block-randomized,
-    minimized, or constrained on covariates.
+    minimized, or constrained on covariates. A reported block design still counts even if arms are
+    balanced; call randomization simple only when the manuscript says it was unblocked and
+    unstratified.
 11. **P11. Accounting for it** means using the induced between-cluster correlation: a matching or
     stratum correlation, a reduced between-cluster variance, a matched-pair design effect, or a
     simulation reproducing the scheme.

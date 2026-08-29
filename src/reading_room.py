@@ -1623,7 +1623,8 @@ def find_claude(claude: str = "claude") -> str:
 
 def run_paper(prompt: str, *, room: Room, token: str, paper_id: str,
               attempt: int = 1, model: str = MODEL, claude: str = "claude",
-              timeout: int = TIMEOUT_SECONDS, repo_root: Path = ROOT) -> Attempt:
+              timeout: int = TIMEOUT_SECONDS, repo_root: Path = ROOT,
+              effort: str = EFFORT) -> Attempt:
     """Spawn exactly one sealed process for exactly one paper.
 
     Every wall is re-checked here rather than once at startup. It costs
@@ -1631,8 +1632,9 @@ def run_paper(prompt: str, *, room: Room, token: str, paper_id: str,
     dropped into it at 09:40 is caught at 09:40, not never.
     """
     executable = find_claude(claude)
-    argv = build_argv(model=model, settings_path=room.settings_path, claude=executable)
-    verify_argv(argv)
+    argv = build_argv(model=model, settings_path=room.settings_path, claude=executable,
+                      effort=effort)
+    verify_argv(argv, effort=effort)
     verify_room(room, repo_root=repo_root)
 
     cwd = new_paper_room(room, token, repo_root=repo_root)
@@ -1747,7 +1749,8 @@ class Preflight:
 
 def preflight(room: Room, *, model: str = MODEL, claude: str = "claude",
               repo_root: Path = ROOT, timeout: int = 120,
-              ceiling: int = PREFLIGHT_TOKEN_CEILING) -> Preflight:
+              ceiling: int = PREFLIGHT_TOKEN_CEILING,
+              effort: str = EFFORT) -> Preflight:
     """One throwaway spawn that proves the room is empty before a round is spent.
 
     Every failure it catches breaks *every* paper identically, which is exactly
@@ -1769,7 +1772,7 @@ def preflight(room: Room, *, model: str = MODEL, claude: str = "claude",
              "This is a startup check, not a paper.")
     attempt = run_paper(probe, room=room, token="preflight", paper_id="preflight",
                         model=model, claude=claude, timeout=timeout,
-                        repo_root=repo_root)
+                        repo_root=repo_root, effort=effort)
 
     if "Not logged in" in attempt.stdout or "authentication_failed" in attempt.stdout:
         raise Refuse(
