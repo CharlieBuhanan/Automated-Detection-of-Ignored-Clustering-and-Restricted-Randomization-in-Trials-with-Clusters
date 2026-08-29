@@ -183,6 +183,7 @@ def main() -> int:
     # Version is part of raw-artifact identity. A retry stays in this directory;
     # a later promptbook version cannot overwrite or mingle its evidence.
     raw_dir = RAW_ROOT / f"{args.task}_{version}_r{args.round}"
+    text_cache = rr.cache_dir_for_promptbook_version(version)
 
     conn = db.connect()
     try:
@@ -193,9 +194,10 @@ def main() -> int:
 
     if combined:
         plan = rr.load_combined_analysis_round(
-            args.round, labels=labels, verdicts=verdicts)
+            args.round, labels=labels, verdicts=verdicts, cache_dir=text_cache)
     else:
-        plan = rr.load_round(args.task, args.round, labels=labels, verdicts=verdicts)
+        plan = rr.load_round(args.task, args.round, labels=labels, verdicts=verdicts,
+                             cache_dir=text_cache)
 
     print(f"{bar}\nREADING ROOM -- {args.task} round {args.round}\n{bar}")
     if combined:
@@ -205,7 +207,7 @@ def main() -> int:
     else:
         print(f"  promptbook   : {version}  ({book_path.relative_to(ROOT)})")
     print(f"  model        : {args.model}")
-    print(f"  text         : {rr.CACHE_DIR.relative_to(ROOT)}")
+    print(f"  text         : {text_cache.relative_to(ROOT)}")
     print(f"  papers       : {plan.n}"
           + (f"  (nominal {rr.ROUND_SIZE}; short rounds are proceeded with, "
              f"never re-cut -- DC47)" if plan.n != rr.ROUND_SIZE else ""))
@@ -227,7 +229,11 @@ def main() -> int:
     # row with the latest checker report so --resume repairs parse/semantic
     # failures instead of silently skipping them forever.
     latest = rr.latest_attempts_by_paper(existing)
-    checked = read_csv(CHECKED_ROOT / f"{args.task}_r{args.round}.csv")
+    # New reports carry the promptbook version. Keep reading the legacy name
+    # while an old raw directory is being completed.
+    versioned_checked = CHECKED_ROOT / f"{args.task}_{version}_r{args.round}.csv"
+    legacy_checked = CHECKED_ROOT / f"{args.task}_r{args.round}.csv"
+    checked = read_csv(versioned_checked if versioned_checked.is_file() else legacy_checked)
     attempt_by_paper: dict[str, int] = {}
     if args.resume or args.force:
         selected, accepted, awaiting, terminal = [], 0, 0, 0

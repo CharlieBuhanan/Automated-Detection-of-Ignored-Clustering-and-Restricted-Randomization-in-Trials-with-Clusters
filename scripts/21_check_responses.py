@@ -496,7 +496,10 @@ def main() -> int:
                 f"every one of the {len(values)} {task} judgments returned "
                 f"confidence={values[0]}. That is a template, not a judgment (E8)")
 
-    out = RESULTS / "checked" / f"{args.task}_r{args.round}.csv"
+    # Match the raw directory identity: future versions of the same task/round
+    # must not overwrite this checker report. Legacy raw runs retain their
+    # legacy checked filename.
+    out = RESULTS / "checked" / f"{raw_dir.name}.csv"
     write_checked(out, checked)
     failures = [record for record in checked if record["status"] == "failed"]
     print_summary(route=args.task, passed=passed, failures=failures,

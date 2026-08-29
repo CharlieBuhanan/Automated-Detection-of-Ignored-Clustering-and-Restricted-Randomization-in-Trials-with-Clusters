@@ -72,6 +72,16 @@ EXTRACT_CACHE_DIR = ROOT / "data" / "extracted_text"
 # that has already exited.
 CACHE_DIR = ROOT / "data" / "extracted_text_stripped"
 
+
+def cache_dir_for_promptbook_version(version: str) -> Path:
+    """Return the reading condition frozen for a promptbook version.
+
+    v1 evidence was paid against whole extracted text. v2 starts the
+    references-stripped condition; later versions inherit it unless explicitly
+    revised. This keeps a late v1 completion homogeneous with its first calls.
+    """
+    return EXTRACT_CACHE_DIR if version == "v1" else CACHE_DIR
+
 PROMPTBOOKS = ROOT / "promptbooks"
 
 # Pinned, and pinned to the model the *batch* run will use (Costs.md: Sonnet 5

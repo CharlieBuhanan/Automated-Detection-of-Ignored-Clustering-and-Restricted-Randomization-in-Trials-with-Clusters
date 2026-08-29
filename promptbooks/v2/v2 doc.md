@@ -17,9 +17,9 @@ history row.
 | Created | 2026-08-28 |
 | Parent | `v1` |
 | Git commit | captured in each run environment; v2 must not be edited in place |
-| Model used to build it | none — a provenance cut for references-stripped input, not a rubric change |
+| Model used to build it | none — v1 miss review and references-stripped input |
 | Route | Reading Room (`scripts/20_reading_room.py`) |
-| Status | **active**; cut immediately before the first references-stripped Reading Room request |
+| Status | **draft**; do not run until v1 batch-1 results are analyzed |
 
 **No DC17 accuracy delta is reportable for this version yet.** `exclusion_r1`
 remains the baseline; its accepted `v1` whole-text judgments are not re-run and
@@ -30,10 +30,11 @@ later runs (DC57), which must be labelled when compared with that baseline.
 
 | Change | Why | Baseline consequence |
 |---|---|---|
-| Input text is references-stripped (`data/extracted_text_stripped/`) | Reference titles can trigger criteria unrelated to the paper's study; stripping changes what the unchanged rubric reads | `exclusion_r1` remains the baseline. Do not pool its whole-text judgments invisibly with `v2`; report version and text preparation alongside comparisons |
+| Input text is references-stripped (`data/extracted_text_stripped/`) | Reference titles can trigger criteria unrelated to the paper's study; stripping changes what the rubric reads | `exclusion_r1` remains the whole-text baseline; report version and preparation alongside comparisons |
+| E6 protocol/design exception | Three v1 E6 false exclusions treated protocol status as baseline-only | A protocol/design paper with no effect estimate is kept unless an independent criterion applies |
 
-The three task promptbook files are byte-for-byte copies of `v1`. This cut is
-for input provenance only, not a rubric revision.
+Power and data promptbooks remain byte-identical to `v1`; exclusion adds the E6
+exception above. This is a draft until the v1 batch-1 review is complete.
 
 **`v1` is not shaped by a miss.** Every change below comes from Deb's 2026-08-27
 rulings on criteria `v0` flagged as contested, plus one environment change from a
