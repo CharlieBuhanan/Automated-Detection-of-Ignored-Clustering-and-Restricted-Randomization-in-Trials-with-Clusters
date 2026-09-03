@@ -110,6 +110,9 @@ Read-only. It never calls a model and never changes `data/review.db`.
 - Keep missing, `undecidable`, `wrong_text`, and unlabelled rows visible
 - Calculate the confusion matrix, accuracy, sensitivity, specificity, precision, F1, balanced accuracy, and Cohen's kappa
 - Write a Markdown dashboard, summary CSV/JSON, and paper-level cases CSV
+- Also write `report.html`: every calculated statistic on one self-contained page, in the Script 23 review-table style — headline tiles, the confusion matrix, calibration bins, the threshold sweep and the provenance block, with a task filter
+- Rank the statistics on that page rather than listing them flat. **Primary** (accuracy, sensitivity, specificity, kappa) is what a promptbook change is judged on; **guardrail** (coverage, scored, undecidable, wrong text, missing, unlabelled, configuration) can invalidate a primary number; **supporting** (precision, NPV, F1, balanced accuracy, confidence, calibration, Brier) describes the errors but decides nothing on its own
+- Explain each statistic per task, because `yes` means *exclude* on the gate and *analysis done correctly* on power/data: on exclusion the page names FP as an unrecoverable false exclusion, on the analyses as the model being too lenient
 - Produce a read-only snapshot only: it does not append `promptbook_accuracy_history.csv` or make a DC17/G11 plateau claim
 - Once request-level route/effort/run/prompt-hash provenance is migrated, require a homogeneous configuration before any explicit history append; label legacy-high/new-medium reuse as exploratory mixed configuration
 
@@ -124,5 +127,6 @@ Read-only. It never calls a model and never writes to `data/review.db`; output g
 - Sort errors first, most confident first: a confident error is the one worth reading
 - `--all-rounds` builds every checked report into its own table, which is also how the two `power_analysis` round 1 reports are handled instead of refused as ambiguous
 - `--html` also writes a self-contained page: filter chips by outcome, and each cited rule expanded to its full text from the promptbook the round actually ran under
+- Spell the outcomes out on the page, and spell them out per task: `yes` means *exclude* on exclusion and *analysis done correctly* on power/data, so one wording for both would be clear on neither. The CSV keeps the short codes, which is what cross-references Script 22's `cases.csv`
 - `--html <csv>` re-renders an existing review table with no database and no manifest; the CSV carries the task and promptbook version on every row
 - Degrade rather than refuse when a legacy round has no `run_environment.json`: the table still builds, and the page says the promptbook is unrecorded instead of claiming the rule was not found

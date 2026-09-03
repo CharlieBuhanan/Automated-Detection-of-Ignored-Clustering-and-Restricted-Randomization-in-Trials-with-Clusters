@@ -39,11 +39,17 @@ h1 { font-size:22px; margin:0 0 4px; letter-spacing:-.01em; }
 .card.true_positive { color:var(--tp); }
 .card.undecidable, .card.wrong_text, .card.failed, .card.unlabelled { color:var(--odd); }
 .card > * { color:var(--ink); }
-header { display:flex; gap:12px; align-items:baseline; }
-.tag { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
-  white-space:nowrap; padding-top:3px; }
-.who h2 { font-size:15px; font-weight:600; margin:0; line-height:1.4; }
-.who p { margin:2px 0 0; font-size:12px; color:var(--muted); }
+.tag { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.05em;
+  text-transform:uppercase; border:1px solid currentColor; border-radius:99px;
+  padding:1px 8px; margin-bottom:8px; }
+header h2 { font-size:15px; font-weight:600; margin:0; line-height:1.4; }
+.who { margin:2px 0 0; font-size:12px; color:var(--muted); }
+.legend { margin:-6px 0 20px; font-size:13px; color:var(--muted); }
+.legend summary { cursor:pointer; color:var(--muted); }
+.legend-row { display:flex; gap:10px; align-items:baseline; margin:10px 0 0;
+  padding-left:2px; color:var(--tn); }
+.legend-row > span:last-child { color:var(--muted); flex:1; }
+.legend-row .tag { margin:0; flex:0 0 auto; min-width:170px; text-align:center; }
 .facts { display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:var(--muted);
   margin:10px 0 0; }
 .facts b { color:var(--ink); font-weight:600; }
@@ -62,444 +68,445 @@ code { font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace; }
 .card[hidden] { display:none; }
 </style></head><body><div class="wrap">
 <h1>power_analysis r1 review table</h1><p class="sub">power_analysis · round 1 · v1 · claude-sonnet-5 · effort medium · 49 papers · accuracy 79.6% of 49 scored</p>
-<div class="bar"><button class="chip active" data-outcome="all">all <b>49</b></button><button class="chip false_negative" data-outcome="false_negative">FN <b>5</b></button><button class="chip false_positive" data-outcome="false_positive">FP <b>5</b></button><button class="chip true_positive" data-outcome="true_positive">TP <b>3</b></button><button class="chip true_negative" data-outcome="true_negative">TN <b>36</b></button></div>
+<div class="bar"><button class="chip active" data-outcome="all">Every paper <b>49</b></button><button class="chip false_negative" data-outcome="false_negative" title="human judged the analysis correct · model called it flawed">Model too strict <b>5</b></button><button class="chip false_positive" data-outcome="false_positive" title="human judged the analysis flawed · model called it correct">Model too lenient <b>5</b></button><button class="chip true_positive" data-outcome="true_positive" title="human judged the analysis correct · model agreed">Correct, and model agreed <b>3</b></button><button class="chip true_negative" data-outcome="true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed <b>36</b></button></div>
+<details class="legend"><summary>What these mean</summary><div class="legend-row"><span class="tag false_negative">Model too strict</span><span>human judged the analysis correct · model called it flawed</span></div><div class="legend-row"><span class="tag false_positive">Model too lenient</span><span>human judged the analysis flawed · model called it correct</span></div><div class="legend-row"><span class="tag true_positive">Correct, and model agreed</span><span>human judged the analysis correct · model agreed</span></div><div class="legend-row"><span class="tag true_negative">Flawed, and model agreed</span><span>human judged the analysis flawed · model agreed</span></div></details>
 <article class="card false_negative" data-outcome="false_negative">
-<header><span class="tag false_negative">FN</span>
-<div class="who"><h2>Community Health Workers Linking Clinics and Schools and Asthma Control: A Randomized Clinical Trial</h2>
-<p>Bryant-Stephens 2024 &middot; <code>IPR6QU8P</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>no</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag false_negative" title="human judged the analysis correct · model called it flawed">Model too strict</span>
+<h2>Community Health Workers Linking Clinics and Schools and Asthma Control: A Randomized Clinical Trial</h2>
+<p class="who">Bryant-Stephens 2024 &middot; <code>IPR6QU8P</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P2</span><strong>P2. This manuscript only</strong> — its text plus its own supplement. A calculation described in a protocol paper, registry record, or prior report does not count, however confidently cited: if this manuscript&#x27;s power justification is &quot;see our protocol paper,&quot; that is <code>no</code>, full stop — not <code>undecidable</code>.</div>
 <blockquote>Sample size/power calc explicitly deferred to prior protocol paper (ref 19), not described in this manuscript, violating P2/P6.</blockquote>
 
 </article>
 <article class="card false_negative" data-outcome="false_negative">
-<header><span class="tag false_negative">FN</span>
-<div class="who"><h2>Efficacy of Mobile Phone-Delivered Smoking Cessation Interventions for Socioeconomically Disadvantaged Individuals: A Randomized Clinical Trial</h2>
-<p>Vidrine 2019 &middot; <code>2RDD8DGI</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag false_negative" title="human judged the analysis correct · model called it flawed">Model too strict</span>
+<h2>Efficacy of Mobile Phone-Delivered Smoking Cessation Interventions for Socioeconomically Disadvantaged Individuals: A Randomized Clinical Trial</h2>
+<p class="who">Vidrine 2019 &middot; <code>2RDD8DGI</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Sites were stratified by type/ethnicity (restricted randomization) but power calc only used ICC=0.001, no stratum correlation accounted for.</blockquote>
 
 </article>
 <article class="card false_negative" data-outcome="false_negative">
-<header><span class="tag false_negative">FN</span>
-<div class="who"><h2>Effectiveness and implementation of mPATH™-CRC: a mobile health system for colorectal cancer screening</h2>
-<p>Snavely 2023 &middot; <code>9DKJKFAS</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag false_negative" title="human judged the analysis correct · model called it flawed">Model too strict</span>
+<h2>Effectiveness and implementation of mPATH™-CRC: a mobile health system for colorectal cancer screening</h2>
+<p class="who">Snavely 2023 &middot; <code>9DKJKFAS</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Clusters pair-matched within size strata (P10), but sample size uses only ICC/CV, no matching correlation accounted for (P11/P12).</blockquote>
 
 </article>
 <article class="card false_negative" data-outcome="false_negative">
-<header><span class="tag false_negative">FN</span>
-<div class="who"><h2>Mixed-methods approach to evaluate an mHealth intervention to increase adherence to triage of human papillomavirus-positive women who have performed self-collection (the ATICA study): study protocol for a hybrid type I cluster randomized effectiveness-implementation trial</h2>
-<p>Arrossi 2019 &middot; <code>B3KTU9TU</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag false_negative" title="human judged the analysis correct · model called it flawed">Model too strict</span>
+<h2>Mixed-methods approach to evaluate an mHealth intervention to increase adherence to triage of human papillomavirus-positive women who have performed self-collection (the ATICA study): study protocol for a hybrid type I cluster randomized effectiveness-implementation trial</h2>
+<p class="who">Arrossi 2019 &middot; <code>B3KTU9TU</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>ICC 0.10 accounts for CHW clustering, but randomization was stratified by gender/urban-rural with no adjustment for induced stratum correlation in the power calc.</blockquote>
 
 </article>
 <article class="card false_negative" data-outcome="false_negative">
-<header><span class="tag false_negative">FN</span>
-<div class="who"><h2>Automated symptom and treatment side effect monitoring for improved quality of life among adults with diabetic peripheral neuropathy in primary care: a pragmatic, cluster, randomized, controlled trial</h2>
-<p>Adams 2019 &middot; <code>D24FD6G2</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag false_negative" title="human judged the analysis correct · model called it flawed">Model too strict</span>
+<h2>Automated symptom and treatment side effect monitoring for improved quality of life among adults with diabetic peripheral neuropathy in primary care: a pragmatic, cluster, randomized, controlled trial</h2>
+<p class="who">Adams 2019 &middot; <code>D24FD6G2</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P8</span><strong>P8. Ignoring clustering</strong> is an individual-level calculation — &quot;n = 300 gives 80% power to detect d = 0.35&quot; — with no ICC, design effect, or cluster count.</div>
 <blockquote>Power calc assumes cluster size 1, an individual-level calculation with no ICC or design effect; clustering not properly accounted for.</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>Improving Communication in Heart Failure Patient Care</h2>
-<p>Goldstein 2019 &middot; <code>LU33978L</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human judged the analysis flawed · model called it correct">Model too lenient</span>
+<h2>Improving Communication in Heart Failure Patient Care</h2>
+<p class="who">Goldstein 2019 &middot; <code>LU33978L</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P7</span><strong>P7. Accounting for clustering</strong> means using a cluster-structure quantity and answering in clusters: an ICC; a design effect <code>1 + (m-1)p</code>; a coefficient of variation of cluster means; an explicit between-cluster variance; a simulation with within-cluster correlation.</div>
 <blockquote>Sample size used 3 clusters/arm and ICC=0.04, satisfying P4-P7. No matching/stratification reported, so restriction criteria don&#x27;t apply.</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>The comparative effectiveness of decision aids in diverse populations with early stage prostate cancer: a study protocol for a cluster-randomized controlled trial in the NCI Community Oncology Research Program (NCORP), Alliance A191402CD</h2>
-<p>Pacyna 2018 &middot; <code>BAABE7JM</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human judged the analysis flawed · model called it correct">Model too lenient</span>
+<h2>The comparative effectiveness of decision aids in diverse populations with early stage prostate cancer: a study protocol for a cluster-randomized controlled trial in the NCI Community Oncology Research Program (NCORP), Alliance A191402CD</h2>
+<p class="who">Pacyna 2018 &middot; <code>BAABE7JM</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P7</span><strong>P7. Accounting for clustering</strong> means using a cluster-structure quantity and answering in clusters: an ICC; a design effect <code>1 + (m-1)p</code>; a coefficient of variation of cluster means; an explicit between-cluster variance; a simulation with within-cluster correlation.</div>
 <blockquote>Clustering handled via ICC=0.1, m=5, design effect 1+(m-1)ρ=1.4; block randomization (equal sites/arm) with no covariate matching, so no restriction adjustment needed.</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>Oral cancer screening using mobile phone-based(mHealth) approach versus conventional oral examination approach, protocol of a cluster randomized study with cost-effectiveness analysis</h2>
-<p>Thankappan 2020 &middot; <code>WY9D5UIK</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human judged the analysis flawed · model called it correct">Model too lenient</span>
+<h2>Oral cancer screening using mobile phone-based(mHealth) approach versus conventional oral examination approach, protocol of a cluster randomized study with cost-effectiveness analysis</h2>
+<p class="who">Thankappan 2020 &middot; <code>WY9D5UIK</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P7</span><strong>P7. Accounting for clustering</strong> means using a cluster-structure quantity and answering in clusters: an ICC; a design effect <code>1 + (m-1)p</code>; a coefficient of variation of cluster means; an explicit between-cluster variance; a simulation with within-cluster correlation.</div>
 <blockquote>Sample size uses effect size, ICC via design effect of 2, and cluster count (6); no restricted randomization (simple 3v3 random allocation) to account for.</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>A mHealth intervention to preserve and promote ideal cardiovascular health in college students: Design and protocol of a cluster randomized controlled trial</h2>
-<p>Pfammatter 2020 &middot; <code>LGEECHQM</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.62</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human judged the analysis flawed · model called it correct">Model too lenient</span>
+<h2>A mHealth intervention to preserve and promote ideal cardiovascular health in college students: Design and protocol of a cluster randomized controlled trial</h2>
+<p class="who">Pfammatter 2020 &middot; <code>LGEECHQM</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.62</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P7</span><strong>P7. Accounting for clustering</strong> means using a cluster-structure quantity and answering in clusters: an ICC; a design effect <code>1 + (m-1)p</code>; a coefficient of variation of cluster means; an explicit between-cluster variance; a simulation with within-cluster correlation.</div>
 <blockquote>ICC=0.01 specified, cluster-based design via Thompson et al.&#x27;s paired cluster RCT formula, which incorporates matching correlation for dorm pairs.</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>Effect of the School-Based Asthma Care for Teens (SB-ACT) program on asthma morbidity: a 3-arm randomized controlled trial</h2>
-<p>Halterman 2022 &middot; <code>7M6ST2JQ</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.55</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human judged the analysis flawed · model called it correct">Model too lenient</span>
+<h2>Effect of the School-Based Asthma Care for Teens (SB-ACT) program on asthma morbidity: a 3-arm randomized controlled trial</h2>
+<p class="who">Halterman 2022 &middot; <code>7M6ST2JQ</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.55</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P17</span><strong>P17. Longitudinality does not count.</strong> A power analysis that handles clustering and restriction but assumes one measurement per subject is <strong><code>yes</code></strong>.</div>
 <blockquote>Teens, not schools, were randomized (stratified by school), so no cluster-level correlation applies; ICC 0.3-0.4 addresses repeated measures, correctly handled per P17.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Community-based, cluster-randomized pilot trial of a cardiovascular mHealth intervention: Rationale, design, and baseline findings of the FAITH! Trial</h2>
-<p>Brewer 2022 &middot; <code>FHVQQIX3</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.78</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human judged the analysis correct · model agreed">Correct, and model agreed</span>
+<h2>Community-based, cluster-randomized pilot trial of a cardiovascular mHealth intervention: Rationale, design, and baseline findings of the FAITH! Trial</h2>
+<p class="who">Brewer 2022 &middot; <code>FHVQQIX3</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.78</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P7</span><strong>P7. Accounting for clustering</strong> means using a cluster-structure quantity and answering in clusters: an ICC; a design effect <code>1 + (m-1)p</code>; a coefficient of variation of cluster means; an explicit between-cluster variance; a simulation with within-cluster correlation.</div>
 <blockquote>Power analysis specifies clusters (16 churches), ICC=0.01, and CV of cluster sizes=0.50, satisfying clustering requirements. No restricted randomization present (balanced only by size).</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Diagnosing Cervical Neoplasia in Rural Brazil Using a Mobile Van Equipped with In Vivo Microscopy: A Cluster-Randomized Community Trial</h2>
-<p>Hunt 2018 &middot; <code>72N55PAH</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human judged the analysis correct · model agreed">Correct, and model agreed</span>
+<h2>Diagnosing Cervical Neoplasia in Rural Brazil Using a Mobile Van Equipped with In Vivo Microscopy: A Cluster-Randomized Community Trial</h2>
+<p class="who">Hunt 2018 &middot; <code>72N55PAH</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P7</span><strong>P7. Accounting for clustering</strong> means using a cluster-structure quantity and answering in clusters: an ICC; a design effect <code>1 + (m-1)p</code>; a coefficient of variation of cluster means; an explicit between-cluster variance; a simulation with within-cluster correlation.</div>
 <blockquote>Sample size calc used cluster randomization score test with 20 clusters of 5 each and effect size, accounting for clustering; no restricted randomization present.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Rationale and protocol for a cluster randomized pragmatic clinical trial testing behavioral economic implementation strategies to improve tobacco treatment rates for cancer patients who smoke</h2>
-<p>Jenssen 2021 &middot; <code>BLWKH6C8</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human judged the analysis correct · model agreed">Correct, and model agreed</span>
+<h2>Rationale and protocol for a cluster randomized pragmatic clinical trial testing behavioral economic implementation strategies to improve tobacco treatment rates for cancer patients who smoke</h2>
+<p class="who">Jenssen 2021 &middot; <code>BLWKH6C8</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P7</span><strong>P7. Accounting for clustering</strong> means using a cluster-structure quantity and answering in clusters: an ICC; a design effect <code>1 + (m-1)p</code>; a coefficient of variation of cluster means; an explicit between-cluster variance; a simulation with within-cluster correlation.</div>
 <blockquote>Simulation-based power used exchangeable correlation (ICC=0.07) within clinician clusters, GEE, cluster count specified. No restricted randomization present.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>A Group Randomized Intervention Trial Increases Participation in the School Breakfast Program in 16 Rural High Schools in Minnesota</h2>
-<p>Nanney 2019 &middot; <code>2BDG7GVP</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>A Group Randomized Intervention Trial Increases Participation in the School Breakfast Program in 16 Rural High Schools in Minnesota</h2>
+<p class="who">Nanney 2019 &middot; <code>2BDG7GVP</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P6</span><strong>P6. Absent is <code>no</code>, not <code>undecidable</code>.</strong> The likeliest place to hedge. Do not.</div>
 <blockquote>No sample-size/power analysis reported at all in this manuscript; refers to design elsewhere without ICC/effect size/cluster count here.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Utilization of Mobile Reminders in Improving the Completeness and Timeliness of Routine Childhood Immunization in Kano Metropolis, Nigeria: A Randomized Controlled Trial</h2>
-<p>Yunusa 2024 &middot; <code>BR4Y6FSS</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Utilization of Mobile Reminders in Improving the Completeness and Timeliness of Routine Childhood Immunization in Kano Metropolis, Nigeria: A Randomized Controlled Trial</h2>
+<p class="who">Yunusa 2024 &middot; <code>BR4Y6FSS</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P8</span><strong>P8. Ignoring clustering</strong> is an individual-level calculation — &quot;n = 300 gives 80% power to detect d = 0.35&quot; — with no ICC, design effect, or cluster count.</div>
 <blockquote>Sample size calc used individual-level formula (Charan &amp; Biswas) with proportions only; no ICC, design effect, or cluster count reported.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Impact of Clinical Decision Support on Antibiotic Prescribing for Acute Respiratory Infections: a Cluster Randomized Implementation Trial</h2>
-<p>Mann 2020 &middot; <code>DCYTWR4N</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Impact of Clinical Decision Support on Antibiotic Prescribing for Acute Respiratory Infections: a Cluster Randomized Implementation Trial</h2>
+<p class="who">Mann 2020 &middot; <code>DCYTWR4N</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P6</span><strong>P6. Absent is <code>no</code>, not <code>undecidable</code>.</strong> The likeliest place to hedge. Do not.</div>
 <blockquote>No sample size/power justification described anywhere in manuscript; absent, not undecidable.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Caring for the elderly at work and home: Can a randomized organizational intervention improve psychological health?</h2>
-<p>Kossek 2019 &middot; <code>NQ4Y7FIA</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Caring for the elderly at work and home: Can a randomized organizational intervention improve psychological health?</h2>
+<p class="who">Kossek 2019 &middot; <code>NQ4Y7FIA</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P6</span><strong>P6. Absent is <code>no</code>, not <code>undecidable</code>.</strong> The likeliest place to hedge. Do not.</div>
 <blockquote>No power analysis reported in this manuscript; sample size justification absent entirely.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Design of the Equity in Prevention and Progression of Hypertension by Addressing Barriers to Nutrition and Physical Activity Study: A Cluster Randomized Trial</h2>
-<p>Hardy 2023 &middot; <code>BW2B5H9P</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Design of the Equity in Prevention and Progression of Hypertension by Addressing Barriers to Nutrition and Physical Activity Study: A Cluster Randomized Trial</h2>
+<p class="who">Hardy 2023 &middot; <code>BW2B5H9P</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P8</span><strong>P8. Ignoring clustering</strong> is an individual-level calculation — &quot;n = 300 gives 80% power to detect d = 0.35&quot; — with no ICC, design effect, or cluster count.</div>
 <blockquote>Sample size gives 88% power for 4mmHg difference with n=480 individuals, no ICC, design effect, or cluster count used—individual-level calculation ignoring clustering.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Cluster-randomized trial comparing organizationally tailored versus standard approach for integrating an evidence-based cancer control intervention into African American churches</h2>
-<p>Knott 2022 &middot; <code>JCPBMIPX</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Cluster-randomized trial comparing organizationally tailored versus standard approach for integrating an evidence-based cancer control intervention into African American churches</h2>
+<p class="who">Knott 2022 &middot; <code>JCPBMIPX</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P5</span><strong>P5. Naming a tool is not a description.</strong> GLIMMPSE, PASS, Donner &amp; Klar: cited alone, not enough. Need at minimum an ICC or design effect, an effect size, and a cluster count.</div>
 <blockquote>Only states sample size &#x27;estimated by power analysis based on cluster-randomized design&#x27; with no ICC, design effect, or cluster count detail given; matching also unaddressed.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Clinician Prompts for Human Papillomavirus Vaccination: A Cluster Randomized Trial</h2>
-<p>Rand 2024 &middot; <code>KMRQTRP3</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Clinician Prompts for Human Papillomavirus Vaccination: A Cluster Randomized Trial</h2>
+<p class="who">Rand 2024 &middot; <code>KMRQTRP3</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P6</span><strong>P6. Absent is <code>no</code>, not <code>undecidable</code>.</strong> The likeliest place to hedge. Do not.</div>
 <blockquote>Only states 90% power to detect 5pp difference; no ICC/design effect, no cluster count, no mention of constrained randomization accounted for.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Multilevel approaches to increase fruit and vegetable intake in low-income housing communities: final results of the &#x27;Live Well, Viva Bien&#x27; cluster-randomized trial</h2>
-<p>Gans 2018 &middot; <code>SGCHKJTH</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Multilevel approaches to increase fruit and vegetable intake in low-income housing communities: final results of the &#x27;Live Well, Viva Bien&#x27; cluster-randomized trial</h2>
+<p class="who">Gans 2018 &middot; <code>SGCHKJTH</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P6</span><strong>P6. Absent is <code>no</code>, not <code>undecidable</code>.</strong> The likeliest place to hedge. Do not.</div>
 <blockquote>No power/sample size justification described in this manuscript; refers to prior protocol paper only, and matched-pair design not addressed.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Improving adherence to endocrine hormonal therapy among breast cancer patients: Study protocol for a randomized controlled trial</h2>
-<p>Chalela 2018 &middot; <code>U7PLGE75</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Improving adherence to endocrine hormonal therapy among breast cancer patients: Study protocol for a randomized controlled trial</h2>
+<p class="who">Chalela 2018 &middot; <code>U7PLGE75</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P8</span><strong>P8. Ignoring clustering</strong> is an individual-level calculation — &quot;n = 300 gives 80% power to detect d = 0.35&quot; — with no ICC, design effect, or cluster count.</div>
 <blockquote>Individual RCT randomizing patients, not clusters; sample size calc is individual-level with no ICC/design effect—not a cluster trial power analysis.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Effects of Different Allotments of Avocados on the Nutritional Status of Families: A Cluster Randomized Controlled Trial</h2>
-<p>Pacheco 2021 &middot; <code>UPVYYFVQ</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Effects of Different Allotments of Avocados on the Nutritional Status of Families: A Cluster Randomized Controlled Trial</h2>
+<p class="who">Pacheco 2021 &middot; <code>UPVYYFVQ</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P8</span><strong>P8. Ignoring clustering</strong> is an individual-level calculation — &quot;n = 300 gives 80% power to detect d = 0.35&quot; — with no ICC, design effect, or cluster count.</div>
 <blockquote>Sample size calc uses individual-level SD (500 kcal), no ICC/design effect/cluster count despite family-level clustering unit.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Effectiveness of a Multicomponent Strategy for Implementing Guidelines for Treating Tobacco Use in Vietnam Commune Health Centers</h2>
-<p>Shelley 2022 &middot; <code>ZETJJPRR</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Effectiveness of a Multicomponent Strategy for Implementing Guidelines for Treating Tobacco Use in Vietnam Commune Health Centers</h2>
+<p class="who">Shelley 2022 &middot; <code>ZETJJPRR</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P6</span><strong>P6. Absent is <code>no</code>, not <code>undecidable</code>.</strong> The likeliest place to hedge. Do not.</div>
 <blockquote>No sample-size/power justification is presented in this manuscript; only ICC ranges reported post hoc for outcomes measured.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Results of a cluster randomized trial testing the Systems Analysis and Improvement Approach to increase cervical cancer screening in family planning clinics in Mombasa County, Kenya</h2>
-<p>Eastment 2023 &middot; <code>26LDPI8G</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Results of a cluster randomized trial testing the Systems Analysis and Improvement Approach to increase cervical cancer screening in family planning clinics in Mombasa County, Kenya</h2>
+<p class="who">Eastment 2023 &middot; <code>26LDPI8G</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>ICC and cluster size CV used for clustering, but restricted randomization (stratified by clinic size/baseline screening) not incorporated into power calc.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Enhanced care planning and clinical-community linkages versus usual care to address basic needs of patients with multiple chronic conditions: a clinician-level randomized controlled trial</h2>
-<p>Krist 2020 &middot; <code>6XFGQN39</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Enhanced care planning and clinical-community linkages versus usual care to address basic needs of patients with multiple chronic conditions: a clinician-level randomized controlled trial</h2>
+<p class="who">Krist 2020 &middot; <code>6XFGQN39</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Clinicians stratified/matched by age and sex (restricted randomization) but power calc only uses ICC for clinician clustering, ignoring matching correlation.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Equitable Care for Hypertension: Blood Pressure and Patient-Reported Outcomes of the RICH LIFE Cluster Randomized Trial</h2>
-<p>Cooper 2024 &middot; <code>84YU8UCD</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Equitable Care for Hypertension: Blood Pressure and Patient-Reported Outcomes of the RICH LIFE Cluster Randomized Trial</h2>
+<p class="who">Cooper 2024 &middot; <code>84YU8UCD</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Power calc used ICC and cluster count (clustering handled), but randomization was stratified/block-constrained by health system with no accounting for that correlation.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Evaluation of a walking school bus program: a cluster randomized controlled trial</h2>
-<p>Johnson 2024 &middot; <code>SH5J2R2J</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Evaluation of a walking school bus program: a cluster randomized controlled trial</h2>
+<p class="who">Johnson 2024 &middot; <code>SH5J2R2J</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Schools matched pairs &amp; stratified by site (restricted randomization), but sample size only used ICC/VIF for clustering, no matching correlation adjustment.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Mailed fecal testing and patient navigation versus usual care to improve rates of colorectal cancer screening and follow-up colonoscopy in rural Medicaid enrollees: a cluster-randomized controlled trial</h2>
-<p>Coronado 2022 &middot; <code>TBFRUAMD</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Mailed fecal testing and patient navigation versus usual care to improve rates of colorectal cancer screening and follow-up colonoscopy in rural Medicaid enrollees: a cluster-randomized controlled trial</h2>
+<p class="who">Coronado 2022 &middot; <code>TBFRUAMD</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Randomization was stratified by health system, but power calc only uses ICC/cluster size, ignoring stratification-induced correlation.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Design and rationale of a pragmatic trial integrating routine screening for atrial fibrillation at primary care visits: The VITAL-AF trial</h2>
-<p>Ashburner 2019 &middot; <code>TGSIADX6</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Design and rationale of a pragmatic trial integrating routine screening for atrial fibrillation at primary care visits: The VITAL-AF trial</h2>
+<p class="who">Ashburner 2019 &middot; <code>TGSIADX6</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Constrained/covariate-balanced randomization was used (P10) but power calc only used ICC for clustering, no correlation adjustment for restriction (P12).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>A Cluster-Randomized Evaluation of the SuperShelf Intervention in Choice-Based Food Pantries</h2>
-<p>Caspi 2024 &middot; <code>UHEKLJLC</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>A Cluster-Randomized Evaluation of the SuperShelf Intervention in Choice-Based Food Pantries</h2>
+<p class="who">Caspi 2024 &middot; <code>UHEKLJLC</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Power calc uses ICC=0.05 (clustering handled) but randomization was matched on RUCA/catchment/interventionist; matching correlation not addressed.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Performance Feedback for Human Papillomavirus Vaccination: A Randomized Trial From the American Academy of Pediatrics Pediatric Research in Office Settings Research Network</h2>
-<p>Fiks 2023 &middot; <code>WD74R75C</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Performance Feedback for Human Papillomavirus Vaccination: A Randomized Trial From the American Academy of Pediatrics Pediatric Research in Office Settings Research Network</h2>
+<p class="who">Fiks 2023 &middot; <code>WD74R75C</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P5</span><strong>P5. Naming a tool is not a description.</strong> GLIMMPSE, PASS, Donner &amp; Klar: cited alone, not enough. Need at minimum an ICC or design effect, an effect size, and a cluster count.</div>
 <blockquote>Power stated as &#x27;&gt;95% power to detect 5pp with 19 practices/arm&#x27; with no ICC/design effect; restricted randomization (stratified) not accounted for either.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Health insurance coverage with or without a nurse-led task shifting strategy for hypertension control: A pragmatic cluster randomized trial in Ghana</h2>
-<p>Ogedegbe 2018 &middot; <code>XFPCQLGP</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Health insurance coverage with or without a nurse-led task shifting strategy for hypertension control: A pragmatic cluster randomized trial in Ghana</h2>
+<p class="who">Ogedegbe 2018 &middot; <code>XFPCQLGP</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Sample size uses ICC and cluster count (clustering handled) but pair-matching by rural/urban is not reflected in the calculation.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Putting patients at the center of kidney care transitions: PREPARE NOW, a cluster randomized controlled trial</h2>
-<p>Green 2018 &middot; <code>5VWZPNEQ</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Putting patients at the center of kidney care transitions: PREPARE NOW, a cluster randomized controlled trial</h2>
+<p class="who">Green 2018 &middot; <code>5VWZPNEQ</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Power analysis accounts for clustering (8 clinics, ICC=0.05) but randomization was constrained by clinic size/region; that restriction correlation isn&#x27;t incorporated.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Using increased trust in medical researchers to increase minority recruitment: The RECRUIT cluster randomized clinical trial</h2>
-<p>Tilley 2021 &middot; <code>C69UAKKB</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Using increased trust in medical researchers to increase minority recruitment: The RECRUIT cluster randomized clinical trial</h2>
+<p class="who">Tilley 2021 &middot; <code>C69UAKKB</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Sites were matched into pairs on covariates (P10), but power calc only used ICC=0.10 with no matching correlation adjustment—restriction ignored while clustering handled (P12).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Team-focused implementation strategies to improve implementation of mental health screening and referral in rural Children&#x27;s Advocacy Centers: study protocol for a pilot cluster randomized hybrid type 2 trial</h2>
-<p>McGuier 2023 &middot; <code>C9P63S2B</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Team-focused implementation strategies to improve implementation of mental health screening and referral in rural Children&#x27;s Advocacy Centers: study protocol for a pilot cluster randomized hybrid type 2 trial</h2>
+<p class="who">McGuier 2023 &middot; <code>C9P63S2B</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>CACs pair-matched by team size before randomization (P10), but power calc for primary outcome only uses ICC/design effect, not matching correlation (P12).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Personalized Multilevel Intervention for Improving Appropriate Use of Colorectal Cancer Screening in Older Adults: A Cluster Randomized Clinical Trial</h2>
-<p>Saini 2023 &middot; <code>CKEF67C5</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Personalized Multilevel Intervention for Improving Appropriate Use of Colorectal Cancer Screening in Older Adults: A Cluster Randomized Clinical Trial</h2>
+<p class="who">Saini 2023 &middot; <code>CKEF67C5</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Power calc used ICC=0.02, cluster count, effect size (clustering handled), but randomization was stratified by site/FTE with no adjustment for stratum correlation.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Two-year outcomes of Faith in Action/Fe en Acción: a randomized controlled trial of physical activity promotion in Latinas</h2>
-<p>Arredondo 2022 &middot; <code>DFJE8ALD</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Two-year outcomes of Faith in Action/Fe en Acción: a randomized controlled trial of physical activity promotion in Latinas</h2>
+<p class="who">Arredondo 2022 &middot; <code>DFJE8ALD</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Power analysis used ICC=0.05 with 16 clusters (clustering handled), but churches were stratified by size before randomization and stratum correlation not accounted for.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Evaluating a multicomponent program to improve hypertension control in Guatemala: study protocol for an effectiveness-implementation cluster randomized trial</h2>
-<p>Paniagua-Avila 2020 &middot; <code>H7N83IW2</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Evaluating a multicomponent program to improve hypertension control in Guatemala: study protocol for an effectiveness-implementation cluster randomized trial</h2>
+<p class="who">Paniagua-Avila 2020 &middot; <code>H7N83IW2</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Randomization stratified by department (P10) but power calc only uses ICC/cluster count; no stratum correlation accounted, per P12.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>A study protocol to engage religious leaders to reduce blood pressure in Tanzanian communities: A cluster randomized trial</h2>
-<p>Kavishe 2025 &middot; <code>L8CPLJYW</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>A study protocol to engage religious leaders to reduce blood pressure in Tanzanian communities: A cluster randomized trial</h2>
+<p class="who">Kavishe 2025 &middot; <code>L8CPLJYW</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Clustering handled via ICC/Monte Carlo simulation, but randomization was stratified by population size with no accounting for stratum correlation in power calc.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Managing high cardiovascular disease risk among adults in Argentina using a multicomponent strategy linking key aspects of care: A two-arm cluster-randomized clinical trial (PRIMECare) protocol</h2>
-<p>Abrahams-Gessel 2023 &middot; <code>MTLFVN94</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Managing high cardiovascular disease risk among adults in Argentina using a multicomponent strategy linking key aspects of care: A two-arm cluster-randomized clinical trial (PRIMECare) protocol</h2>
+<p class="who">Abrahams-Gessel 2023 &middot; <code>MTLFVN94</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>ICC (0.08) used for clustering, but randomization stratified by province with no accounting for stratum correlation in sample size calc.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>A cluster randomized controlled trial comparing Virtual Learning Collaborative and Technical Assistance strategies to implement an early palliative care program for patients with advanced cancer and their caregivers: a study protocol</h2>
-<p>Zubkoff 2021 &middot; <code>UMV6NC2L</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>A cluster randomized controlled trial comparing Virtual Learning Collaborative and Technical Assistance strategies to implement an early palliative care program for patients with advanced cancer and their caregivers: a study protocol</h2>
+<p class="who">Zubkoff 2021 &middot; <code>UMV6NC2L</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>ICC-based sample size accounts for clustering, but minimization algorithm (restricted randomization) is not reflected in the power calculation at all.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Randomized evaluation of decision support interventions for atrial fibrillation: Rationale and design of the RED-AF study</h2>
-<p>Jones 2022 &middot; <code>VMHXT33Z</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Randomized evaluation of decision support interventions for atrial fibrillation: Rationale and design of the RED-AF study</h2>
+<p class="who">Jones 2022 &middot; <code>VMHXT33Z</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P6</span><strong>P6. Absent is <code>no</code>, not <code>undecidable</code>.</strong> The likeliest place to hedge. Do not.</div>
 <blockquote>Sample size/power calc deferred to supplemental appendix, not in manuscript text; no ICC, design effect, or details given in body.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Design and rationale of an intervention to improve cancer prevention using clinical decision support and shared decision making: A clinic-randomized trial</h2>
-<p>Elliott 2021 &middot; <code>WCA66X4I</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Design and rationale of an intervention to improve cancer prevention using clinical decision support and shared decision making: A clinic-randomized trial</h2>
+<p class="who">Elliott 2021 &middot; <code>WCA66X4I</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Clinics were stratified (rural/urban, Medicaid %) before randomization, but power calc only used ICC/design effect, not stratification correlation (P12).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>A cluster randomized factorial trial of school-lunch salad bars and marketing on elementary students&#x27; objectively measured fruit and vegetable consumption</h2>
-<p>Adams 2025 &middot; <code>4GUDDLNQ</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.68</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>A cluster randomized factorial trial of school-lunch salad bars and marketing on elementary students&#x27; objectively measured fruit and vegetable consumption</h2>
+<p class="who">Adams 2025 &middot; <code>4GUDDLNQ</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.68</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Power calc used autocorrelation between school means (clustering) but design was block-randomized (block size=4); no accounting for restriction-induced correlation.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Effect of an Oncology Nurse-Led Primary Palliative Care Intervention on Patients With Advanced Cancer: The CONNECT Cluster Randomized Clinical Trial</h2>
-<p>Schenker 2021 &middot; <code>HPIL7WVW</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.65</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Effect of an Oncology Nurse-Led Primary Palliative Care Intervention on Patients With Advanced Cancer: The CONNECT Cluster Randomized Clinical Trial</h2>
+<p class="who">Schenker 2021 &middot; <code>HPIL7WVW</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.65</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Randomization stratified by practice size (P10) but power calc only used ICC/design effect for clustering, no stratum correlation accounted (P12).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Evaluation of an adapted version of the Diabetes Prevention Program for low- and middle-income countries: A cluster randomized trial to evaluate &quot;Lifestyle Africa&quot; in South Africa</h2>
-<p>Catley 2022 &middot; <code>FEHWGZSQ</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.62</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Evaluation of an adapted version of the Diabetes Prevention Program for low- and middle-income countries: A cluster randomized trial to evaluate &quot;Lifestyle Africa&quot; in South Africa</h2>
+<p class="who">Catley 2022 &middot; <code>FEHWGZSQ</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.62</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Power analysis used ICC and cluster count (clustering handled) but randomization was stratified within NGOs, and this restriction was not incorporated into the power calc.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Mobile Application-Based Communication Facilitation Platform for Family Members of Critically Ill Patients: A Randomized Clinical Trial</h2>
-<p>Cox 2024 &middot; <code>TEXLFQSL</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.62</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Mobile Application-Based Communication Facilitation Platform for Family Members of Critically Ill Patients: A Randomized Clinical Trial</h2>
+<p class="who">Cox 2024 &middot; <code>TEXLFQSL</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.62</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P12</span><strong>P12. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>ICC and cluster count used for power, but physician randomization was stratified by gender/experience/discipline; stratification effect not incorporated in sample size calc.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Effect of Training Pediatric Clinicians in Human Papillomavirus Communication Strategies on Human Papillomavirus Vaccination Rates: A Cluster Randomized Clinical Trial</h2>
-<p>Szilagyi 2021 &middot; <code>9LTSBSEE</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.60</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Effect of Training Pediatric Clinicians in Human Papillomavirus Communication Strategies on Human Papillomavirus Vaccination Rates: A Cluster Randomized Clinical Trial</h2>
+<p class="who">Szilagyi 2021 &middot; <code>9LTSBSEE</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.60</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">P5</span><strong>P5. Naming a tool is not a description.</strong> GLIMMPSE, PASS, Donner &amp; Klar: cited alone, not enough. Need at minimum an ICC or design effect, an effect size, and a cluster count.</div>
 <blockquote>No sample size/power calculation with ICC, effect size, cluster count given; only mentions &gt;90% power to detect 5pp difference with design effect ~2, no derivation shown.</blockquote>
 

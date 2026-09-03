@@ -18,6 +18,21 @@ have plateaued. Those wait for run 2.
 
 ## TODO now
 
+- [ ] Review the sample prompt `.txt` files and record any changes needed before the next promptbook refinement.
+- [ ] Create an interactive GUI for expert feedback to support promptbook refinement.
+- [ ] Refactor the draft email to Deb and Keith.
+- [ ] Convene the Keith/Deb expert-review meeting for the three restorable review piles.
+- [ ] Complete Group G of the Reading Room CLI test plan.
+- [ ] Implement and offline-validate the build-set Message Batches API path.
+- [ ] Write `promptbook_builder.py`, `two_pass.py`, and the run-log / accuracy-history artifacts.
+- [ ] Refactor the power and data-analysis promptbooks into one combined analysis block.
+- [ ] Use a fixed exploratory subset for promptbook-refinement rounds; reserve a full regression for a plateau claim.
+- [ ] Complete the Batch API transport once credits are available.
+- [ ] Consolidate the corpus-breakdown `.tex` sources and publish the corpus-breakdown artifact.
+- [ ] Prepare the LaTeX review document covering the three Deb/Keith adjudication piles.
+
+## Roadmap record
+
 - [x] **Split assigned, 2026-08-26.** 338 build / 145 holdout, stratified on gate-survivor status:
       123/53 survivors, 215/92 excluded. Runs once; re-running now refuses.
 - [x] **Build rounds cut, 2026-08-26.** `scripts/17_assign_build_rounds.py` ->

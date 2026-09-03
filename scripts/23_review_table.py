@@ -56,11 +56,65 @@ COLUMNS = [
 OUTCOME_ORDER = ["false_negative", "false_positive", "undecidable", "wrong_text",
                  "failed", "unlabelled", "true_positive", "true_negative"]
 
+# Short codes stay in the CSV, where they match 22_evaluate.py's cases.csv. The
+# page spells them out, because "false positive" points in opposite directions
+# across tasks: on exclusion `yes` means exclude the paper, on power and data
+# analysis it means the analysis was done correctly. One label for both would be
+# clear on neither.
 OUTCOME_LABEL = {
     "false_negative": "FN", "false_positive": "FP", "true_positive": "TP",
     "true_negative": "TN", "undecidable": "undecidable", "wrong_text": "wrong text",
     "failed": "failed", "unlabelled": "unlabelled",
 }
+
+BY_TASK = {
+    "exclusion": {
+        "true_positive": ("Correctly excluded", "human excluded it · model excluded it"),
+        "true_negative": ("Correctly kept", "human kept it · model kept it"),
+        "false_positive": ("Wrongly excluded",
+                           "human kept it · model excluded it — unrecoverable, "
+                           "the paper never reaches power or data analysis"),
+        "false_negative": ("Wrongly kept", "human excluded it · model kept it"),
+    },
+    "analysis": {
+        "true_positive": ("Correct, and model agreed",
+                          "human judged the analysis correct · model agreed"),
+        "true_negative": ("Flawed, and model agreed",
+                          "human judged the analysis flawed · model agreed"),
+        "false_positive": ("Model too lenient",
+                           "human judged the analysis flawed · model called it correct"),
+        "false_negative": ("Model too strict",
+                           "human judged the analysis correct · model called it flawed"),
+    },
+}
+
+SHARED_LABEL = {
+    "undecidable": ("Model abstained",
+                    "the model returned `undecidable` — no scoreable answer"),
+    "wrong_text": ("Wrong paper text",
+                   "the model reported that the text it was handed was not the paper"),
+    "failed": ("Response failed checks",
+               "the response never passed 21_check_responses, so no judgment exists"),
+    "unlabelled": ("No human label",
+                   "this paper carries no human answer for this task, so it cannot be scored"),
+}
+
+
+def describe(task: str) -> dict[str, tuple[str, str]]:
+    """Full outcome labels and their gloss, for one task."""
+    return {**BY_TASK.get(task, BY_TASK["analysis"]), **SHARED_LABEL}
+
+
+# The stored `yes`/`no` is the schema's vocabulary, not a reader's: on exclusion
+# `yes` means exclude, on the analyses it means the analysis was done correctly.
+VERDICT = {"exclusion": {"yes": "exclude", "no": "keep"},
+           "analysis": {"yes": "correct", "no": "flawed"}}
+
+
+def verdict(task: str, value: str | None) -> str:
+    if not value:
+        return "—"
+    return VERDICT.get(task, VERDICT["analysis"]).get(value, value.replace("_", " "))
 
 BINARY = ("true_positive", "true_negative", "false_positive", "false_negative")
 
@@ -352,11 +406,20 @@ def render_html(rows: list[dict], meta: dict, rules: dict[str, str]) -> str:
                if not meta.get("promptbook_version")
                else "not found in this promptbook")
 
-    chips = [f'<button class="chip active" data-outcome="all">all <b>{len(rows)}</b></button>']
-    for key in OUTCOME_ORDER:
-        if counts.get(key):
-            chips.append(f'<button class="chip {key}" data-outcome="{key}">'
-                         f'{OUTCOME_LABEL[key]} <b>{counts[key]}</b></button>')
+    words = describe(meta.get("task", ""))
+    present = [key for key in OUTCOME_ORDER if counts.get(key)]
+
+    chips = [f'<button class="chip active" data-outcome="all">'
+             f'Every paper <b>{len(rows)}</b></button>']
+    for key in present:
+        label, gloss = words[key]
+        chips.append(f'<button class="chip {key}" data-outcome="{key}" '
+                     f'title="{html.escape(gloss)}">'
+                     f'{html.escape(label)} <b>{counts[key]}</b></button>')
+
+    legend = "".join(
+        f'<div class="legend-row"><span class="tag {key}">{html.escape(words[key][0])}</span>'
+        f'<span>{inline_markdown(words[key][1])}</span></div>' for key in present)
 
     cards = []
     for row in rows:
@@ -368,11 +431,13 @@ def render_html(rows: list[dict], meta: dict, rules: dict[str, str]) -> str:
             confidence = f'{float(row.get("confidence") or ""):.2f}'
         except (TypeError, ValueError):
             confidence = "—"
-        facts = [f'<span>truth <b>{html.escape(row.get("truth") or chr(8212))}</b></span>',
-                 f'<span>model <b>{html.escape(row.get("decision") or chr(8212))}</b></span>',
-                 f'<span>conf <b>{confidence}</b></span>']
+        task = meta.get("task", "")
+        facts = [
+            f'<span>Human said <b>{html.escape(verdict(task, row.get("truth")))}</b></span>',
+            f'<span>Model said <b>{html.escape(verdict(task, row.get("decision")))}</b></span>',
+            f'<span>Confidence <b>{confidence}</b></span>']
         if row.get("split"):
-            facts.append(f'<span>{html.escape(row["split"])}</span>')
+            facts.append(f'<span>{html.escape(row["split"])} split</span>')
         detail = ""
         if outcome == "failed" and row.get("detail"):
             case = row.get("failure_case") or ""
@@ -382,10 +447,11 @@ def render_html(rows: list[dict], meta: dict, rules: dict[str, str]) -> str:
                       f'{html.escape(row["detail"])}</div>')
         reasoning = (f'<blockquote>{html.escape(row["reasoning"])}</blockquote>'
                      if row.get("reasoning") else "")
+        label, gloss = words.get(outcome, (outcome, ""))
         cards.append(f"""<article class="card {outcome}" data-outcome="{outcome}">
-<header><span class="tag {outcome}">{OUTCOME_LABEL.get(outcome, outcome)}</span>
-<div class="who"><h2>{title}</h2>
-<p>{html.escape(byline)} &middot; <code>{html.escape(row.get("paper_id", ""))}</code></p></div></header>
+<header><span class="tag {outcome}" title="{html.escape(gloss)}">{html.escape(label)}</span>
+<h2>{title}</h2>
+<p class="who">{html.escape(byline)} &middot; <code>{html.escape(row.get("paper_id", ""))}</code></p></header>
 <div class="facts">{"".join(facts)}</div>
 {rule_block(row, rules, missing=missing)}
 {reasoning}
@@ -410,7 +476,8 @@ def render_html(rows: list[dict], meta: dict, rules: dict[str, str]) -> str:
 
     heading = f'{meta.get("task", "review")} r{meta.get("round", "")} review table'
     return TEMPLATE.format(title=html.escape(heading), subtitle=html.escape(subtitle),
-                           warning=warning, chips="".join(chips), cards="\n".join(cards))
+                           warning=warning, chips="".join(chips), legend=legend,
+                           cards="\n".join(cards))
 
 
 TEMPLATE = """<!doctype html>
@@ -454,11 +521,17 @@ h1 {{ font-size:22px; margin:0 0 4px; letter-spacing:-.01em; }}
 .card.true_positive {{ color:var(--tp); }}
 .card.undecidable, .card.wrong_text, .card.failed, .card.unlabelled {{ color:var(--odd); }}
 .card > * {{ color:var(--ink); }}
-header {{ display:flex; gap:12px; align-items:baseline; }}
-.tag {{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
-  white-space:nowrap; padding-top:3px; }}
-.who h2 {{ font-size:15px; font-weight:600; margin:0; line-height:1.4; }}
-.who p {{ margin:2px 0 0; font-size:12px; color:var(--muted); }}
+.tag {{ display:inline-block; font-size:11px; font-weight:700; letter-spacing:.05em;
+  text-transform:uppercase; border:1px solid currentColor; border-radius:99px;
+  padding:1px 8px; margin-bottom:8px; }}
+header h2 {{ font-size:15px; font-weight:600; margin:0; line-height:1.4; }}
+.who {{ margin:2px 0 0; font-size:12px; color:var(--muted); }}
+.legend {{ margin:-6px 0 20px; font-size:13px; color:var(--muted); }}
+.legend summary {{ cursor:pointer; color:var(--muted); }}
+.legend-row {{ display:flex; gap:10px; align-items:baseline; margin:10px 0 0;
+  padding-left:2px; color:var(--tn); }}
+.legend-row > span:last-child {{ color:var(--muted); flex:1; }}
+.legend-row .tag {{ margin:0; flex:0 0 auto; min-width:170px; text-align:center; }}
 .facts {{ display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:var(--muted);
   margin:10px 0 0; }}
 .facts b {{ color:var(--ink); font-weight:600; }}
@@ -478,6 +551,7 @@ code {{ font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace; }}
 </style></head><body><div class="wrap">
 <h1>{title}</h1><p class="sub">{subtitle}</p>{warning}
 <div class="bar">{chips}</div>
+<details class="legend"><summary>What these mean</summary>{legend}</details>
 {cards}
 </div><script>
 var chips = document.querySelectorAll('.chip');

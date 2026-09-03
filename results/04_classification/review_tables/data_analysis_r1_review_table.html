@@ -39,11 +39,17 @@ h1 { font-size:22px; margin:0 0 4px; letter-spacing:-.01em; }
 .card.true_positive { color:var(--tp); }
 .card.undecidable, .card.wrong_text, .card.failed, .card.unlabelled { color:var(--odd); }
 .card > * { color:var(--ink); }
-header { display:flex; gap:12px; align-items:baseline; }
-.tag { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
-  white-space:nowrap; padding-top:3px; }
-.who h2 { font-size:15px; font-weight:600; margin:0; line-height:1.4; }
-.who p { margin:2px 0 0; font-size:12px; color:var(--muted); }
+.tag { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.05em;
+  text-transform:uppercase; border:1px solid currentColor; border-radius:99px;
+  padding:1px 8px; margin-bottom:8px; }
+header h2 { font-size:15px; font-weight:600; margin:0; line-height:1.4; }
+.who { margin:2px 0 0; font-size:12px; color:var(--muted); }
+.legend { margin:-6px 0 20px; font-size:13px; color:var(--muted); }
+.legend summary { cursor:pointer; color:var(--muted); }
+.legend-row { display:flex; gap:10px; align-items:baseline; margin:10px 0 0;
+  padding-left:2px; color:var(--tn); }
+.legend-row > span:last-child { color:var(--muted); flex:1; }
+.legend-row .tag { margin:0; flex:0 0 auto; min-width:170px; text-align:center; }
 .facts { display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:var(--muted);
   margin:10px 0 0; }
 .facts b { color:var(--ink); font-weight:600; }
@@ -62,102 +68,103 @@ code { font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace; }
 .card[hidden] { display:none; }
 </style></head><body><div class="wrap">
 <h1>data_analysis r1 review table</h1><p class="sub">data_analysis · round 1 · v1 · claude-sonnet-5 · effort high · 49 papers · accuracy 79.2% of 48 scored</p>
-<div class="bar"><button class="chip active" data-outcome="all">all <b>49</b></button><button class="chip false_negative" data-outcome="false_negative">FN <b>5</b></button><button class="chip false_positive" data-outcome="false_positive">FP <b>5</b></button><button class="chip failed" data-outcome="failed">failed <b>1</b></button><button class="chip true_positive" data-outcome="true_positive">TP <b>2</b></button><button class="chip true_negative" data-outcome="true_negative">TN <b>36</b></button></div>
+<div class="bar"><button class="chip active" data-outcome="all">Every paper <b>49</b></button><button class="chip false_negative" data-outcome="false_negative" title="human judged the analysis correct · model called it flawed">Model too strict <b>5</b></button><button class="chip false_positive" data-outcome="false_positive" title="human judged the analysis flawed · model called it correct">Model too lenient <b>5</b></button><button class="chip failed" data-outcome="failed" title="the response never passed 21_check_responses, so no judgment exists">Response failed checks <b>1</b></button><button class="chip true_positive" data-outcome="true_positive" title="human judged the analysis correct · model agreed">Correct, and model agreed <b>2</b></button><button class="chip true_negative" data-outcome="true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed <b>36</b></button></div>
+<details class="legend"><summary>What these mean</summary><div class="legend-row"><span class="tag false_negative">Model too strict</span><span>human judged the analysis correct · model called it flawed</span></div><div class="legend-row"><span class="tag false_positive">Model too lenient</span><span>human judged the analysis flawed · model called it correct</span></div><div class="legend-row"><span class="tag failed">Response failed checks</span><span>the response never passed 21_check_responses, so no judgment exists</span></div><div class="legend-row"><span class="tag true_positive">Correct, and model agreed</span><span>human judged the analysis correct · model agreed</span></div><div class="legend-row"><span class="tag true_negative">Flawed, and model agreed</span><span>human judged the analysis flawed · model agreed</span></div></details>
 <article class="card false_negative" data-outcome="false_negative">
-<header><span class="tag false_negative">FN</span>
-<div class="who"><h2>Multilevel approaches to increase fruit and vegetable intake in low-income housing communities: final results of the &#x27;Live Well, Viva Bien&#x27; cluster-randomized trial</h2>
-<p>Gans 2018 &middot; <code>SGCHKJTH</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag false_negative" title="human judged the analysis correct · model called it flawed">Model too strict</span>
+<h2>Multilevel approaches to increase fruit and vegetable intake in low-income housing communities: final results of the &#x27;Live Well, Viva Bien&#x27; cluster-randomized trial</h2>
+<p class="who">Gans 2018 &middot; <code>SGCHKJTH</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Sites were pair-matched before randomization, but the mixed model only included random effects for site and participant, no pair/matched-set term. D11.</blockquote>
 
 </article>
 <article class="card false_negative" data-outcome="false_negative">
-<header><span class="tag false_negative">FN</span>
-<div class="who"><h2>Community-based, cluster-randomized pilot trial of a cardiovascular mHealth intervention: Rationale, design, and baseline findings of the FAITH! Trial</h2>
-<p>Brewer 2022 &middot; <code>FHVQQIX3</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag false_negative" title="human judged the analysis correct · model called it flawed">Model too strict</span>
+<h2>Community-based, cluster-randomized pilot trial of a cardiovascular mHealth intervention: Rationale, design, and baseline findings of the FAITH! Trial</h2>
+<p class="who">Brewer 2022 &middot; <code>FHVQQIX3</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D4</span><strong>D4. Absent or undescribed is <code>no</code></strong> — including &quot;outcomes were compared between arms.&quot;</div>
 <blockquote>This is a baseline/design paper; primary outcome (6-month LS7 change) treatment effect analysis was not yet performed, only planned in future tense.</blockquote>
 
 </article>
 <article class="card false_negative" data-outcome="false_negative">
-<header><span class="tag false_negative">FN</span>
-<div class="who"><h2>Mixed-methods approach to evaluate an mHealth intervention to increase adherence to triage of human papillomavirus-positive women who have performed self-collection (the ATICA study): study protocol for a hybrid type I cluster randomized effectiveness-implementation trial</h2>
-<p>Arrossi 2019 &middot; <code>B3KTU9TU</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>no</b></span><span>conf <b>0.68</b></span><span>build</span></div>
+<header><span class="tag false_negative" title="human judged the analysis correct · model called it flawed">Model too strict</span>
+<h2>Mixed-methods approach to evaluate an mHealth intervention to increase adherence to triage of human papillomavirus-positive women who have performed self-collection (the ATICA study): study protocol for a hybrid type I cluster randomized effectiveness-implementation trial</h2>
+<p class="who">Arrossi 2019 &middot; <code>B3KTU9TU</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.68</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>GEE clusters by CHW (D5) but CHWs were stratified by gender/urban-rural; analysis plan only checks effect modification, not stratum adjustment. Restriction ignored (D11).</blockquote>
 
 </article>
 <article class="card false_negative" data-outcome="false_negative">
-<header><span class="tag false_negative">FN</span>
-<div class="who"><h2>Efficacy of Mobile Phone-Delivered Smoking Cessation Interventions for Socioeconomically Disadvantaged Individuals: A Randomized Clinical Trial</h2>
-<p>Vidrine 2019 &middot; <code>2RDD8DGI</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>no</b></span><span>conf <b>0.62</b></span><span>build</span></div>
+<header><span class="tag false_negative" title="human judged the analysis correct · model called it flawed">Model too strict</span>
+<h2>Efficacy of Mobile Phone-Delivered Smoking Cessation Interventions for Socioeconomically Disadvantaged Individuals: A Randomized Clinical Trial</h2>
+<p class="who">Vidrine 2019 &middot; <code>2RDD8DGI</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.62</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Sites stratified by type AND racial/ethnic composition (D9), but model only includes site type as random effect, ignoring the racial/ethnic composition stratum (D10/D11).</blockquote>
 
 </article>
 <article class="card false_negative" data-outcome="false_negative">
-<header><span class="tag false_negative">FN</span>
-<div class="who"><h2>Community Health Workers Linking Clinics and Schools and Asthma Control: A Randomized Clinical Trial</h2>
-<p>Bryant-Stephens 2024 &middot; <code>IPR6QU8P</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>no</b></span><span>conf <b>0.60</b></span><span>build</span></div>
+<header><span class="tag false_negative" title="human judged the analysis correct · model called it flawed">Model too strict</span>
+<h2>Community Health Workers Linking Clinics and Schools and Asthma Control: A Randomized Clinical Trial</h2>
+<p class="who">Bryant-Stephens 2024 &middot; <code>IPR6QU8P</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.60</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Individual randomization stratified by clinic site (D9) not entered in model; school randomization stratified into 5 groups also not adjusted, despite clustering being handled (D11).</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>Mobile Application-Based Communication Facilitation Platform for Family Members of Critically Ill Patients: A Randomized Clinical Trial</h2>
-<p>Cox 2024 &middot; <code>TEXLFQSL</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.80</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human judged the analysis flawed · model called it correct">Model too lenient</span>
+<h2>Mobile Application-Based Communication Facilitation Platform for Family Members of Critically Ill Patients: A Randomized Clinical Trial</h2>
+<p class="who">Cox 2024 &middot; <code>TEXLFQSL</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.80</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D13</span><strong>D13. Only clustering and restricted randomization decide this.</strong> If both are handled, answer <code>yes</code> however flawed the rest is. Not grounds for <code>no</code>: GEE without small-sample bias correction (corrected and uncorrected are treated identically), <strong>longitudinality — repeated measures on the same subjects, compound symmetry, an assumed-exchangeable working correlation over time</strong>, the wrong link function, no multiplicity adjustment, missing-data handling, adjusted vs unadjusted, unequal cluster sizes, ITT vs per-protocol, no reported ICC.</div>
 <blockquote>Primary NEST analysis used mixed model with random physician effect (D5) plus adjustment for stratification variables (D10), satisfying both clustering and restriction requirements.</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>Impact of Clinical Decision Support on Antibiotic Prescribing for Acute Respiratory Infections: a Cluster Randomized Implementation Trial</h2>
-<p>Mann 2020 &middot; <code>DCYTWR4N</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human judged the analysis flawed · model called it correct">Model too lenient</span>
+<h2>Impact of Clinical Decision Support on Antibiotic Prescribing for Acute Respiratory Infections: a Cluster Randomized Implementation Trial</h2>
+<p class="who">Mann 2020 &middot; <code>DCYTWR4N</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D5</span><strong>D5. Accounting for clustering</strong> means one of: a mixed model with a <strong>random</strong> effect for the randomization unit; GEE with the cluster as working-correlation unit; a cluster-level summary analysis; cluster-robust standard errors; a cluster-level permutation test; a Bayesian hierarchical model with a cluster random effect.</div>
 <blockquote>Primary outcome (antibiotic prescribing) analyzed via GEE with robust SEs clustering visits within practices, the randomization unit. Simple random allocation, no restriction to handle.</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>Equitable Care for Hypertension: Blood Pressure and Patient-Reported Outcomes of the RICH LIFE Cluster Randomized Trial</h2>
-<p>Cooper 2024 &middot; <code>84YU8UCD</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human judged the analysis flawed · model called it correct">Model too lenient</span>
+<h2>Equitable Care for Hypertension: Blood Pressure and Patient-Reported Outcomes of the RICH LIFE Cluster Randomized Trial</h2>
+<p class="who">Cooper 2024 &middot; <code>84YU8UCD</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D5</span><strong>D5. Accounting for clustering</strong> means one of: a mixed model with a <strong>random</strong> effect for the randomization unit; GEE with the cluster as working-correlation unit; a cluster-level summary analysis; cluster-robust standard errors; a cluster-level permutation test; a Bayesian hierarchical model with a cluster random effect.</div><div class="rule"><span class="rid">D10</span><strong>D10. Accounting for it</strong> means the pair or stratum enters as a random effect or blocking factor, or the analysis is of within-pair differences, or the working correlation reflects the matched sets, or the stratification variables are adjusted for.</div>
 <blockquote>Primary outcomes analyzed via GEE (BP control) and mixed model with random effect (PAM-13), both clustering by practice; health system (randomization stratum) adjusted as covariate.</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>Automated symptom and treatment side effect monitoring for improved quality of life among adults with diabetic peripheral neuropathy in primary care: a pragmatic, cluster, randomized, controlled trial</h2>
-<p>Adams 2019 &middot; <code>D24FD6G2</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human judged the analysis flawed · model called it correct">Model too lenient</span>
+<h2>Automated symptom and treatment side effect monitoring for improved quality of life among adults with diabetic peripheral neuropathy in primary care: a pragmatic, cluster, randomized, controlled trial</h2>
+<p class="who">Adams 2019 &middot; <code>D24FD6G2</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D5</span><strong>D5. Accounting for clustering</strong> means one of: a mixed model with a <strong>random</strong> effect for the randomization unit; GEE with the cluster as working-correlation unit; a cluster-level summary analysis; cluster-robust standard errors; a cluster-level permutation test; a Bayesian hierarchical model with a cluster random effect.</div>
 <blockquote>GEE explicitly used to account for clustering of persons within physicians, with robust SEs; randomization was simple 1:1, no stratification/matching present (D9 n/a).</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>Improving Communication in Heart Failure Patient Care</h2>
-<p>Goldstein 2019 &middot; <code>LU33978L</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.70</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human judged the analysis flawed · model called it correct">Model too lenient</span>
+<h2>Improving Communication in Heart Failure Patient Care</h2>
+<p class="who">Goldstein 2019 &middot; <code>LU33978L</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.70</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D5</span><strong>D5. Accounting for clustering</strong> means one of: a mixed model with a <strong>random</strong> effect for the randomization unit; GEE with the cluster as working-correlation unit; a cluster-level summary analysis; cluster-robust standard errors; a cluster-level permutation test; a Bayesian hierarchical model with a cluster random effect.</div>
 <blockquote>Primary outcomes analyzed via GLM with Huber-White cluster-robust SEs, clustered at hospital (randomization unit). No restricted randomization (simple cluster randomization) to account for.</blockquote>
 
 </article>
 <article class="card failed" data-outcome="failed">
-<header><span class="tag failed">failed</span>
-<div class="who"><h2>Evaluation of an adapted version of the Diabetes Prevention Program for low- and middle-income countries: A cluster randomized trial to evaluate &quot;Lifestyle Africa&quot; in South Africa</h2>
-<p>Catley 2022 &middot; <code>FEHWGZSQ</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>—</b></span><span>conf <b>—</b></span><span>build</span></div>
+<header><span class="tag failed" title="the response never passed 21_check_responses, so no judgment exists">Response failed checks</span>
+<h2>Evaluation of an adapted version of the Diabetes Prevention Program for low- and middle-income countries: A cluster randomized trial to evaluate &quot;Lifestyle Africa&quot; in South Africa</h2>
+<p class="who">Catley 2022 &middot; <code>FEHWGZSQ</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>—</b></span><span>Confidence <b>—</b></span><span>build split</span></div>
 
 
 <div class="detail"><b>parse D</b> 1 validation error for Decision
@@ -166,343 +173,343 @@ reasoning
     For further information visit https://errors.pydantic.dev/2.12/v/value_error</div>
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Effectiveness and implementation of mPATH™-CRC: a mobile health system for colorectal cancer screening</h2>
-<p>Snavely 2023 &middot; <code>9DKJKFAS</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.65</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human judged the analysis correct · model agreed">Correct, and model agreed</span>
+<h2>Effectiveness and implementation of mPATH™-CRC: a mobile health system for colorectal cancer screening</h2>
+<p class="who">Snavely 2023 &middot; <code>9DKJKFAS</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.65</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D10</span><strong>D10. Accounting for it</strong> means the pair or stratum enters as a random effect or blocking factor, or the analysis is of within-pair differences, or the working correlation reflects the matched sets, or the stratification variables are adjusted for.</div>
 <blockquote>Primary outcome uses mixed logistic model with site random effect (clustering) and adjusts for stratification factor clinic size (restriction), satisfying D5/D10.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Rationale and protocol for a cluster randomized pragmatic clinical trial testing behavioral economic implementation strategies to improve tobacco treatment rates for cancer patients who smoke</h2>
-<p>Jenssen 2021 &middot; <code>BLWKH6C8</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.62</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human judged the analysis correct · model agreed">Correct, and model agreed</span>
+<h2>Rationale and protocol for a cluster randomized pragmatic clinical trial testing behavioral economic implementation strategies to improve tobacco treatment rates for cancer patients who smoke</h2>
+<p class="who">Jenssen 2021 &middot; <code>BLWKH6C8</code></p></header>
+<div class="facts"><span>Human said <b>correct</b></span><span>Model said <b>correct</b></span><span>Confidence <b>0.62</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D5</span><strong>D5. Accounting for clustering</strong> means one of: a mixed model with a <strong>random</strong> effect for the randomization unit; GEE with the cluster as working-correlation unit; a cluster-level summary analysis; cluster-robust standard errors; a cluster-level permutation test; a Bayesian hierarchical model with a cluster random effect.</div>
 <blockquote>Planned GEE logistic model includes random effects for clinician cluster, the randomization unit; no stratified/matched restriction on cluster randomization is described.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Utilization of Mobile Reminders in Improving the Completeness and Timeliness of Routine Childhood Immunization in Kano Metropolis, Nigeria: A Randomized Controlled Trial</h2>
-<p>Yunusa 2024 &middot; <code>BR4Y6FSS</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.95</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Utilization of Mobile Reminders in Improving the Completeness and Timeliness of Routine Childhood Immunization in Kano Metropolis, Nigeria: A Randomized Controlled Trial</h2>
+<p class="who">Yunusa 2024 &middot; <code>BR4Y6FSS</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.95</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D6</span><strong>D6. Ignoring clustering</strong> is an individual-level analysis with nothing above it — t-test, chi-square, Wilcoxon, ANCOVA, or a regression with no random effect, no clustered SEs, no aggregation.</div>
 <blockquote>Cluster RCT with only 4 clusters analyzed via chi-square on individual data; clustering completely ignored (D6).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Diagnosing Cervical Neoplasia in Rural Brazil Using a Mobile Van Equipped with In Vivo Microscopy: A Cluster-Randomized Community Trial</h2>
-<p>Hunt 2018 &middot; <code>72N55PAH</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Diagnosing Cervical Neoplasia in Rural Brazil Using a Mobile Van Equipped with In Vivo Microscopy: A Cluster-Randomized Community Trial</h2>
+<p class="who">Hunt 2018 &middot; <code>72N55PAH</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D6</span><strong>D6. Ignoring clustering</strong> is an individual-level analysis with nothing above it — t-test, chi-square, Wilcoxon, ANCOVA, or a regression with no random effect, no clustered SEs, no aggregation.</div>
 <blockquote>Primary outcome (diagnostic completion) analyzed via Fisher&#x27;s exact test on individual patients; no random effect, clustered SE, or cluster-level summary despite cluster randomization by city.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Oral cancer screening using mobile phone-based(mHealth) approach versus conventional oral examination approach, protocol of a cluster randomized study with cost-effectiveness analysis</h2>
-<p>Thankappan 2020 &middot; <code>WY9D5UIK</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Oral cancer screening using mobile phone-based(mHealth) approach versus conventional oral examination approach, protocol of a cluster randomized study with cost-effectiveness analysis</h2>
+<p class="who">Thankappan 2020 &middot; <code>WY9D5UIK</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D4</span><strong>D4. Absent or undescribed is <code>no</code></strong> — including &quot;outcomes were compared between arms.&quot;</div>
 <blockquote>This is a protocol paper with no data analysis plan described for accounting for clustering; only sample size design effect mentioned.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Design and rationale of a pragmatic trial integrating routine screening for atrial fibrillation at primary care visits: The VITAL-AF trial</h2>
-<p>Ashburner 2019 &middot; <code>TGSIADX6</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.78</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Design and rationale of a pragmatic trial integrating routine screening for atrial fibrillation at primary care visits: The VITAL-AF trial</h2>
+<p class="who">Ashburner 2019 &middot; <code>TGSIADX6</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.78</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D8</span><strong>D8. Every level counts.</strong> Clinic but not physician, school but not classroom → <code>no</code>. This is a common failure — check each level explicitly.</div>
 <blockquote>GEE only accounts for clustering within providers, not at the practice (randomization) level; constrained randomization also not addressed in analysis.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Health insurance coverage with or without a nurse-led task shifting strategy for hypertension control: A pragmatic cluster randomized trial in Ghana</h2>
-<p>Ogedegbe 2018 &middot; <code>XFPCQLGP</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.78</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Health insurance coverage with or without a nurse-led task shifting strategy for hypertension control: A pragmatic cluster randomized trial in Ghana</h2>
+<p class="who">Ogedegbe 2018 &middot; <code>XFPCQLGP</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.78</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>CHCs pair-matched on rural/urban location (restriction present), but primary mixed model only includes random intercept for CHC—no pair/stratum term, violating D11.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>A Group Randomized Intervention Trial Increases Participation in the School Breakfast Program in 16 Rural High Schools in Minnesota</h2>
-<p>Nanney 2019 &middot; <code>2BDG7GVP</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>A Group Randomized Intervention Trial Increases Participation in the School Breakfast Program in 16 Rural High Schools in Minnesota</h2>
+<p class="who">Nanney 2019 &middot; <code>2BDG7GVP</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Randomization stratified by wave (D9), but primary Wilcoxon test on school-level summaries ignores wave stratification entirely — clustering handled, restriction ignored (D11).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>A cluster randomized factorial trial of school-lunch salad bars and marketing on elementary students&#x27; objectively measured fruit and vegetable consumption</h2>
-<p>Adams 2025 &middot; <code>4GUDDLNQ</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>A cluster randomized factorial trial of school-lunch salad bars and marketing on elementary students&#x27; objectively measured fruit and vegetable consumption</h2>
+<p class="who">Adams 2025 &middot; <code>4GUDDLNQ</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Block-randomized (size=4) design per methods, but GLMM only includes school and school-wave random intercepts; no block/stratum term in the analysis at all.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Evaluating a multicomponent program to improve hypertension control in Guatemala: study protocol for an effectiveness-implementation cluster randomized trial</h2>
-<p>Paniagua-Avila 2020 &middot; <code>H7N83IW2</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Evaluating a multicomponent program to improve hypertension control in Guatemala: study protocol for an effectiveness-implementation cluster randomized trial</h2>
+<p class="who">Paniagua-Avila 2020 &middot; <code>H7N83IW2</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Randomization stratified by department (restriction present), but analysis plan&#x27;s mixed model only includes cluster/participant random effects, no department term.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Cluster-randomized trial comparing organizationally tailored versus standard approach for integrating an evidence-based cancer control intervention into African American churches</h2>
-<p>Knott 2022 &middot; <code>JCPBMIPX</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Cluster-randomized trial comparing organizationally tailored versus standard approach for integrating an evidence-based cancer control intervention into African American churches</h2>
+<p class="who">Knott 2022 &middot; <code>JCPBMIPX</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Churches matched in pairs by size (restricted randomization), but mixed models only include random effect for church/time; no pair/stratum term used.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Clinician Prompts for Human Papillomavirus Vaccination: A Cluster Randomized Trial</h2>
-<p>Rand 2024 &middot; <code>KMRQTRP3</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Clinician Prompts for Human Papillomavirus Vaccination: A Cluster Randomized Trial</h2>
+<p class="who">Rand 2024 &middot; <code>KMRQTRP3</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Constrained randomization on EHR vendor, baseline HPV rate, baseline visit volume (D9) but models only include arm, period, interaction—no adjustment for constraining covariates (D11).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Evaluation of a walking school bus program: a cluster randomized controlled trial</h2>
-<p>Johnson 2024 &middot; <code>SH5J2R2J</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Evaluation of a walking school bus program: a cluster randomized controlled trial</h2>
+<p class="who">Johnson 2024 &middot; <code>SH5J2R2J</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Schools were pair-matched on SES/ethnicity/enrollment and stratified by site, but the mixed model only used student/school random effects—no pair or site term. Clustering handled, restriction ignored.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Mailed fecal testing and patient navigation versus usual care to improve rates of colorectal cancer screening and follow-up colonoscopy in rural Medicaid enrollees: a cluster-randomized controlled trial</h2>
-<p>Coronado 2022 &middot; <code>TBFRUAMD</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Mailed fecal testing and patient navigation versus usual care to improve rates of colorectal cancer screening and follow-up colonoscopy in rural Medicaid enrollees: a cluster-randomized controlled trial</h2>
+<p class="who">Coronado 2022 &middot; <code>TBFRUAMD</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Randomization stratified by health system (D9), but analysis plan (clinic random effect only) never adjusts for stratum—clustering handled, restriction ignored (D11).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Improving adherence to endocrine hormonal therapy among breast cancer patients: Study protocol for a randomized controlled trial</h2>
-<p>Chalela 2018 &middot; <code>U7PLGE75</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Improving adherence to endocrine hormonal therapy among breast cancer patients: Study protocol for a randomized controlled trial</h2>
+<p class="who">Chalela 2018 &middot; <code>U7PLGE75</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D6</span><strong>D6. Ignoring clustering</strong> is an individual-level analysis with nothing above it — t-test, chi-square, Wilcoxon, ANCOVA, or a regression with no random effect, no clustered SEs, no aggregation.</div>
 <blockquote>Primary outcome (adherence) analyzed via t-test/Mann-Whitney U, an individual-level test with no clustering adjustment (random effect, clustered SEs, or aggregation) — matches D6.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Performance Feedback for Human Papillomavirus Vaccination: A Randomized Trial From the American Academy of Pediatrics Pediatric Research in Office Settings Research Network</h2>
-<p>Fiks 2023 &middot; <code>WD74R75C</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Performance Feedback for Human Papillomavirus Vaccination: A Randomized Trial From the American Academy of Pediatrics Pediatric Research in Office Settings Research Network</h2>
+<p class="who">Fiks 2023 &middot; <code>WD74R75C</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>GEE at practice level handles clustering, but stratification factors (EHR vendor, baseline HPV rate, baseline visit volume) used for restricted randomization are never adjusted for in the analysis.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Effect of Training Pediatric Clinicians in Human Papillomavirus Communication Strategies on Human Papillomavirus Vaccination Rates: A Cluster Randomized Clinical Trial</h2>
-<p>Szilagyi 2021 &middot; <code>9LTSBSEE</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Effect of Training Pediatric Clinicians in Human Papillomavirus Communication Strategies on Human Papillomavirus Vaccination Rates: A Cluster Randomized Clinical Trial</h2>
+<p class="who">Szilagyi 2021 &middot; <code>9LTSBSEE</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>GEE clusters by practice, but constrained randomization balanced on 3 covariates (EHR source, baseline HPV rate, WCC visits) never entered the analysis model.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Using increased trust in medical researchers to increase minority recruitment: The RECRUIT cluster randomized clinical trial</h2>
-<p>Tilley 2021 &middot; <code>C69UAKKB</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Using increased trust in medical researchers to increase minority recruitment: The RECRUIT cluster randomized clinical trial</h2>
+<p class="who">Tilley 2021 &middot; <code>C69UAKKB</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Sites pair-matched on covariates within parent trial (D9), but GEE model only adjusts for parent trial, not the matched pairs/strata—restriction ignored despite clustering handled (D11).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Team-focused implementation strategies to improve implementation of mental health screening and referral in rural Children&#x27;s Advocacy Centers: study protocol for a pilot cluster randomized hybrid type 2 trial</h2>
-<p>McGuier 2023 &middot; <code>C9P63S2B</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Team-focused implementation strategies to improve implementation of mental health screening and referral in rural Children&#x27;s Advocacy Centers: study protocol for a pilot cluster randomized hybrid type 2 trial</h2>
+<p class="who">McGuier 2023 &middot; <code>C9P63S2B</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>CACs pair-matched by team size before randomization, but analyses (mixed models, robust SEs) never adjust for pairing/matching factor.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Two-year outcomes of Faith in Action/Fe en Acción: a randomized controlled trial of physical activity promotion in Latinas</h2>
-<p>Arredondo 2022 &middot; <code>DFJE8ALD</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Two-year outcomes of Faith in Action/Fe en Acción: a randomized controlled trial of physical activity promotion in Latinas</h2>
+<p class="who">Arredondo 2022 &middot; <code>DFJE8ALD</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Churches were stratified by size before randomization (D9), but the mixed models only adjust for age/marital/employment/education, not stratum—restriction ignored despite clustering handled (D11).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Effect of an Oncology Nurse-Led Primary Palliative Care Intervention on Patients With Advanced Cancer: The CONNECT Cluster Randomized Clinical Trial</h2>
-<p>Schenker 2021 &middot; <code>HPIL7WVW</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Effect of an Oncology Nurse-Led Primary Palliative Care Intervention on Patients With Advanced Cancer: The CONNECT Cluster Randomized Clinical Trial</h2>
+<p class="who">Schenker 2021 &middot; <code>HPIL7WVW</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Randomization stratified by practice size (D9), but mixed model only adjusts for clinic random effect, baseline, age, cancer type—no stratification factor adjustment (D11).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>A study protocol to engage religious leaders to reduce blood pressure in Tanzanian communities: A cluster randomized trial</h2>
-<p>Kavishe 2025 &middot; <code>L8CPLJYW</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>A study protocol to engage religious leaders to reduce blood pressure in Tanzanian communities: A cluster randomized trial</h2>
+<p class="who">Kavishe 2025 &middot; <code>L8CPLJYW</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Communities stratified by population size (D9), but mixed model only includes community random effect + launch month; stratification variable not adjusted for (D11).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Caring for the elderly at work and home: Can a randomized organizational intervention improve psychological health?</h2>
-<p>Kossek 2019 &middot; <code>NQ4Y7FIA</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Caring for the elderly at work and home: Can a randomized organizational intervention improve psychological health?</h2>
+<p class="who">Kossek 2019 &middot; <code>NQ4Y7FIA</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Facility random effect handles clustering, but randomization used Frane&#x27;s adaptive method balancing on retention, location, size (D9); analysis never adjusts for these strata (D11).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>A Cluster-Randomized Evaluation of the SuperShelf Intervention in Choice-Based Food Pantries</h2>
-<p>Caspi 2024 &middot; <code>UHEKLJLC</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>A Cluster-Randomized Evaluation of the SuperShelf Intervention in Choice-Based Food Pantries</h2>
+<p class="who">Caspi 2024 &middot; <code>UHEKLJLC</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Pantries were matched into sets by RUCA, catchment area, interventionist before randomization, but mixed models don&#x27;t include pair/set as blocking factor or adjust for matching vars.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Randomized evaluation of decision support interventions for atrial fibrillation: Rationale and design of the RED-AF study</h2>
-<p>Jones 2022 &middot; <code>VMHXT33Z</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Randomized evaluation of decision support interventions for atrial fibrillation: Rationale and design of the RED-AF study</h2>
+<p class="who">Jones 2022 &middot; <code>VMHXT33Z</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D6</span><strong>D6. Ignoring clustering</strong> is an individual-level analysis with nothing above it — t-test, chi-square, Wilcoxon, ANCOVA, or a regression with no random effect, no clustered SEs, no aggregation.</div>
 <blockquote>Analysis described as &#x27;sequential unadjusted tests&#x27; for primary outcomes; no random effect for clinician cluster or adjustment for stratification (site, CHA2DS2-VASc, cohort) is mentioned.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Effect of the School-Based Asthma Care for Teens (SB-ACT) program on asthma morbidity: a 3-arm randomized controlled trial</h2>
-<p>Halterman 2022 &middot; <code>7M6ST2JQ</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.68</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Effect of the School-Based Asthma Care for Teens (SB-ACT) program on asthma morbidity: a 3-arm randomized controlled trial</h2>
+<p class="who">Halterman 2022 &middot; <code>7M6ST2JQ</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.68</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D10</span><strong>D10. Accounting for it</strong> means the pair or stratum enters as a random effect or blocking factor, or the analysis is of within-pair differences, or the working correlation reflects the matched sets, or the stratification variables are adjusted for.</div>
 <blockquote>Randomization was stratified by school and baseline medication use, but GEE model only adjusted for baseline SFD, poverty, and smoking—stratification variables never entered the analysis.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>A mHealth intervention to preserve and promote ideal cardiovascular health in college students: Design and protocol of a cluster randomized controlled trial</h2>
-<p>Pfammatter 2020 &middot; <code>LGEECHQM</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.68</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>A mHealth intervention to preserve and promote ideal cardiovascular health in college students: Design and protocol of a cluster randomized controlled trial</h2>
+<p class="who">Pfammatter 2020 &middot; <code>LGEECHQM</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.68</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Primary 3-level mixed model handles dorm-level clustering (subject, dorm) but pair-matching is only used in a separate secondary heterogeneity model, not the primary effect estimate.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Enhanced care planning and clinical-community linkages versus usual care to address basic needs of patients with multiple chronic conditions: a clinician-level randomized controlled trial</h2>
-<p>Krist 2020 &middot; <code>6XFGQN39</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.65</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Enhanced care planning and clinical-community linkages versus usual care to address basic needs of patients with multiple chronic conditions: a clinician-level randomized controlled trial</h2>
+<p class="who">Krist 2020 &middot; <code>6XFGQN39</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.65</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Clinicians stratified by age/sex for randomization (D9), but primary hierarchical GLMM only includes clinician/practice random effects, not the age/sex strata (D11).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Putting patients at the center of kidney care transitions: PREPARE NOW, a cluster randomized controlled trial</h2>
-<p>Green 2018 &middot; <code>5VWZPNEQ</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.62</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Putting patients at the center of kidney care transitions: PREPARE NOW, a cluster randomized controlled trial</h2>
+<p class="who">Green 2018 &middot; <code>5VWZPNEQ</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.62</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Mixed model with clinic random effect handles clustering, but randomization was also constrained by region; only clinic size (not region) is proposed as a covariate.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Design of the Equity in Prevention and Progression of Hypertension by Addressing Barriers to Nutrition and Physical Activity Study: A Cluster Randomized Trial</h2>
-<p>Hardy 2023 &middot; <code>BW2B5H9P</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.62</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Design of the Equity in Prevention and Progression of Hypertension by Addressing Barriers to Nutrition and Physical Activity Study: A Cluster Randomized Trial</h2>
+<p class="who">Hardy 2023 &middot; <code>BW2B5H9P</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.62</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D4</span><strong>D4. Absent or undescribed is <code>no</code></strong> — including &quot;outcomes were compared between arms.&quot;</div>
 <blockquote>Primary SBP/DBP analysis described only as &#x27;longitudinal models&#x27; with time, arm, interaction; no random effect for church cluster or other clustering method specified.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Managing high cardiovascular disease risk among adults in Argentina using a multicomponent strategy linking key aspects of care: A two-arm cluster-randomized clinical trial (PRIMECare) protocol</h2>
-<p>Abrahams-Gessel 2023 &middot; <code>MTLFVN94</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.62</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Managing high cardiovascular disease risk among adults in Argentina using a multicomponent strategy linking key aspects of care: A two-arm cluster-randomized clinical trial (PRIMECare) protocol</h2>
+<p class="who">Abrahams-Gessel 2023 &middot; <code>MTLFVN94</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.62</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Randomization stratified by province (D9), but primary GEE analysis adjusts only for clustering, not stratification factor; subgroup-by-province is not adjustment. D11 applies.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Design and rationale of an intervention to improve cancer prevention using clinical decision support and shared decision making: A clinic-randomized trial</h2>
-<p>Elliott 2021 &middot; <code>WCA66X4I</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.62</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Design and rationale of an intervention to improve cancer prevention using clinical decision support and shared decision making: A clinic-randomized trial</h2>
+<p class="who">Elliott 2021 &middot; <code>WCA66X4I</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.62</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Randomization stratified on rural/urban and Medicaid % (D9), but planned GLMM only includes clinic/provider random effects and sex; stratification variables not explicitly adjusted (D10/D11).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Effectiveness of a Multicomponent Strategy for Implementing Guidelines for Treating Tobacco Use in Vietnam Commune Health Centers</h2>
-<p>Shelley 2022 &middot; <code>ZETJJPRR</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.62</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Effectiveness of a Multicomponent Strategy for Implementing Guidelines for Treating Tobacco Use in Vietnam Commune Health Centers</h2>
+<p class="who">Shelley 2022 &middot; <code>ZETJJPRR</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.62</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>CHCs randomized in 3 waves (block randomization) but primary GLMM only includes commune random intercept + education covariate; wave/block not adjusted for.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Results of a cluster randomized trial testing the Systems Analysis and Improvement Approach to increase cervical cancer screening in family planning clinics in Mombasa County, Kenya</h2>
-<p>Eastment 2023 &middot; <code>26LDPI8G</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.60</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Results of a cluster randomized trial testing the Systems Analysis and Improvement Approach to increase cervical cancer screening in family planning clinics in Mombasa County, Kenya</h2>
+<p class="who">Eastment 2023 &middot; <code>26LDPI8G</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.60</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D6</span><strong>D6. Ignoring clustering</strong> is an individual-level analysis with nothing above it — t-test, chi-square, Wilcoxon, ANCOVA, or a regression with no random effect, no clustered SEs, no aggregation.</div>
 <blockquote>Poisson regression with &#x27;robust standard errors&#x27; likely corrects for binary/Poisson mismatch, not clinic clustering; no mention of clustered/clinic-level SEs despite 20-clinic cluster RCT.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>The comparative effectiveness of decision aids in diverse populations with early stage prostate cancer: a study protocol for a cluster-randomized controlled trial in the NCI Community Oncology Research Program (NCORP), Alliance A191402CD</h2>
-<p>Pacyna 2018 &middot; <code>BAABE7JM</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.60</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>The comparative effectiveness of decision aids in diverse populations with early stage prostate cancer: a study protocol for a cluster-randomized controlled trial in the NCI Community Oncology Research Program (NCORP), Alliance A191402CD</h2>
+<p class="who">Pacyna 2018 &middot; <code>BAABE7JM</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.60</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Site-level clustering handled via random intercept, but the block-randomized design (D9) is never accounted for in the mixed model—no block/stratum term mentioned (D11).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Personalized Multilevel Intervention for Improving Appropriate Use of Colorectal Cancer Screening in Older Adults: A Cluster Randomized Clinical Trial</h2>
-<p>Saini 2023 &middot; <code>CKEF67C5</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.55</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Personalized Multilevel Intervention for Improving Appropriate Use of Colorectal Cancer Screening in Older Adults: A Cluster Randomized Clinical Trial</h2>
+<p class="who">Saini 2023 &middot; <code>CKEF67C5</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.55</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Randomization stratified by both site and clinical FTE, but model only includes site as fixed effect; FTE stratification never adjusted for, so restriction only partially handled.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>A cluster randomized controlled trial comparing Virtual Learning Collaborative and Technical Assistance strategies to implement an early palliative care program for patients with advanced cancer and their caregivers: a study protocol</h2>
-<p>Zubkoff 2021 &middot; <code>UMV6NC2L</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.55</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>A cluster randomized controlled trial comparing Virtual Learning Collaborative and Technical Assistance strategies to implement an early palliative care program for patients with advanced cancer and their caregivers: a study protocol</h2>
+<p class="who">Zubkoff 2021 &middot; <code>UMV6NC2L</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.55</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>GEE clusters correctly (D5) but primary aim1 model uses only group assignment; minimization factors (rural, size, minority) not built in, only conditionally adjusted if imbalanced.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Effects of Different Allotments of Avocados on the Nutritional Status of Families: A Cluster Randomized Controlled Trial</h2>
-<p>Pacheco 2021 &middot; <code>UPVYYFVQ</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.55</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human judged the analysis flawed · model agreed">Flawed, and model agreed</span>
+<h2>Effects of Different Allotments of Avocados on the Nutritional Status of Families: A Cluster Randomized Controlled Trial</h2>
+<p class="who">Pacheco 2021 &middot; <code>UPVYYFVQ</code></p></header>
+<div class="facts"><span>Human said <b>flawed</b></span><span>Model said <b>flawed</b></span><span>Confidence <b>0.55</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">D11</span><strong>D11. Clustering handled, restriction ignored, is <code>no</code>.</strong> A common pattern. Both sources of correlation, or neither.</div>
 <blockquote>Family-level cluster-summary handles clustering, but block-randomized allocation (D9) is never accounted for in the t-test/ANCOVA analyses (D11).</blockquote>
 

@@ -39,11 +39,17 @@ h1 { font-size:22px; margin:0 0 4px; letter-spacing:-.01em; }
 .card.true_positive { color:var(--tp); }
 .card.undecidable, .card.wrong_text, .card.failed, .card.unlabelled { color:var(--odd); }
 .card > * { color:var(--ink); }
-header { display:flex; gap:12px; align-items:baseline; }
-.tag { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
-  white-space:nowrap; padding-top:3px; }
-.who h2 { font-size:15px; font-weight:600; margin:0; line-height:1.4; }
-.who p { margin:2px 0 0; font-size:12px; color:var(--muted); }
+.tag { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.05em;
+  text-transform:uppercase; border:1px solid currentColor; border-radius:99px;
+  padding:1px 8px; margin-bottom:8px; }
+header h2 { font-size:15px; font-weight:600; margin:0; line-height:1.4; }
+.who { margin:2px 0 0; font-size:12px; color:var(--muted); }
+.legend { margin:-6px 0 20px; font-size:13px; color:var(--muted); }
+.legend summary { cursor:pointer; color:var(--muted); }
+.legend-row { display:flex; gap:10px; align-items:baseline; margin:10px 0 0;
+  padding-left:2px; color:var(--tn); }
+.legend-row > span:last-child { color:var(--muted); flex:1; }
+.legend-row .tag { margin:0; flex:0 0 auto; min-width:170px; text-align:center; }
 .facts { display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:var(--muted);
   margin:10px 0 0; }
 .facts b { color:var(--ink); font-weight:600; }
@@ -62,444 +68,445 @@ code { font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace; }
 .card[hidden] { display:none; }
 </style></head><body><div class="wrap">
 <h1>exclusion r1 review table</h1><p class="sub">exclusion · round 1 · v1 · claude-sonnet-5 · effort high · 49 papers · accuracy 89.6% of 48 scored</p>
-<div class="bar"><button class="chip active" data-outcome="all">all <b>49</b></button><button class="chip false_positive" data-outcome="false_positive">FP <b>5</b></button><button class="chip wrong_text" data-outcome="wrong_text">wrong text <b>1</b></button><button class="chip true_positive" data-outcome="true_positive">TP <b>31</b></button><button class="chip true_negative" data-outcome="true_negative">TN <b>12</b></button></div>
+<div class="bar"><button class="chip active" data-outcome="all">Every paper <b>49</b></button><button class="chip false_positive" data-outcome="false_positive" title="human kept it · model excluded it — unrecoverable, the paper never reaches power or data analysis">Wrongly excluded <b>5</b></button><button class="chip wrong_text" data-outcome="wrong_text" title="the model reported that the text it was handed was not the paper">Wrong paper text <b>1</b></button><button class="chip true_positive" data-outcome="true_positive" title="human excluded it · model excluded it">Correctly excluded <b>31</b></button><button class="chip true_negative" data-outcome="true_negative" title="human kept it · model kept it">Correctly kept <b>12</b></button></div>
+<details class="legend"><summary>What these mean</summary><div class="legend-row"><span class="tag false_positive">Wrongly excluded</span><span>human kept it · model excluded it — unrecoverable, the paper never reaches power or data analysis</span></div><div class="legend-row"><span class="tag wrong_text">Wrong paper text</span><span>the model reported that the text it was handed was not the paper</span></div><div class="legend-row"><span class="tag true_positive">Correctly excluded</span><span>human excluded it · model excluded it</span></div><div class="legend-row"><span class="tag true_negative">Correctly kept</span><span>human kept it · model kept it</span></div></details>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>Team-focused implementation strategies to improve implementation of mental health screening and referral in rural Children&#x27;s Advocacy Centers: study protocol for a pilot cluster randomized hybrid type 2 trial</h2>
-<p>McGuier 2023 &middot; <code>C9P63S2B</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.95</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human kept it · model excluded it — unrecoverable, the paper never reaches power or data analysis">Wrongly excluded</span>
+<h2>Team-focused implementation strategies to improve implementation of mental health screening and referral in rural Children&#x27;s Advocacy Centers: study protocol for a pilot cluster randomized hybrid type 2 trial</h2>
+<p class="who">McGuier 2023 &middot; <code>C9P63S2B</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.95</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E13</span><strong>E13. Pilot or feasibility study</strong> — exclude.</div>
 <blockquote>Explicitly labeled pilot cluster-randomized trial assessing feasibility of team-focused implementation strategies; also a protocol paper.</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>Design and rationale of an intervention to improve cancer prevention using clinical decision support and shared decision making: A clinic-randomized trial</h2>
-<p>Elliott 2021 &middot; <code>WCA66X4I</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human kept it · model excluded it — unrecoverable, the paper never reaches power or data analysis">Wrongly excluded</span>
+<h2>Design and rationale of an intervention to improve cancer prevention using clinical decision support and shared decision making: A clinic-randomized trial</h2>
+<p class="who">Elliott 2021 &middot; <code>WCA66X4I</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E6</span><strong>E6. Baseline-only</strong> — no post-randomization treatment effect estimated.</div>
 <blockquote>Design/protocol paper only; trial ongoing, no post-randomization treatment effect results reported (&#x27;results expected in 2021&#x27;).</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>Effectiveness of a Multicomponent Strategy for Implementing Guidelines for Treating Tobacco Use in Vietnam Commune Health Centers</h2>
-<p>Shelley 2022 &middot; <code>ZETJJPRR</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human kept it · model excluded it — unrecoverable, the paper never reaches power or data analysis">Wrongly excluded</span>
+<h2>Effectiveness of a Multicomponent Strategy for Implementing Guidelines for Treating Tobacco Use in Vietnam Commune Health Centers</h2>
+<p class="who">Shelley 2022 &middot; <code>ZETJJPRR</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E7</span><strong>E7. Implementation study</strong> — studies adoption, reach, fidelity, or scale-up rather than the effect on participants.</div>
 <blockquote>Primary outcome is provider adoption/fidelity of TDT guidelines (4As), not patient cessation outcomes—classic implementation study.</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>Managing high cardiovascular disease risk among adults in Argentina using a multicomponent strategy linking key aspects of care: A two-arm cluster-randomized clinical trial (PRIMECare) protocol</h2>
-<p>Abrahams-Gessel 2023 &middot; <code>MTLFVN94</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human kept it · model excluded it — unrecoverable, the paper never reaches power or data analysis">Wrongly excluded</span>
+<h2>Managing high cardiovascular disease risk among adults in Argentina using a multicomponent strategy linking key aspects of care: A two-arm cluster-randomized clinical trial (PRIMECare) protocol</h2>
+<p class="who">Abrahams-Gessel 2023 &middot; <code>MTLFVN94</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E6</span><strong>E6. Baseline-only</strong> — no post-randomization treatment effect estimated.</div>
 <blockquote>Protocol paper only; describes planned cRCT methods but reports no post-randomization treatment effect estimate at all.</blockquote>
 
 </article>
 <article class="card false_positive" data-outcome="false_positive">
-<header><span class="tag false_positive">FP</span>
-<div class="who"><h2>Putting patients at the center of kidney care transitions: PREPARE NOW, a cluster randomized controlled trial</h2>
-<p>Green 2018 &middot; <code>5VWZPNEQ</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>yes</b></span><span>conf <b>0.72</b></span><span>build</span></div>
+<header><span class="tag false_positive" title="human kept it · model excluded it — unrecoverable, the paper never reaches power or data analysis">Wrongly excluded</span>
+<h2>Putting patients at the center of kidney care transitions: PREPARE NOW, a cluster randomized controlled trial</h2>
+<p class="who">Green 2018 &middot; <code>5VWZPNEQ</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.72</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E6</span><strong>E6. Baseline-only</strong> — no post-randomization treatment effect estimated.</div>
 <blockquote>This is a protocol/design paper for an ongoing trial; no post-randomization treatment effect is estimated, only planned methods and power calculations.</blockquote>
 
 </article>
 <article class="card wrong_text" data-outcome="wrong_text">
-<header><span class="tag wrong_text">wrong text</span>
-<div class="who"><h2>Incorrect Analyses of Cluster-Randomized Trials that Do Not Take Clustering and Nesting into Account Likely Lead to p-Values that Are Too Small</h2>
-<p>Golzarri-Arroyo 2020 &middot; <code>WPF7MUCV</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>wrong_text</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag wrong_text" title="the model reported that the text it was handed was not the paper">Wrong paper text</span>
+<h2>Incorrect Analyses of Cluster-Randomized Trials that Do Not Take Clustering and Nesting into Account Likely Lead to p-Values that Are Too Small</h2>
+<p class="who">Golzarri-Arroyo 2020 &middot; <code>WPF7MUCV</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>wrong text</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">WRONG_TEXT</span></div>
 <blockquote>This is a commentary/letter critiquing another trial&#x27;s statistical analysis, not a study report itself.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Effect of a Quality Improvement Intervention on Clinical Outcomes in Patients in India With Acute Myocardial Infarction: The ACS QUIK Randomized Clinical Trial</h2>
-<p>Huffman 2018 &middot; <code>D29P9RKT</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.98</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Effect of a Quality Improvement Intervention on Clinical Outcomes in Patients in India With Acute Myocardial Infarction: The ACS QUIK Randomized Clinical Trial</h2>
+<p class="who">Huffman 2018 &middot; <code>D29P9RKT</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.98</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E3</span><strong>E3. Stepped-wedge design</strong> — exclude. Clusters cross over from control to intervention on a staggered schedule, so every cluster receives the intervention and the contrast is partly within-cluster over time. <em>Test: does the design section describe a stepped wedge, a staggered rollout, or sequential crossover of clusters in steps?</em></div>
 <blockquote>Explicitly described as a cluster randomized, stepped-wedge trial with 5 predefined steps of hospital crossover from control to intervention.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Implementation strategies to integrate HIV and hypertension care in Kampala and Wakiso districts, Uganda: study protocol for a stepped wedge cluster randomized trial (PULESA-Uganda)</h2>
-<p>Longenecker 2025 &middot; <code>S47B3QEJ</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.98</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Implementation strategies to integrate HIV and hypertension care in Kampala and Wakiso districts, Uganda: study protocol for a stepped wedge cluster randomized trial (PULESA-Uganda)</h2>
+<p class="who">Longenecker 2025 &middot; <code>S47B3QEJ</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.98</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E3</span><strong>E3. Stepped-wedge design</strong> — exclude. Clusters cross over from control to intervention on a staggered schedule, so every cluster receives the intervention and the contrast is partly within-cluster over time. <em>Test: does the design section describe a stepped wedge, a staggered rollout, or sequential crossover of clusters in steps?</em></div>
 <blockquote>Explicitly a stepped-wedge cluster randomized trial protocol; design section describes staggered crossover of 16 clinics across steps.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Individually randomized trial mislabeled as a cluster-randomized trial. Comment on: &quot;Effectiveness of wearable technology to optimize youth soccer players&#x27; off-training behaviour and training responses: a cluster-randomized trial&quot;</h2>
-<p>Leite 2024 &middot; <code>3MBN8DIA</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.97</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Individually randomized trial mislabeled as a cluster-randomized trial. Comment on: &quot;Effectiveness of wearable technology to optimize youth soccer players&#x27; off-training behaviour and training responses: a cluster-randomized trial&quot;</h2>
+<p class="who">Leite 2024 &middot; <code>3MBN8DIA</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.97</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E16</span><strong>E16. Comment, letter, or editorial.</strong></div>
 <blockquote>This is a letter to the editor commenting on another study, not a study report itself.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Prehospital low titer group O whole blood is feasible and safe: Results of a prospective randomized pilot trial</h2>
-<p>Guyette 2022 &middot; <code>6XSR8DVR</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.97</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Prehospital low titer group O whole blood is feasible and safe: Results of a prospective randomized pilot trial</h2>
+<p class="who">Guyette 2022 &middot; <code>6XSR8DVR</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.97</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E13</span><strong>E13. Pilot or feasibility study</strong> — exclude.</div>
 <blockquote>Explicitly a pilot trial (title, methods, objective all state pilot); primary outcome is feasibility, halted early.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Cost-Effectiveness of a Comprehensive Approach for Hypertension Control in Low-Income Settings in Argentina: Trial-Based Analysis of the Hypertension Control Program in Argentina</h2>
-<p>Augustovski 2018 &middot; <code>FZB8IQSZ</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.97</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Cost-Effectiveness of a Comprehensive Approach for Hypertension Control in Low-Income Settings in Argentina: Trial-Based Analysis of the Hypertension Control Program in Argentina</h2>
+<p class="who">Augustovski 2018 &middot; <code>FZB8IQSZ</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.97</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Self-declared cost-effectiveness analysis of a prior cluster RCT; primary trial results published elsewhere (He et al. JAMA 2017).</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Associations of Caregiver-Oncologist Discordance in Prognostic Understanding With Caregiver-Reported Therapeutic Alliance and Anxiety</h2>
-<p>Loh 2020 &middot; <code>HA9IHJB6</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.97</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Associations of Caregiver-Oncologist Discordance in Prognostic Understanding With Caregiver-Reported Therapeutic Alliance and Anxiety</h2>
+<p class="who">Loh 2020 &middot; <code>HA9IHJB6</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.97</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Explicitly self-declared as an exploratory secondary analysis of the VOICE cluster RCT, pointing to prior publications for primary results.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>A Geriatric Assessment Intervention to Reduce Treatment Toxicity Among Older Adults With Advanced Lung Cancer: A Subgroup Analysis From a Cluster Randomized Controlled Trial</h2>
-<p>Presley 2022 &middot; <code>I6GH9T7T</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.97</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>A Geriatric Assessment Intervention to Reduce Treatment Toxicity Among Older Adults With Advanced Lung Cancer: A Subgroup Analysis From a Cluster Randomized Controlled Trial</h2>
+<p class="who">Presley 2022 &middot; <code>I6GH9T7T</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.97</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Self-declared secondary/subgroup analysis of GAP-70+ trial; primary trial results published elsewhere (Mohile et al. Lancet 2021).</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Estimands in cluster-randomized trials: choosing analyses that answer the right question</h2>
-<p>Kahan 2023 &middot; <code>JPXXAFJZ</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.97</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Estimands in cluster-randomized trials: choosing analyses that answer the right question</h2>
+<p class="who">Kahan 2023 &middot; <code>JPXXAFJZ</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.97</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E8</span><strong>E8. Methods paper</strong> — a design, estimator, simulation, power formula, or instrument.</div>
 <blockquote>This is a methods paper explaining estimand choice, estimators, and bias via a hypothetical/simulated example, not a trial report.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Sodium Bicarbonate Use During Pediatric Cardiopulmonary Resuscitation: A Secondary Analysis of the ICU-RESUScitation Project Trial</h2>
-<p>Cashen 2022 &middot; <code>QEHREYLH</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.97</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Sodium Bicarbonate Use During Pediatric Cardiopulmonary Resuscitation: A Secondary Analysis of the ICU-RESUScitation Project Trial</h2>
+<p class="who">Cashen 2022 &middot; <code>QEHREYLH</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.97</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Self-declared pre-specified secondary analysis of the ICU-RESUS cluster RCT; primary trial results reported elsewhere; also observational/propensity-weighted cohort design.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Toward Understanding the Relationship Between Prioritized Values and Preferences for Cardiopulmonary Resuscitation Among Seriously Ill Adults</h2>
-<p>Modes 2019 &middot; <code>TB7DEJ83</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.97</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Toward Understanding the Relationship Between Prioritized Values and Preferences for Cardiopulmonary Resuscitation Among Seriously Ill Adults</h2>
+<p class="who">Modes 2019 &middot; <code>TB7DEJ83</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.97</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Self-declared secondary analysis of baseline surveys from a multi-center cluster-randomized trial; primary results published elsewhere (ref 23).</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Clinical Effects of Balanced Crystalloids vs Saline in Adults With Diabetic Ketoacidosis: A Subgroup Analysis of Cluster Randomized Clinical Trials</h2>
-<p>Self 2020 &middot; <code>U9LEIXXF</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.97</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Clinical Effects of Balanced Crystalloids vs Saline in Adults With Diabetic Ketoacidosis: A Subgroup Analysis of Cluster Randomized Clinical Trials</h2>
+<p class="who">Self 2020 &middot; <code>U9LEIXXF</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.97</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Self-declared subgroup/secondary analysis of DKA patients from SALT-ED/SMART trials, whose primary results were reported elsewhere.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Did a Goals-of-Care Discussion Happen? Differences in the Occurrence of Goals-of-Care Discussions as Reported by Patients, Clinicians, and in the Electronic Health Record</h2>
-<p>Modes 2019 &middot; <code>UIB8ZYW3</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.97</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Did a Goals-of-Care Discussion Happen? Differences in the Occurrence of Goals-of-Care Discussions as Reported by Patients, Clinicians, and in the Electronic Health Record</h2>
+<p class="who">Modes 2019 &middot; <code>UIB8ZYW3</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.97</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Self-declared secondary analysis of a cluster-randomized trial (Jumpstart Tips), primary results published elsewhere.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Early bolus epinephrine administration during pediatric cardiopulmonary resuscitation for bradycardia with poor perfusion: an ICU-resuscitation study</h2>
-<p>O&#x27;Halloran 2024 &middot; <code>W8PNS3ZQ</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.97</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Early bolus epinephrine administration during pediatric cardiopulmonary resuscitation for bradycardia with poor perfusion: an ICU-resuscitation study</h2>
+<p class="who">O&#x27;Halloran 2024 &middot; <code>W8PNS3ZQ</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.97</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Explicitly self-declared &#x27;pre-specified secondary analysis&#x27; of ICU-RESUS trial, pointing to primary results published elsewhere.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Effect of Physiologic Point-of-Care Cardiopulmonary Resuscitation Training on Survival With Favorable Neurologic Outcome in Cardiac Arrest in Pediatric ICUs: A Randomized Clinical Trial</h2>
-<p>ICU-RESUS and Eunice Kennedy Shriver National Institute of Child Health 2022 &middot; <code>65U9AYL7</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.95</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Effect of Physiologic Point-of-Care Cardiopulmonary Resuscitation Training on Survival With Favorable Neurologic Outcome in Cardiac Arrest in Pediatric ICUs: A Randomized Clinical Trial</h2>
+<p class="who">ICU-RESUS and Eunice Kennedy Shriver National Institute of Child Health 2022 &middot; <code>65U9AYL7</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.95</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E3</span><strong>E3. Stepped-wedge design</strong> — exclude. Clusters cross over from control to intervention on a staggered schedule, so every cluster receives the intervention and the contrast is partly within-cluster over time. <em>Test: does the design section describe a stepped wedge, a staggered rollout, or sequential crossover of clusters in steps?</em></div>
 <blockquote>Explicitly described as a hybrid stepped-wedge cluster randomized trial with staggered crossover of ICUs from control to intervention.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Decision Aid Implementation among Left Ventricular Assist Device Programs Participating in the DECIDE-LVAD Stepped-Wedge Trial</h2>
-<p>Matlock 2020 &middot; <code>88XZGAZQ</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.95</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Decision Aid Implementation among Left Ventricular Assist Device Programs Participating in the DECIDE-LVAD Stepped-Wedge Trial</h2>
+<p class="who">Matlock 2020 &middot; <code>88XZGAZQ</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.95</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E3</span><strong>E3. Stepped-wedge design</strong> — exclude. Clusters cross over from control to intervention on a staggered schedule, so every cluster receives the intervention and the contrast is partly within-cluster over time. <em>Test: does the design section describe a stepped wedge, a staggered rollout, or sequential crossover of clusters in steps?</em></div>
 <blockquote>Explicitly stepped-wedge cluster-randomized design (E3); also an implementation study of reach/adoption/fidelity (E7).</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>A Virtual Cardiometabolic Health Program Among African Immigrants in the US: A Pilot Cluster-Randomized Clinical Trial</h2>
-<p>Ogungbe 2025 &middot; <code>DEN3TJZ5</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.95</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>A Virtual Cardiometabolic Health Program Among African Immigrants in the US: A Pilot Cluster-Randomized Clinical Trial</h2>
+<p class="who">Ogungbe 2025 &middot; <code>DEN3TJZ5</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.95</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E13</span><strong>E13. Pilot or feasibility study</strong> — exclude.</div>
 <blockquote>Explicitly titled and described as a pilot cluster-randomized clinical trial throughout; authors call it a pilot study.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Pediatric Office Delivery of Smoking Cessation Assistance for Breast-Feeding Mothers</h2>
-<p>Drehmer 2020 &middot; <code>ECH2D7BJ</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.95</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Pediatric Office Delivery of Smoking Cessation Assistance for Breast-Feeding Mothers</h2>
+<p class="who">Drehmer 2020 &middot; <code>ECH2D7BJ</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.95</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Paper explicitly self-declares as secondary analysis of CEASE trial data, with primary trial results published elsewhere (ref 20).</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>While-alive regression analysis of composite survival endpoints</h2>
-<p>Fang 2024 &middot; <code>F7UIGLIK</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.95</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>While-alive regression analysis of composite survival endpoints</h2>
+<p class="who">Fang 2024 &middot; <code>F7UIGLIK</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.95</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E8</span><strong>E8. Methods paper</strong> — a design, estimator, simulation, power formula, or instrument.</div>
 <blockquote>Methods paper: develops a new regression estimator/spline framework, validated by simulations and illustrative data analyses, not a trial report.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Identifying Which Urban Children With Asthma Benefit Most From Clinician Prompting: Subgroup Analyses From the Prompting Asthma Intervention in Rochester-Uniting Parents and Providers (PAIR-UP) Trial</h2>
-<p>Goldstein 2018 &middot; <code>SRGFMEL6</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.95</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Identifying Which Urban Children With Asthma Benefit Most From Clinician Prompting: Subgroup Analyses From the Prompting Asthma Intervention in Rochester-Uniting Parents and Providers (PAIR-UP) Trial</h2>
+<p class="who">Goldstein 2018 &middot; <code>SRGFMEL6</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.95</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Self-declared pre-specified subgroup/sub-analysis of PAIR-UP trial; primary result reported elsewhere (ref 20, JAMA Pediatrics).</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Effect of Applying Best Practices for Physical Activity and Screen Time to Family Childcare Homes</h2>
-<p>Jiang 2023 &middot; <code>LD2EYF43</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.93</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Effect of Applying Best Practices for Physical Activity and Screen Time to Family Childcare Homes</h2>
+<p class="who">Jiang 2023 &middot; <code>LD2EYF43</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.93</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E6</span><strong>E6. Baseline-only</strong> — no post-randomization treatment effect estimated.</div>
 <blockquote>Paper analyzes only baseline observational data from the cluster-RCT; no post-randomization treatment effect estimated (cross-sectional caregiver-child associations only).</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Changes in Moderate Intensity Physical Activity Are Associated With Better Cognition in the Multilevel Intervention for Physical Activity in Retirement Communities (MIPARC) Study</h2>
-<p>Zlatar 2019 &middot; <code>NCY67FZ9</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.93</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Changes in Moderate Intensity Physical Activity Are Associated With Better Cognition in the Multilevel Intervention for Physical Activity in Retirement Communities (MIPARC) Study</h2>
+<p class="who">Zlatar 2019 &middot; <code>NCY67FZ9</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.93</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Paper explicitly states cognition was a secondary outcome of MIPARC trial; primary PA outcomes reported in a separate cited publication (Kerr et al 2018).</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Disease and Race-Based Differences in Inpatient Palliative Care Consultation in Cancer and Noncancer Serious Illnesses</h2>
-<p>Moin 2025 &middot; <code>VZQD5RZ8</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.93</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Disease and Race-Based Differences in Inpatient Palliative Care Consultation in Cancer and Noncancer Serious Illnesses</h2>
+<p class="who">Moin 2025 &middot; <code>VZQD5RZ8</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.93</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Self-declared secondary analysis of REDAPS stepped-wedge trial&#x27;s usual-care period; also observational cohort design, not a treatment-effect trial itself.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Perspectives of women participating in a cervical cancer screening campaign with community-based HPV self-sampling in rural western Kenya: a qualitative study</h2>
-<p>Oketch 2019 &middot; <code>3YMCRN5A</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Perspectives of women participating in a cervical cancer screening campaign with community-based HPV self-sampling in rural western Kenya: a qualitative study</h2>
+<p class="who">Oketch 2019 &middot; <code>3YMCRN5A</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E11</span><strong>E11. Qualitative only</strong> — no quantitative treatment-effect estimate.</div>
 <blockquote>Qualitative IDI study nested in larger cluster RCT; main outcomes reported elsewhere; no quantitative treatment-effect estimate here.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Machine Learning-Based Prediction of Hospitalization During Chemoradiotherapy With Daily Step Counts</h2>
-<p>Friesner 2024 &middot; <code>D6FQ47HW</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Machine Learning-Based Prediction of Hospitalization During Chemoradiotherapy With Daily Step Counts</h2>
+<p class="who">Friesner 2024 &middot; <code>D6FQ47HW</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Paper self-declares as a &#x27;secondary analysis of 3 prospective studies&#x27; in Key Points; also a prediction-model/ML methods paper, not a cluster-randomized trial.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Knowledge of colorectal cancer screening guidelines and intention to obtain screening among nonadherent Filipino, Hmong, and Korean Americans</h2>
-<p>Tsoh 2018 &middot; <code>FRK7DQLC</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Knowledge of colorectal cancer screening guidelines and intention to obtain screening among nonadherent Filipino, Hmong, and Korean Americans</h2>
+<p class="who">Tsoh 2018 &middot; <code>FRK7DQLC</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E6</span><strong>E6. Baseline-only</strong> — no post-randomization treatment effect estimated.</div>
 <blockquote>Uses only cross-sectional, pre-intervention survey data from a cluster RCT; no post-randomization treatment effect estimated; primary trial outcomes reported elsewhere (refs 8,9).</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Nutrition Practices of Family Child Care Home Providers and Children&#x27;s Diet Quality</h2>
-<p>Jiang 2023 &middot; <code>P6QS3RSX</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Nutrition Practices of Family Child Care Home Providers and Children&#x27;s Diet Quality</h2>
+<p class="who">Jiang 2023 &middot; <code>P6QS3RSX</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E6</span><strong>E6. Baseline-only</strong> — no post-randomization treatment effect estimated.</div>
 <blockquote>Cross-sectional analysis of baseline data only from a CRT; no post-randomization treatment effect estimated; intervention effects reported elsewhere (ref 76).</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>The impact of text message reminders on cryotherapy uptake among women testing positive for HPV in western Kenya: a prospective cohort study</h2>
-<p>Choi 2024 &middot; <code>TYUTRABV</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>The impact of text message reminders on cryotherapy uptake among women testing positive for HPV in western Kenya: a prospective cohort study</h2>
+<p class="who">Choi 2024 &middot; <code>TYUTRABV</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E9</span><strong>E9. Non-randomized</strong> — observational, single-arm, pre-post, quasi-experimental.</div>
 <blockquote>Title/text: &#x27;prospective cohort study&#x27;, single-arm sub-study of phase 2, non-randomized comparison of sequential communities, not a CRT.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Challenges and adaptations for a cluster-randomized control trial targeting parents of pediatric cancer survivors with obesity during the COVID-19 pandemic</h2>
-<p>Buro 2023 &middot; <code>767M69JK</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Challenges and adaptations for a cluster-randomized control trial targeting parents of pediatric cancer survivors with obesity during the COVID-19 pandemic</h2>
+<p class="who">Buro 2023 &middot; <code>767M69JK</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E16</span><strong>E16. Comment, letter, or editorial.</strong></div>
 <blockquote>Journal labels it &#x27;Commentary/Position Paper&#x27; discussing COVID-19 implementation challenges/adaptations, not reporting treatment-effect results.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Using a social marketing approach to develop Healthy Me, Healthy We: a nutrition and physical activity intervention in early care and education</h2>
-<p>Vaughn 2019 &middot; <code>V4KK3YW4</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Using a social marketing approach to develop Healthy Me, Healthy We: a nutrition and physical activity intervention in early care and education</h2>
+<p class="who">Vaughn 2019 &middot; <code>V4KK3YW4</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Describes campaign development process; outcomes/effectiveness relegated to a separate protocol/future paper; no treatment effect reported here.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Prospective Assessment of the Feasibility of a Trial of Low-Tidal Volume Ventilation for Patients with Acute Respiratory Failure</h2>
-<p>Lanspa 2019 &middot; <code>ZS5WVT7S</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Prospective Assessment of the Feasibility of a Trial of Low-Tidal Volume Ventilation for Patients with Acute Respiratory Failure</h2>
+<p class="who">Lanspa 2019 &middot; <code>ZS5WVT7S</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E9</span><strong>E9. Non-randomized</strong> — observational, single-arm, pre-post, quasi-experimental.</div>
 <blockquote>Observational feasibility cohort study simulating a proposed stepped-wedge trial; no actual randomization occurred, and it&#x27;s a feasibility/methods paper.</blockquote>
 
 </article>
 <article class="card true_positive" data-outcome="true_positive">
-<header><span class="tag true_positive">TP</span>
-<div class="who"><h2>Influence of hydrometeorological risk factors on child diarrhea and enteropathogens in rural Bangladesh</h2>
-<p>Grembi 2024 &middot; <code>GK558E5R</code></p></div></header>
-<div class="facts"><span>truth <b>yes</b></span><span>model <b>yes</b></span><span>conf <b>0.75</b></span><span>build</span></div>
+<header><span class="tag true_positive" title="human excluded it · model excluded it">Correctly excluded</span>
+<h2>Influence of hydrometeorological risk factors on child diarrhea and enteropathogens in rural Bangladesh</h2>
+<p class="who">Grembi 2024 &middot; <code>GK558E5R</code></p></header>
+<div class="facts"><span>Human said <b>exclude</b></span><span>Model said <b>exclude</b></span><span>Confidence <b>0.75</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Observational analysis of weather/environmental exposures using trial data; not evaluating randomized intervention effect; primary trial results reported elsewhere (refs 31,51).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Personalized Multilevel Intervention for Improving Appropriate Use of Colorectal Cancer Screening in Older Adults: A Cluster Randomized Clinical Trial</h2>
-<p>Saini 2023 &middot; <code>CKEF67C5</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.93</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human kept it · model kept it">Correctly kept</span>
+<h2>Personalized Multilevel Intervention for Improving Appropriate Use of Colorectal Cancer Screening in Older Adults: A Cluster Randomized Clinical Trial</h2>
+<p class="who">Saini 2023 &middot; <code>CKEF67C5</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>keep</b></span><span>Confidence <b>0.93</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Genuine cluster RCT (PCP-level randomization), reports primary outcome with treatment effect estimate; no exclusion criteria apply.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Health insurance coverage with or without a nurse-led task shifting strategy for hypertension control: A pragmatic cluster randomized trial in Ghana</h2>
-<p>Ogedegbe 2018 &middot; <code>XFPCQLGP</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.93</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human kept it · model kept it">Correctly kept</span>
+<h2>Health insurance coverage with or without a nurse-led task shifting strategy for hypertension control: A pragmatic cluster randomized trial in Ghana</h2>
+<p class="who">Ogedegbe 2018 &middot; <code>XFPCQLGP</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>keep</b></span><span>Confidence <b>0.93</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>This is a full pragmatic cluster RCT (32 CHCs) with primary outcome (SBP change), reported here in full, none of the exclusion criteria apply.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>A Group Randomized Intervention Trial Increases Participation in the School Breakfast Program in 16 Rural High Schools in Minnesota</h2>
-<p>Nanney 2019 &middot; <code>2BDG7GVP</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human kept it · model kept it">Correctly kept</span>
+<h2>A Group Randomized Intervention Trial Increases Participation in the School Breakfast Program in 16 Rural High Schools in Minnesota</h2>
+<p class="who">Nanney 2019 &middot; <code>2BDG7GVP</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>keep</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Group-randomized trial (16 schools) with primary outcome (SBP participation change) and quantitative treatment effect estimate; no exclusion criteria apply.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Efficacy of Mobile Phone-Delivered Smoking Cessation Interventions for Socioeconomically Disadvantaged Individuals: A Randomized Clinical Trial</h2>
-<p>Vidrine 2019 &middot; <code>2RDD8DGI</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human kept it · model kept it">Correctly kept</span>
+<h2>Efficacy of Mobile Phone-Delivered Smoking Cessation Interventions for Socioeconomically Disadvantaged Individuals: A Randomized Clinical Trial</h2>
+<p class="who">Vidrine 2019 &middot; <code>2RDD8DGI</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>keep</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E10</span><strong>E10. Not group randomized</strong> — individuals randomized, no randomization of or within groups. <em>Individuals randomized within existing clusters still counts — keep.</em></div>
 <blockquote>Group-randomized RCT (neighborhood site as cluster), reports primary outcome (6-month abstinence) with quantitative treatment effects. No exclusion criteria apply.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Automated symptom and treatment side effect monitoring for improved quality of life among adults with diabetic peripheral neuropathy in primary care: a pragmatic, cluster, randomized, controlled trial</h2>
-<p>Adams 2019 &middot; <code>D24FD6G2</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human kept it · model kept it">Correctly kept</span>
+<h2>Automated symptom and treatment side effect monitoring for improved quality of life among adults with diabetic peripheral neuropathy in primary care: a pragmatic, cluster, randomized, controlled trial</h2>
+<p class="who">Adams 2019 &middot; <code>D24FD6G2</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>keep</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Pragmatic cluster RCT (physicians randomized) with primary QoL/symptom outcomes reported, treatment effects estimated; no exclusion criteria met.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Effect of an Oncology Nurse-Led Primary Palliative Care Intervention on Patients With Advanced Cancer: The CONNECT Cluster Randomized Clinical Trial</h2>
-<p>Schenker 2021 &middot; <code>HPIL7WVW</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human kept it · model kept it">Correctly kept</span>
+<h2>Effect of an Oncology Nurse-Led Primary Palliative Care Intervention on Patients With Advanced Cancer: The CONNECT Cluster Randomized Clinical Trial</h2>
+<p class="who">Schenker 2021 &middot; <code>HPIL7WVW</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>keep</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Cluster RCT (clinic-randomized), primary quality-of-life outcome with treatment effect estimates, not stepped-wedge, not pilot/secondary/implementation.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Caring for the elderly at work and home: Can a randomized organizational intervention improve psychological health?</h2>
-<p>Kossek 2019 &middot; <code>NQ4Y7FIA</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.90</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human kept it · model kept it">Correctly kept</span>
+<h2>Caring for the elderly at work and home: Can a randomized organizational intervention improve psychological health?</h2>
+<p class="who">Kossek 2019 &middot; <code>NQ4Y7FIA</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>keep</b></span><span>Confidence <b>0.90</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Group-randomized trial (30 facilities) with primary hypotheses and post-randomization treatment effects on stress/distress; no exclusion criteria met.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Enhanced care planning and clinical-community linkages versus usual care to address basic needs of patients with multiple chronic conditions: a clinician-level randomized controlled trial</h2>
-<p>Krist 2020 &middot; <code>6XFGQN39</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human kept it · model kept it">Correctly kept</span>
+<h2>Enhanced care planning and clinical-community linkages versus usual care to address basic needs of patients with multiple chronic conditions: a clinician-level randomized controlled trial</h2>
+<p class="who">Krist 2020 &middot; <code>6XFGQN39</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>keep</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E12</span><strong>E12. Protocol paper.</strong> Excluding one requires knowing that the trial&#x27;s outcomes paper exists elsewhere. That is a fact about a set you cannot see, not about the paper — <strong>never exclude for this.</strong> A protocol paper is judged on its own text like any other.</div>
 <blockquote>Protocol for clinician-level cluster RCT with defined primary effectiveness aim; not stepped-wedge, not secondary, not pilot. Protocol status alone is not exclusionary (E12).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>The comparative effectiveness of decision aids in diverse populations with early stage prostate cancer: a study protocol for a cluster-randomized controlled trial in the NCI Community Oncology Research Program (NCORP), Alliance A191402CD</h2>
-<p>Pacyna 2018 &middot; <code>BAABE7JM</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human kept it · model kept it">Correctly kept</span>
+<h2>The comparative effectiveness of decision aids in diverse populations with early stage prostate cancer: a study protocol for a cluster-randomized controlled trial in the NCI Community Oncology Research Program (NCORP), Alliance A191402CD</h2>
+<p class="who">Pacyna 2018 &middot; <code>BAABE7JM</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>keep</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E12</span><strong>E12. Protocol paper.</strong> Excluding one requires knowing that the trial&#x27;s outcomes paper exists elsewhere. That is a fact about a set you cannot see, not about the paper — <strong>never exclude for this.</strong> A protocol paper is judged on its own text like any other.</div>
 <blockquote>Protocol for a genuine 4-arm cluster-randomized trial (site-level randomization), defines primary outcome (knowledge); protocol status alone is not exclusionary (E12).</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Clinician Prompts for Human Papillomavirus Vaccination: A Cluster Randomized Trial</h2>
-<p>Rand 2024 &middot; <code>KMRQTRP3</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human kept it · model kept it">Correctly kept</span>
+<h2>Clinician Prompts for Human Papillomavirus Vaccination: A Cluster Randomized Trial</h2>
+<p class="who">Rand 2024 &middot; <code>KMRQTRP3</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>keep</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E5</span><strong>E5. Secondary analysis — self-declared only.</strong> Exclude when <em>this paper</em> says so: it calls itself secondary, post-hoc, sub-study, ancillary, exploratory, mediation, cost-effectiveness, process evaluation, or long-term follow-up; <strong>or</strong> it points to another publication for the primary result; <strong>or</strong> it reports no primary outcome at all. <em>Test: does the text in front of you say the primary analysis is elsewhere or absent?</em> <strong>Never infer it from another paper</strong> — you cannot see any other paper.</div>
 <blockquote>Cluster RCT of 48 practices with its own primary outcome (missed HPV vaccination opportunities) and quantitative treatment effect estimates; not stepped-wedge or self-declared secondary.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>Effects of Different Allotments of Avocados on the Nutritional Status of Families: A Cluster Randomized Controlled Trial</h2>
-<p>Pacheco 2021 &middot; <code>UPVYYFVQ</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.85</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human kept it · model kept it">Correctly kept</span>
+<h2>Effects of Different Allotments of Avocados on the Nutritional Status of Families: A Cluster Randomized Controlled Trial</h2>
+<p class="who">Pacheco 2021 &middot; <code>UPVYYFVQ</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>keep</b></span><span>Confidence <b>0.85</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E10</span><strong>E10. Not group randomized</strong> — individuals randomized, no randomization of or within groups. <em>Individuals randomized within existing clusters still counts — keep.</em></div>
 <blockquote>Cluster RCT (family-randomized), primary outcomes (energy/nutrient intake) reported with treatment effects; no exclusion criteria met.</blockquote>
 
 </article>
 <article class="card true_negative" data-outcome="true_negative">
-<header><span class="tag true_negative">TN</span>
-<div class="who"><h2>A mHealth intervention to preserve and promote ideal cardiovascular health in college students: Design and protocol of a cluster randomized controlled trial</h2>
-<p>Pfammatter 2020 &middot; <code>LGEECHQM</code></p></div></header>
-<div class="facts"><span>truth <b>no</b></span><span>model <b>no</b></span><span>conf <b>0.62</b></span><span>build</span></div>
+<header><span class="tag true_negative" title="human kept it · model kept it">Correctly kept</span>
+<h2>A mHealth intervention to preserve and promote ideal cardiovascular health in college students: Design and protocol of a cluster randomized controlled trial</h2>
+<p class="who">Pfammatter 2020 &middot; <code>LGEECHQM</code></p></header>
+<div class="facts"><span>Human said <b>keep</b></span><span>Model said <b>keep</b></span><span>Confidence <b>0.62</b></span><span>build split</span></div>
 <div class="rule"><span class="rid">E12</span><strong>E12. Protocol paper.</strong> Excluding one requires knowing that the trial&#x27;s outcomes paper exists elsewhere. That is a fact about a set you cannot see, not about the paper — <strong>never exclude for this.</strong> A protocol paper is judged on its own text like any other.</div>
 <blockquote>Protocol for an actual paired cluster-randomized trial (dormitories), not a stepped-wedge, not self-declared secondary, not a generic methods paper. Protocol status alone isn&#x27;t exclusionary (E12).</blockquote>
 

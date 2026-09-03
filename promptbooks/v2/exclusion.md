@@ -1,8 +1,4 @@
-# Exclusion — criteria (v2)
-
 **Objective.** You are screening papers for a systematic review of cluster-randomized trials. You decide whether a paper is eligible to be reviewed at all.
-
-**Task.** Read the paper below and return one decision for **exclusion**, based on the criteria below. Judge nothing else.
 
 **Your reading conditions.** You are in a sealed room. You have **no tools** — no file access, no
 web, no search, no memory of any other paper. Everything you may use is in this one message. You get

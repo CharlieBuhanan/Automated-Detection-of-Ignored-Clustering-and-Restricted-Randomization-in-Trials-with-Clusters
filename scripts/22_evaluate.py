@@ -8,6 +8,9 @@ Examples
 --------
     py -3 scripts/22_evaluate.py --task all --split build --promptbook-version v1
     py -3 scripts/22_evaluate.py --task exclusion --split build --no-write
+
+Every write also produces ``report.html``: the same statistics as a page, each
+one tiered by what it decides, in the style of the Script 23 review tables.
 """
 
 from __future__ import annotations
@@ -33,6 +36,11 @@ def _render(value, *, percent: bool = False) -> str:
     if isinstance(value, float):
         return f"{value:.3f}"
     return str(value)
+
+
+def _show(path: Path) -> str:
+    """Repo-relative when it can be; an --out elsewhere is not an error."""
+    return str(path.relative_to(ROOT) if path.is_relative_to(ROOT) else path)
 
 
 def _default_output(split: str, promptbook_version: str | None) -> Path:
@@ -89,9 +97,10 @@ def main() -> int:
 
     output_dir = (args.out or _default_output(args.split, args.promptbook_version)).resolve()
     paths = evaluate.write_evaluation(output_dir, results)
-    print(f"\n  report      -> {paths['report'].relative_to(ROOT)}")
-    print(f"  summary CSV -> {paths['summary_csv'].relative_to(ROOT)}")
-    print(f"  cases CSV   -> {paths['cases_csv'].relative_to(ROOT)}")
+    print(f"\n  report      -> {_show(paths['report'])}")
+    print(f"  page        -> {_show(paths['report_html'])}")
+    print(f"  summary CSV -> {_show(paths['summary_csv'])}")
+    print(f"  cases CSV   -> {_show(paths['cases_csv'])}")
     print("  SQLite and model providers were not modified.")
     return 0
 

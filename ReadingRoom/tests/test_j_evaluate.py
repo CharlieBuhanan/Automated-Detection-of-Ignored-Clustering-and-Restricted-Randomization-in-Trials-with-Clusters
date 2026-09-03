@@ -141,3 +141,96 @@ def test_writer_creates_csv_json_and_markdown_dashboard(tmp_path):
     rows = list(csv.DictReader(paths["summary_csv"].open(encoding="utf-8")))
     assert rows[0]["cohen_kappa"] == ""
     assert "Cohen's κ" in paths["report"].read_text(encoding="utf-8")
+
+
+def test_html_page_carries_every_statistic_with_its_tier(tmp_path):
+    conn = db.connect(tmp_path / "review.db")
+    try:
+        for paper_id, excluded in (("TP", True), ("FP", False), ("TN", False)):
+            insert_label(conn, paper_id, excluded=excluded)
+        for paper_id, decision in (("TP", "yes"), ("FP", "yes"), ("TN", "no")):
+            insert_judgment(conn, paper_id, "exclusion", decision)
+        results = evaluate.evaluate_tasks(conn, ("exclusion",), promptbook_version="v1")
+    finally:
+        conn.close()
+
+    page = evaluate.render_html(results, generated_at="2026-08-28T00:00:00+00:00")
+
+    # A statistic that is calculated but never reaches the page is a statistic the
+    # reader cannot weigh, so every one of them is asserted onto it by name.
+    for name in ("Accuracy", "Sensitivity", "Specificity", "Cohen&#x27;s kappa",
+                 "Coverage", "Scored", "Undecidable", "Wrong text",
+                 "Missing judgments", "Unlabelled judgments", "Configuration",
+                 "Precision", "Negative predictive value", "F1",
+                 "Balanced accuracy", "Confidence", "Calibration gap",
+                 "Expected calibration error", "Brier score (decision)"):
+        assert name in page, name
+
+    # Each one is tiered, so the page says which are load-bearing and which are not.
+    for tier in evaluate.TIER_ORDER:
+        assert f'class="tag {tier}"' in page
+
+    # The confusion matrix speaks the gate's vocabulary, not the schema's.
+    assert "human exclude" in page and "human keep" in page
+    assert "yes &middot; model" not in page
+    assert "unrecoverable" in page
+
+
+def test_html_page_speaks_each_task_in_its_own_vocabulary(tmp_path):
+    conn = db.connect(tmp_path / "review.db")
+    try:
+        insert_label(conn, "P1", excluded=False, power="no")
+        insert_judgment(conn, "P1", "power_analysis", "yes")
+        results = evaluate.evaluate_tasks(conn, ("power_analysis",), promptbook_version="v1")
+    finally:
+        conn.close()
+
+    page = evaluate.render_html(results, generated_at="2026-08-28T00:00:00+00:00")
+    # `yes` means "excluded" on the gate and "analysis done correctly" here, so a
+    # shared wording would be wrong on one of them.
+    assert "too lenient" in page
+    assert "human correct" in page and "human flawed" in page
+    assert "unrecoverable" not in page
+
+
+def test_html_page_survives_a_task_with_nothing_scored(tmp_path):
+    conn = db.connect(tmp_path / "review.db")
+    try:
+        insert_label(conn, "P1", excluded=True)
+        results = evaluate.evaluate_tasks(conn, ("exclusion",), promptbook_version="v1")
+    finally:
+        conn.close()
+
+    page = evaluate.render_html(results, generated_at="2026-08-28T00:00:00+00:00")
+    # Undefined rates must read as undefined, never as a zero the reader trusts.
+    assert "No scoreable judgment" in page
+    assert "no interval at n = 0" in page
+
+
+def test_html_page_names_an_unclean_configuration(tmp_path):
+    conn = db.connect(tmp_path / "review.db")
+    try:
+        insert_label(conn, "P1", excluded=True)
+        insert_judgment(conn, "P1", "exclusion", "yes")
+        results = evaluate.evaluate_tasks(conn, ("exclusion",), promptbook_version="v1")
+    finally:
+        conn.close()
+
+    page = evaluate.render_html(results, generated_at="2026-08-28T00:00:00+00:00")
+    assert "Not a clean DC17 history row" in page
+
+
+def test_writer_also_produces_the_html_page(tmp_path):
+    conn = db.connect(tmp_path / "review.db")
+    try:
+        insert_label(conn, "P1", excluded=True)
+        insert_judgment(conn, "P1", "exclusion", "yes")
+        results = evaluate.evaluate_tasks(conn, ("exclusion",), promptbook_version="v1")
+    finally:
+        conn.close()
+
+    paths = evaluate.write_evaluation(tmp_path / "report", results,
+                                      generated_at="2026-08-28T00:00:00+00:00")
+    page = paths["report_html"]
+    assert page.name == "report.html"
+    assert "<title>Classification evaluation</title>" in page.read_text(encoding="utf-8")

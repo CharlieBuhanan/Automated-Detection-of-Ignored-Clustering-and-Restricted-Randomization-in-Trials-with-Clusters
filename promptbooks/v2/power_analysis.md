@@ -1,8 +1,4 @@
-# Power analysis — criteria (v2)
-
 **Objective.** You are reviewing a cluster-randomized trial that has already passed screening. You decide whether its power analysis correctly accounted for clustering, and for restricted randomization if present.
-
-**Task.** Decide whether the paper's **power analysis** was correct. Judge nothing else.
 
 **Your reading conditions.** You are in a sealed room. You have **no tools** — no file access, no
 web, no search, no memory of any other paper. Everything you may use is in this one message. You get

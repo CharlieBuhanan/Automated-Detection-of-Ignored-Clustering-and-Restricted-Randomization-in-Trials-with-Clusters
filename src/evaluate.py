@@ -15,8 +15,10 @@ instead of being silently converted into mistakes.
 from __future__ import annotations
 
 import csv
+import html
 import json
 import math
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -545,6 +547,492 @@ def _write_csv(path: Path, *, columns: list[str], rows: Iterable[dict[str, Any]]
         writer.writerows(rows)
 
 
+# ------------------------------------------------------------- HTML dashboard
+
+# Every number this module calculates is on the page, but they are not equally
+# load-bearing and a reader cannot tell that from a metric name alone. Each one
+# carries a tier so the page can say plainly what a decision may rest on.
+TIER_LABEL = {
+    "primary": ("Primary",
+                "the round's result — a promptbook change is judged on these, and "
+                "the DC17 plateau rule reads accuracy"),
+    "guardrail": ("Guardrail",
+                  "these can invalidate the primary numbers; read them before "
+                  "believing an accuracy"),
+    "support": ("Supporting",
+                "describes the shape of the errors and the model's confidence; "
+                "never a stopping criterion on its own"),
+}
+
+TIER_ORDER = ["primary", "guardrail", "support"]
+
+# `yes` is one word in the schema and two different claims across tasks, so every
+# gloss below is written per task rather than in the schema's vocabulary.
+TASK_WORDS = {
+    "exclusion": {
+        "yes": "exclude", "no": "keep",
+        "positive": "papers the human excluded",
+        "negative": "papers the human kept",
+        "sensitivity": "Share of human-excluded papers the model also excluded. A miss "
+                       "here is a false keep: recoverable, a human still sees the paper.",
+        "specificity": "Share of human-kept papers the model also kept. **This is the "
+                       "critical direction for the gate** — a miss here is a false "
+                       "exclusion, and the paper never reaches power or data analysis.",
+        "false_positive": "False exclusions — **unrecoverable**. The model dropped a "
+                          "paper the human kept, so no later task ever sees it.",
+        "false_negative": "False keeps. The model kept a paper the human excluded: "
+                          "wasteful, but recoverable downstream.",
+        "precision": "Of the papers the model excluded, the share the human also excluded.",
+        "npv": "Of the papers the model kept, the share the human also kept.",
+    },
+    "analysis": {
+        "yes": "correct", "no": "flawed",
+        "positive": "analyses the human judged correct",
+        "negative": "analyses the human judged flawed",
+        "sensitivity": "Share of human-correct analyses the model also called correct. "
+                       "A miss here means the model is too strict.",
+        "specificity": "Share of human-flawed analyses the model also called flawed. A "
+                       "miss here means the model is too lenient — it waved a flawed "
+                       "analysis through.",
+        "false_positive": "Model too lenient: it called a flawed analysis correct.",
+        "false_negative": "Model too strict: it called a correct analysis flawed.",
+        "precision": "Of the analyses the model called correct, the share the human also did.",
+        "npv": "Of the analyses the model called flawed, the share the human also did.",
+    },
+}
+
+
+def task_words(task: str) -> dict[str, str]:
+    """Reader-facing vocabulary for one task; analyses share a wording."""
+    return TASK_WORDS.get(task, TASK_WORDS["analysis"])
+
+
+def _pct(value: Any) -> str:
+    return _format_metric(value, percent=True)
+
+
+def _num(value: Any) -> str:
+    return _format_metric(value)
+
+
+def _interval(row: dict[str, Any], stem: str) -> str:
+    low, high = row.get(f"{stem}_ci95_low"), row.get(f"{stem}_ci95_high")
+    if low is None or high is None:
+        return "no interval at n = 0"
+    return f"95% CI {_pct(low)} – {_pct(high)}"
+
+
+def _inline(text: str) -> str:
+    """Escape, then honour the `**bold**` and `` `code` `` used in the glosses."""
+    escaped = html.escape(text)
+    escaped = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", escaped)
+    return re.sub(r"`([^`]+)`", r"<code>\1</code>", escaped)
+
+
+def _metric_rows(row: dict[str, Any]) -> list[dict[str, str]]:
+    """Every statistic calculated for one task, tiered and explained."""
+    words = task_words(row["task"])
+    tp, tn = row["true_positive"], row["true_negative"]
+    fp, fn = row["false_positive"], row["false_negative"]
+    undecidable_rate = _ratio(row["undecidable"], row["judged_eligible"])
+    fingerprints = row["configuration_fingerprints"]
+    return [
+        # ---------------------------------------------------------- primary
+        {"tier": "primary", "name": "Accuracy", "value": _pct(row["accuracy"]),
+         "detail": f"(TP + TN) / scored = {tp + tn} / {row['scored']} · "
+                   + _interval(row, "accuracy"),
+         "why": "The DC17 plateau rule reads this one: two consecutive rounds each "
+                "improving by under 1pp ends the promptbook loop. Compare rounds "
+                "through the interval, not the point estimate — at 50 papers a 1pp "
+                "move is well inside the noise."},
+        {"tier": "primary", "name": "Sensitivity", "value": _pct(row["sensitivity"]),
+         "detail": f"TP / (TP + FN) = {tp} / {tp + fn} · " + _interval(row, "sensitivity"),
+         "why": words["sensitivity"]},
+        {"tier": "primary", "name": "Specificity", "value": _pct(row["specificity"]),
+         "detail": f"TN / (TN + FP) = {tn} / {tn + fp} · " + _interval(row, "specificity"),
+         "why": words["specificity"]},
+        {"tier": "primary", "name": "Cohen's kappa", "value": _num(row["cohen_kappa"]),
+         "detail": "interval " + row["cohen_kappa_ci95_method"].replace("_", " ")
+                   + " — a binomial interval would be invalid here",
+         "why": "Agreement corrected for what the two marginal distributions would "
+                "produce by chance. On a lopsided split this is the honest headline: "
+                "accuracy can look high purely because one class dominates. Shown as "
+                "— when expected agreement is 1 and kappa is undefined."},
+        # -------------------------------------------------------- guardrail
+        {"tier": "guardrail", "name": "Eligible papers", "value": str(row["eligible"]),
+         "detail": f"{row['split']} split · {row['persisted_judgments']} persisted judgments",
+         "why": "Papers in this split carrying a human answer for this task. Power and "
+                "data analysis score only gate survivors, so their eligible count is "
+                "smaller than exclusion's by design, not by loss."},
+        {"tier": "guardrail", "name": "Coverage", "value": _pct(row["coverage"]),
+         "detail": f"{row['judged_eligible']} of {row['eligible']} judged · "
+                   f"{row['missing']} missing",
+         "why": "Share of eligible papers with a persisted judgment. Below 100% the "
+                "accuracy above describes a subset, not the split — and a partial "
+                "round is not the full-build-split regression run DC17 asks for."},
+        {"tier": "guardrail", "name": "Scored", "value": str(row["scored"]),
+         "detail": f"TP + TN + FP + FN · {_pct(row['scoreable_coverage'])} of eligible",
+         "why": "The binary denominator. Abstentions, wrong-text reports and missing "
+                "rows sit outside it, which is what stops them being silently counted "
+                "as mistakes."},
+        {"tier": "guardrail", "name": "Undecidable", "value": str(row["undecidable"]),
+         "detail": f"{_pct(undecidable_rate)} of judged papers",
+         "why": "Abstentions, not a category. **Watch this against accuracy**: rising "
+                "while accuracy holds flat means the promptbook is teaching the model "
+                "to abstain rather than to judge."},
+        {"tier": "guardrail", "name": "Wrong text", "value": str(row["wrong_text"]),
+         "detail": "reported by the model, not detected here",
+         "why": "The model said the text it was handed was not the paper. Any count "
+                "above zero is a corpus or extraction problem to chase before these "
+                "metrics mean anything."},
+        {"tier": "guardrail", "name": "Missing judgments", "value": str(row["missing"]),
+         "detail": f"of {row['eligible']} eligible",
+         "why": "Eligible papers with no persisted judgment. Pairing is label-first so "
+                "these cut coverage instead of quietly shrinking the denominator."},
+        {"tier": "guardrail", "name": "Unlabelled judgments",
+         "value": str(row["unlabeled_judgments"]),
+         "detail": "persisted, but not scoreable against this split",
+         "why": "Judgments that could not pair to an eligible label — a split mismatch, "
+                "or an analysis judgment on a human-excluded paper. Evidence worth "
+                "investigating, not rows to drop invisibly."},
+        {"tier": "guardrail", "name": "Configuration",
+         "value": row["configuration_status"].replace("_", " "),
+         "detail": f"{len(fingerprints.split(';')) if fingerprints else 0} fingerprint(s)",
+         "why": "Only `comparable` means one fully recorded configuration. Mixed or "
+                "legacy rows stay useful as description, but are refused for a "
+                "`promptbook_accuracy_history.csv` row or a plateau claim."},
+        # ---------------------------------------------------------- support
+        {"tier": "support", "name": "Precision", "value": _pct(row["precision"]),
+         "detail": f"TP / (TP + FP) = {tp} / {tp + fp}",
+         "why": words["precision"]},
+        {"tier": "support", "name": "Negative predictive value",
+         "value": _pct(row["negative_predictive_value"]),
+         "detail": f"TN / (TN + FN) = {tn} / {tn + fn}",
+         "why": words["npv"]},
+        {"tier": "support", "name": "F1", "value": _num(row["f1"]),
+         "detail": "harmonic mean of precision and sensitivity",
+         "why": "Ignores TN entirely, so it says nothing about the negative class. "
+                "Fine for comparing runs, misleading as a single headline here."},
+        {"tier": "support", "name": "Balanced accuracy",
+         "value": _pct(row["balanced_accuracy"]),
+         "detail": "(sensitivity + specificity) / 2",
+         "why": "Accuracy with both classes weighted equally. A large gap between this "
+                "and plain accuracy means the majority class is carrying the headline."},
+        {"tier": "support", "name": "Confidence", "value": _num(row["confidence_mean"]),
+         "detail": f"mean of n = {row['confidence_n']} · range "
+                   f"{_num(row['confidence_min'])}–{_num(row['confidence_max'])} · "
+                   f"{row['distinct_confidences']} distinct values",
+         "why": "Confidence in the chosen decision, not a probability of the positive "
+                "class. Few distinct values means the model is picking from a habit of "
+                "round numbers, which caps what any threshold can do."},
+        {"tier": "support", "name": "Calibration gap", "value": _num(row["calibration_gap"]),
+         "detail": f"mean confidence − empirical accuracy "
+                   f"({_pct(row['calibration_empirical_accuracy'])}) · "
+                   f"n = {row['calibration_n']}",
+         "why": "Positive means overconfident: the model claims more certainty than its "
+                "answers earn. This is what makes a confidence threshold either useful "
+                "or a false comfort."},
+        {"tier": "support", "name": "Expected calibration error",
+         "value": _num(row["expected_calibration_error"]),
+         "detail": "bin-weighted mean of |gap|",
+         "why": "The calibration gap without cancellation, so an overconfident bin and "
+                "an underconfident bin cannot average each other away."},
+        {"tier": "support", "name": "Brier score (decision)",
+         "value": _num(row["decision_confidence_brier"]),
+         "detail": "mean squared error of confidence against correctness · lower is better",
+         "why": "Scores confidence and correctness together: it rewards being right, and "
+                "being right about how sure you were."},
+    ]
+
+
+def _tile(label: str, value: str, foot: str, tone: str) -> str:
+    return (f'<div class="tile {tone}"><span class="tile-k">{html.escape(label)}</span>'
+            f'<span class="tile-v">{html.escape(value)}</span>'
+            f'<span class="tile-f">{html.escape(foot)}</span></div>')
+
+
+def _table(headers: list[str], body: list[list[str]], *, numeric_from: int = 1) -> str:
+    """Cells at or after ``numeric_from`` are right-aligned and tabular."""
+    def klass(index: int) -> str:
+        return ' class="r"' if index >= numeric_from else ""
+    head = "".join(f"<th{klass(index)}>{html.escape(text)}</th>"
+                   for index, text in enumerate(headers))
+    rows = "".join(
+        "<tr>" + "".join(f"<td{klass(index)}>{cell}</td>"
+                         for index, cell in enumerate(line)) + "</tr>"
+        for line in body)
+    return f"<table><thead><tr>{head}</tr></thead><tbody>{rows}</tbody></table>"
+
+
+def _confusion(row: dict[str, Any]) -> str:
+    words = task_words(row["task"])
+    yes, no = words["yes"], words["no"]
+    cells = [
+        ("true_positive", "TP", row["true_positive"], f"human {yes} · model {yes}"),
+        ("false_negative", "FN", row["false_negative"], f"human {yes} · model {no}"),
+        ("false_positive", "FP", row["false_positive"], f"human {no} · model {yes}"),
+        ("true_negative", "TN", row["true_negative"], f"human {no} · model {no}"),
+    ]
+    grid = "".join(
+        f'<div class="cell {key}"><span class="cell-k">{code}</span>'
+        f'<span class="cell-v">{count}</span>'
+        f'<span class="cell-f">{html.escape(gloss)}</span></div>'
+        for key, code, count, gloss in cells)
+    return (f'<div class="grid">{grid}</div>'
+            f'<p class="note">{_inline(words["false_positive"])}<br>'
+            f'{_inline(words["false_negative"])}</p>')
+
+
+def _metric_table(row: dict[str, Any]) -> str:
+    body = []
+    for metric in sorted(_metric_rows(row),
+                         key=lambda item: TIER_ORDER.index(item["tier"])):
+        tier = metric["tier"]
+        body.append([
+            f'<span class="tag {tier}">{TIER_LABEL[tier][0]}</span>',
+            f'<b>{html.escape(metric["name"])}</b>',
+            f'<span class="big">{html.escape(metric["value"])}</span>',
+            f'<span class="muted">{_inline(metric["detail"])}</span>',
+            _inline(metric["why"]),
+        ])
+    return _table(["Tier", "Statistic", "Value", "How it is built", "Why it matters"],
+                  body, numeric_from=99)
+
+
+def _calibration_table(result: TaskEvaluation) -> str:
+    if not result.calibration_bins:
+        return '<p class="note">No scored judgment carried a confidence value.</p>'
+    body = [[f'{bin_row["bin_lower"]:.2f} – {bin_row["bin_upper"]:.2f}',
+             str(bin_row["n"]), _num(bin_row["mean_confidence"]),
+             _pct(bin_row["empirical_accuracy"]), _num(bin_row["calibration_gap"])]
+            for bin_row in result.calibration_bins]
+    return _table(["Confidence bin", "n", "Mean confidence", "Empirical accuracy", "Gap"],
+                  body)
+
+
+def _threshold_table(result: TaskEvaluation) -> str:
+    rows = [row for row in result.threshold_rows if row["confidence_n"]]
+    if not rows:
+        return '<p class="note">No scored judgment carried a confidence value.</p>'
+    body = [[f'{row["threshold"]:.2f}', str(row["low_confidence_n"]),
+             _pct(row["low_confidence_rate"]), str(row["retained_n"]),
+             _pct(row["retained_accuracy"]), _pct(row["retained_sensitivity"]),
+             _pct(row["retained_specificity"])] for row in rows]
+    return _table(["Threshold", "Sent to review", "Review load", "Retained n",
+                   "Retained accuracy", "Retained sensitivity", "Retained specificity"],
+                  body)
+
+
+def _provenance_table(row: dict[str, Any]) -> str:
+    fields = [("Model(s)", row["models"]), ("Pass(es)", row["pass_names"]),
+              ("Configuration", row["configuration_status"].replace("_", " ")),
+              ("Effort(s)", row["efforts"]), ("Route(s)", row["routes"]),
+              ("Transport(s)", row["transports"]), ("Run ID(s)", row["run_ids"]),
+              ("Fingerprint(s)", row["configuration_fingerprints"]),
+              ("Source(s)", row["configuration_sources"])]
+    body = [[f"<b>{html.escape(name)}</b>",
+             f"<code>{html.escape(str(value))}</code>" if value
+             else '<span class="muted">none</span>']
+            for name, value in fields]
+    return _table(["Field", "Recorded"], body, numeric_from=99)
+
+
+def _task_section(result: TaskEvaluation) -> str:
+    row = result.summary_row()
+    words = task_words(result.task)
+    scored = row["scored"]
+    tone = ("unlabelled" if not scored
+            else "true_positive" if (row["accuracy"] or 0) >= 0.9
+            else "false_positive")
+    tiles = "".join([
+        _tile("Accuracy", _pct(row["accuracy"]), _interval(row, "accuracy"), tone),
+        _tile("Sensitivity", _pct(row["sensitivity"]),
+              f'recall on {words["positive"]}', "true_positive"),
+        _tile("Specificity", _pct(row["specificity"]),
+              f'recall on {words["negative"]}', "true_negative"),
+        _tile("Cohen's kappa", _num(row["cohen_kappa"]),
+              "chance-corrected agreement", "unlabelled"),
+    ])
+    subtitle = " · ".join(part for part in (
+        f'{row["eligible"]} eligible',
+        f'{_pct(row["coverage"])} coverage',
+        f"{scored} scored",
+        f'{row["undecidable"]} undecidable' if row["undecidable"] else "",
+        f'{row["missing"]} missing' if row["missing"] else "",
+        row["configuration_status"].replace("_", " ")) if part)
+    empty = ('<p class="warn">No scoreable judgment for this task, so every rate below '
+             'is undefined rather than zero.</p>' if not scored else "")
+    return f"""<article class="card task {tone}" data-task="{html.escape(result.task)}">
+<header><span class="tag {tone}">{html.escape(result.task.replace("_", " "))}</span>
+<h2>{html.escape(result.task)} &middot; {html.escape(result.split)} split
+&middot; {html.escape(row["promptbook_version"])}</h2>
+<p class="who">{html.escape(subtitle)}</p></header>
+{empty}
+<div class="tiles">{tiles}</div>
+<h3>Confusion matrix</h3>
+{_confusion(row)}
+<h3>Every calculated statistic</h3>
+{_metric_table(row)}
+<h3>Confidence calibration</h3>
+<p class="note">Confidence is confidence in the chosen decision, not a probability of
+&ldquo;{html.escape(words["yes"])}&rdquo;. A positive gap means overconfident.</p>
+{_calibration_table(result)}
+<h3>Review-threshold sweep</h3>
+<p class="note">A policy of &ldquo;send every judgment below the threshold to a human&rdquo;.
+A descriptive build-split sweep, not a tuned production threshold.</p>
+{_threshold_table(result)}
+<h3>Provenance</h3>
+{_provenance_table(row)}
+</article>"""
+
+
+def render_html(results: Iterable[TaskEvaluation], *,
+                generated_at: str | None = None) -> str:
+    """A self-contained page carrying every statistic, ranked by what it decides."""
+    results = list(results)
+    generated_at = generated_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    summaries = [result.summary_row() for result in results]
+    split = summaries[0]["split"] if summaries else ""
+    version = summaries[0]["promptbook_version"] if summaries else ""
+
+    chips = [f'<button class="chip active" data-task="all">'
+             f"Every task <b>{len(results)}</b></button>"]
+    for result, row in zip(results, summaries):
+        chips.append(
+            f'<button class="chip" data-task="{html.escape(result.task)}">'
+            f'{html.escape(result.task.replace("_", " "))} '
+            f'<b>{_pct(row["accuracy"])}</b></button>')
+
+    legend = "".join(
+        f'<div class="legend-row"><span class="tag {tier}">{TIER_LABEL[tier][0]}</span>'
+        f"<span>{_inline(TIER_LABEL[tier][1])}</span></div>" for tier in TIER_ORDER)
+
+    unclean = [f'{row["task"]}: {row["configuration_status"].replace("_", " ")}'
+               for row in summaries if row["configuration_status"] != "comparable"]
+    warning = (f'<p class="warn">Not a clean DC17 history row — '
+               f'{html.escape(" · ".join(unclean))}</p>' if unclean else "")
+
+    subtitle = " · ".join(part for part in (
+        f"{split} split", version, f"{len(results)} task(s)",
+        f"generated {generated_at}") if part)
+
+    return HTML_TEMPLATE.format(
+        title="Classification evaluation", subtitle=html.escape(subtitle),
+        warning=warning, chips="".join(chips), legend=legend,
+        sections="\n".join(_task_section(result) for result in results))
+
+
+HTML_TEMPLATE = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<style>
+:root {{
+  --bg:#fbfbfa; --card:#fff; --ink:#1a1a19; --muted:#6b6b66; --line:#e4e4e0;
+  --fn:#b3261e; --fp:#a8590c; --tp:#1a7f4b; --tn:#5a5a55; --odd:#6b4ba8;
+}}
+@media (prefers-color-scheme: dark) {{
+  :root {{ --bg:#17171a; --card:#1f1f23; --ink:#ececeb; --muted:#9a9a95; --line:#33333a;
+    --fn:#ff8a80; --fp:#ffb870; --tp:#6fd39b; --tn:#9a9a95; --odd:#c0a3f0; }}
+}}
+* {{ box-sizing:border-box; }}
+body {{ margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 -apple-system,
+  BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; }}
+.wrap {{ max-width:1040px; margin:0 auto; padding:32px 20px 96px; }}
+h1 {{ font-size:22px; margin:0 0 4px; letter-spacing:-.01em; }}
+.sub {{ color:var(--muted); font-size:13px; margin:0; }}
+.warn {{ color:var(--fp); font-size:13px; margin:8px 0 0; }}
+.bar {{ position:sticky; top:0; z-index:5; background:var(--bg); padding:16px 0 12px;
+  border-bottom:1px solid var(--line); margin:16px 0 20px; display:flex;
+  flex-wrap:wrap; gap:8px; }}
+.chip {{ font:inherit; font-size:13px; padding:5px 11px; border-radius:99px; cursor:pointer;
+  border:1px solid var(--line); background:var(--card); color:var(--muted); }}
+.chip b {{ color:var(--ink); }}
+.chip.active {{ border-color:currentColor; color:var(--ink); }}
+.tag.primary {{ color:var(--tp); }}
+.tag.guardrail {{ color:var(--fp); }}
+.tag.support {{ color:var(--tn); }}
+.tag.true_positive {{ color:var(--tp); }}
+.tag.true_negative {{ color:var(--tn); }}
+.tag.false_positive {{ color:var(--fp); }}
+.tag.false_negative {{ color:var(--fn); }}
+.tag.unlabelled {{ color:var(--odd); }}
+.card {{ background:var(--card); border:1px solid var(--line); border-radius:10px;
+  padding:16px 18px; margin-bottom:14px; border-left:3px solid currentColor;
+  color:var(--tn); }}
+.card.true_positive {{ color:var(--tp); }}
+.card.false_positive {{ color:var(--fp); }}
+.card.unlabelled {{ color:var(--odd); }}
+.card > * {{ color:var(--ink); }}
+.tag {{ display:inline-block; font-size:11px; font-weight:700; letter-spacing:.05em;
+  text-transform:uppercase; border:1px solid currentColor; border-radius:99px;
+  padding:1px 8px; margin-bottom:8px; white-space:nowrap; }}
+header h2 {{ font-size:15px; font-weight:600; margin:0; line-height:1.4; }}
+h3 {{ font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--muted); margin:24px 0 6px; }}
+.who {{ margin:2px 0 0; font-size:12px; color:var(--muted); }}
+.legend {{ margin:-6px 0 20px; font-size:13px; color:var(--muted); }}
+.legend summary {{ cursor:pointer; color:var(--muted); }}
+.legend-row {{ display:flex; gap:10px; align-items:baseline; margin:10px 0 0;
+  padding-left:2px; color:var(--tn); }}
+.legend-row > span:last-child {{ color:var(--muted); flex:1; }}
+.legend-row .tag {{ margin:0; flex:0 0 auto; min-width:110px; text-align:center; }}
+.tiles {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px;
+  margin:12px 0 0; }}
+.tile {{ border:1px solid var(--line); border-radius:8px; padding:10px 12px;
+  display:flex; flex-direction:column; gap:2px; color:var(--tn); }}
+.tile.true_positive {{ color:var(--tp); }}
+.tile.false_positive {{ color:var(--fp); }}
+.tile.unlabelled {{ color:var(--odd); }}
+.tile-k {{ font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }}
+.tile-v {{ font:600 26px/1.15 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  color:var(--ink); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }}
+.tile-f {{ font-size:11.5px; color:var(--muted); }}
+.grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; }}
+.cell {{ border:1px solid var(--line); border-radius:8px; padding:9px 11px;
+  display:flex; flex-direction:column; gap:1px; color:var(--tn); }}
+.cell.true_positive {{ color:var(--tp); }}
+.cell.false_positive {{ color:var(--fp); }}
+.cell.false_negative {{ color:var(--fn); }}
+.cell-k {{ font:700 11px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.06em; }}
+.cell-v {{ font:600 20px/1.2 system-ui,sans-serif; color:var(--ink);
+  font-variant-numeric:tabular-nums; }}
+.cell-f {{ font-size:11.5px; color:var(--muted); }}
+table {{ width:100%; border-collapse:collapse; font-size:13px; margin:4px 0 0; }}
+th, td {{ text-align:left; padding:7px 9px; border-bottom:1px solid var(--line);
+  vertical-align:top; }}
+th {{ font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted);
+  font-weight:700; white-space:nowrap; }}
+td.r, th.r {{ text-align:right; font-variant-numeric:tabular-nums; }}
+tbody tr:last-child td {{ border-bottom:none; }}
+td .tag {{ margin:0; }}
+.big {{ font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }}
+.muted {{ color:var(--muted); font-size:12px; }}
+.note {{ color:var(--muted); font-size:12.5px; margin:8px 0 0; }}
+code {{ font:12px ui-monospace,SFMono-Regular,Menlo,monospace; word-break:break-all; }}
+.card[hidden] {{ display:none; }}
+.scroll {{ overflow-x:auto; }}
+</style></head><body><div class="wrap">
+<h1>{title}</h1><p class="sub">{subtitle}</p>{warning}
+<div class="bar">{chips}</div>
+<details class="legend"><summary>Which statistics are important, and why</summary>{legend}</details>
+{sections}
+</div><script>
+var chips = document.querySelectorAll('.chip');
+var cards = document.querySelectorAll('.card.task');
+chips.forEach(function (chip) {{
+  chip.addEventListener('click', function () {{
+    var want = chip.dataset.task;
+    chips.forEach(function (other) {{ other.classList.toggle('active', other === chip); }});
+    cards.forEach(function (card) {{
+      card.hidden = want !== 'all' && card.dataset.task !== want;
+    }});
+  }});
+}});
+</script></body></html>
+"""
+
+
 def write_evaluation(output_dir: Path, results: Iterable[TaskEvaluation], *,
                      generated_at: str | None = None) -> dict[str, Path]:
     """Write CSV, JSON, and Markdown reporting artifacts; never write SQLite."""
@@ -689,12 +1177,18 @@ def write_evaluation(output_dir: Path, results: Iterable[TaskEvaluation], *,
         "- `confidence_calibration.csv`: fixed-bin calibration data.",
         "- `confidence_thresholds.csv`: review-load/retained-performance sweep from 0.50 to 0.95.",
         "- `summary.json`: machine-readable aggregates, calibration, and threshold rows.",
+        "- `report.html`: the same statistics as a page, tiered by what each one decides.",
     ]
     report.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
+    report_html = output_dir / "report.html"
+    report_html.write_text(render_html(results, generated_at=generated_at),
+                           encoding="utf-8")
+
     return {"summary_csv": summary_csv, "cases_csv": cases_csv,
             "calibration_csv": calibration_csv, "thresholds_csv": thresholds_csv,
-            "summary_json": summary_json, "report": report}
+            "summary_json": summary_json, "report": report,
+            "report_html": report_html}
 
 
 def require_history_eligible(results: Iterable[TaskEvaluation]) -> None:
