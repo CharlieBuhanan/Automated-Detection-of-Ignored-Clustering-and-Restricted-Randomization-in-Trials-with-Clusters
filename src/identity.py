@@ -11,7 +11,7 @@ article. Both scored 80 and 84 on title similarity, against 96-100 for genuine
 matches -- the gap the thresholds below sit in.
 
 Pure functions, no I/O: the caller supplies text and metadata. That keeps the
-rules testable, and lets classification-time re-checks (PLAN.md step 1) reuse
+rules testable, and lets classification-time re-checks (research design/PLAN.md step 1) reuse
 the same ladder rather than reimplementing it.
 
 Signals, and why these three:
@@ -71,7 +71,7 @@ _ADMIN_MARKERS = [
 # Journals publish corrections, errata and retractions as separate indexed
 # records with their own DOI, so Zotero holds them and identity verification
 # passes them -- the PDF really is the document the record names. They are
-# still not studies: no methods, no sample size, no analysis for any rubric to
+# still not studies: no methods, no sample size, no analysis for any promptbook to
 # judge. They have to leave the corpus before the gate, not inside it.
 CORRECTION_WORDS = (
     "erratum",              # also matches errata below

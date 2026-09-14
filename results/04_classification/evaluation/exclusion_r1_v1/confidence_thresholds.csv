@@ -1,0 +1,11 @@
+task,split,promptbook_version,configuration_status,threshold,confidence_n,low_confidence_n,low_confidence_rate,retained_n,retained_accuracy,retained_sensitivity,retained_specificity
+exclusion,build,v1,unprovenanced_legacy,0.5,48,0,0.0,48,0.8958,1.0,0.7059
+exclusion,build,v1,unprovenanced_legacy,0.55,48,0,0.0,48,0.8958,1.0,0.7059
+exclusion,build,v1,unprovenanced_legacy,0.6,48,0,0.0,48,0.8958,1.0,0.7059
+exclusion,build,v1,unprovenanced_legacy,0.65,48,1,0.0208,47,0.8936,1.0,0.6875
+exclusion,build,v1,unprovenanced_legacy,0.7,48,1,0.0208,47,0.8936,1.0,0.6875
+exclusion,build,v1,unprovenanced_legacy,0.75,48,2,0.0417,46,0.913,1.0,0.7333
+exclusion,build,v1,unprovenanced_legacy,0.8,48,4,0.0833,44,0.9318,1.0,0.7857
+exclusion,build,v1,unprovenanced_legacy,0.85,48,4,0.0833,44,0.9318,1.0,0.7857
+exclusion,build,v1,unprovenanced_legacy,0.9,48,13,0.2708,35,0.9714,1.0,0.875
+exclusion,build,v1,unprovenanced_legacy,0.95,48,28,0.5833,20,0.95,1.0,0.0

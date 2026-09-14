@@ -33,7 +33,7 @@ reproduces exactly — the check that the NCI parse is faithful.
 
 ## Coverage
 
-569 validation PDFs were fetched in total. 530 are active in the corpus today; the rest left for
+569 HLS PDFs were fetched in total. 530 are active in the corpus today; the rest left for
 one of two reasons, both logged rather than silently removed:
 
 | Left the corpus | Papers | Where |
@@ -61,15 +61,14 @@ is a separate one, and the row is the historical record that the citation existe
 
 `Citation` is an APA-style entry (`83. (Hershman, Bansal, Barlow, et al., 2023)`) — no DOI, no
 key. `Reason excluded` blank means the paper was kept. `Power` and `Stats` are YES/NO.
-`Review Category` is A/B/C/D.
 
-**A/B/C/D is partly decoded, not documented.** `A` is provably "data analysis correct" — all 31
-`A` rows have `Stats = YES`, no other category does. `B` (19), `C` (33), `D` (13) are all
-`Stats = NO`, so they're three flavors of incorrect, but not the SAS `ignored_data_c` strata
-(those split the same 65 papers 14/26/25, not 19/33/13) — most likely severity tiers.
-**Ask Dr. Glueck.** Until then the letter is carried through verbatim and nothing downstream
-interprets it. `db.expected_decision()` currently returns this raw letter as the expected answer
-for `inclusion`, where the model returns yes/no — those can never agree until the mapping exists.
+**`Review Category` is dropped: it is a restatement of `Stats`.** Measured over all 96 NCI rows
+that carry it, the letter agrees with `Stats` perfectly in both directions — every one of the 31
+data-correct papers carries the same letter, and no data-incorrect paper does. The remaining
+letters split the 65 incorrect papers three ways but not along the SAS `ignored_data_c` strata
+(those split the same 65 papers 14/26/25), and no NHLBI paper carries a letter at all. It encodes
+nothing `Stats` does not already say, so nothing reads it. The column is still transcribed to
+`data/ground_truth.csv` and `validation_labels` as a raw record of the source file.
 
 ## NHLBI columns (22)
 
@@ -186,7 +185,7 @@ Worth asking for.
 ## Fifteen papers, two reviews each
 
 15 papers were fetched into both Zotero groups and independently reviewed by both institutes —
-`06_merge_validation_duplicates.py` already collapsed their *manifest* rows to one paper_id
+`06_merge_hls_duplicates.py` already collapsed their *manifest* rows to one paper_id
 apiece (the NCI side), but the fetch's raw metadata (`zotero_meta.jsonl`) was never pruned to
 match, so an NHLBI citation could still resolve to the retired paper_id. `07_build_ground_truth.py`
 now remaps those 15 rows to the surviving paper_id (visible in the `paper_id_note` column), so

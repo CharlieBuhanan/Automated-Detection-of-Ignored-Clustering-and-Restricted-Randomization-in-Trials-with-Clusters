@@ -1,165 +1,404 @@
 # Roadmap
 
 Reference doc. Not loaded into context automatically — read when starting a new phase.
-Standing rules live in [.claude/CLAUDE.md](.claude/CLAUDE.md).
+Standing rules live in [.claude/CLAUDE.md](../.claude/CLAUDE.md).
 
-## TODO now — human review, before continuing
+## Run 1 is a proof of concept
 
-**Start with `results/review/05_label_match_review.csv`** — 8 rows, covers items 2 and 3 below in
-one file: each institute's answer is already spelled out, no PDF-hunting needed to see the shape
-of the conflict (reading the actual paper is only needed to decide it).
+**One promptbook-refinement pass and one full run, finished by **2026-08-28**, for
+about **$60** against a $100 budget.** The goal is to prove the pipeline end to end,
+not to produce the final numbers: single pass, no self-consistency voting,
+refinement on the CLI against subscription quota so the budget goes entirely to
+the Batch API production run. Full breakdown in [Costs.md](Costs.md).
 
-- [ ] **Find the original paper for `NBBD4EVE`.** Missing from the corpus entirely — not a review-queue
-      row. Detail under "Checklist — what's next" below.
-- [ ] **Decide the Patterson papers** (`IT2B87LL` / `JBUFJCLU`). Two rows in the review file, one real
-      paper — blocked on the correction-notice policy question (see the erratum item below). Deciding
-      that question resolves this and item 4's third bullet together.
-- [ ] **Adjudicate the 6 institutional disagreements** in the review file. NCI and NHLBI reviewed the
-      same paper and reached different answers — one pair is a complete flip (NCI: both analyses
-      correct; NHLBI: both incorrect). Read the paper, decide which institute's answer is right (or
-      neither), and update `data/ground_truth.csv` or `results/review/05_label_match_review.csv`
-      accordingly — there's no automated way to pick a side for these.
-- [ ] **Other data checks before moving on:**
-      - Read the 3 correction-notice pairs' PDFs for power/stats impact — same question as items 1–2.
-      - Re-run `python scripts/05_build_exclusions.py --check` after any of the above changes anything.
-      - Confirm the A/B/C/D definition is still with Dr. Glueck. (The 23 outstanding NHLBI reviews are
-        no longer waiting on anyone — dropped, see below.)
+What that buys: a survivor count with per-paper drop reasons, power and data
+accuracy on the survivors, and one holdout number. What it does not buy:
+majority voting, a second refinement pass, or any claim that the promptbooks
+have plateaued. Those wait for run 2.
 
-## Checklist — what's next
+## TODO now
 
-Corpus prep is **done**: 1814 active papers (1284 testing + 530 validation), all extracted and cached.
+- [ ] Review the sample prompt `.txt` files and record any changes needed before the next promptbook refinement.
+- [ ] Create an interactive GUI for expert feedback to support promptbook refinement.
+- [ ] Refactor the draft email to Deb and Keith.
+- [ ] Convene the Keith/Deb expert-review meeting for the three restorable review piles.
+- [ ] Complete Group G of the Reading Room CLI test plan.
+- [ ] Implement and offline-validate the build-set Message Batches API path.
+- [ ] Write `promptbook_builder.py`, `two_pass.py`, and the run-log / accuracy-history artifacts.
+- [ ] Refactor the power and data-analysis promptbooks into one combined analysis block.
+- [ ] Use a fixed exploratory subset for promptbook-refinement rounds; reserve a full regression for a plateau claim.
+- [ ] Complete the Batch API transport once credits are available.
+- [ ] Consolidate the corpus-breakdown `.tex` sources and publish the corpus-breakdown artifact.
+- [ ] Prepare the LaTeX review document covering the three Deb/Keith adjudication piles.
 
-- [ ] **Request `Ignore03_NHLBI.bib` from the NHLBI team.** The extraction table cites it, but the
-      bundle shipped `references.bib` instead — the manuscript's own bibliography, which contains none
-      of the 159 cite keys. The right file carries DOIs and would make the NHLBI join exact instead of
-      fuzzy. Not blocking (all 337 NHLBI rows already resolve), but it would remove the fuzzy step.
-- [ ] **Get the definition of NCI's `Review Category` A/B/C/D.** `A` is provably "data analysis
-      correct" (all 31 `A` rows have `Stats = YES`, no other category does), and B/C/D are three
-      flavors of incorrect — but they are *not* the SAS `ignored_data_c` strata, which split the same
-      65 papers 14/26/25 rather than 19/33/13. Until the letters are defined,
-      `db.expected_decision()` cannot map them: it currently returns the raw letter as the expected
-      answer for `inclusion`, where the model returns yes/no, so the two can never agree.
-- [ ] **Decide the validation/build batching scheme.** Earlier drafts assumed round numbers
-      (350 / 150) that predate counting what is actually on disk. Settle, in this order: how the 523
-      labeled papers divide into build and holdout; whether the split is stratified on gate-survivor
-      status (open question 2 — a flat 30% holdout leaves only ~29 survivors to score power and data
-      analysis on, which is thin for a headline number); and what per-round sample size the rubric loop
-      draws from the build split (CLAUDE.md currently says under 100). All three have to be fixed
-      before `--assign-split`, because it only runs once.
-- [ ] **Resolve `(Patterson et al., 2022a)` / `(2022b)` — low risk, and now precisely scoped: only
-      one real corpus paper is affected, not two.** The two citations point at `IT2B87LL` (the article,
-      "A cluster randomized controlled trial for a multi-level, clinic-based smoking cessation program")
-      and `JBUFJCLU` (`Correction to:` that same article) — and `JBUFJCLU` is already `DROPPED` from the
-      manifest. APA only appends `a`/`b` when two references share an author and year, so the suffix is
-      the labeller recording that *they* could not separate them either — nothing in the citation
-      decides it, and `07_build_ground_truth.py` leaves both in
-      `results/review/07_ground_truth_unjoined.csv` rather than guessing. The reason it still can't be
-      resolved automatically is that the join reads `zotero_meta.jsonl`, which still lists `JBUFJCLU` as
-      a live candidate — `06_merge_validation_duplicates.py`'s DROPPED verdict lives only in the
-      manifest and was never propagated back to the metadata the join actually searches.
+## Roadmap record
 
-      **Both label rows carry identical labels** — `excluded`, reason `random` ("second study by same
-      group, excluded randomly"), no Power/Stats/Category — so this is a counting problem, not a
-      correctness one, and does not block `--assign-split`.
+- [x] **Split assigned, 2026-08-26.** 338 build / 145 holdout, stratified on gate-survivor status:
+      123/53 survivors, 215/92 excluded. Runs once; re-running now refuses.
+- [x] **Build rounds cut, 2026-08-26.** `scripts/17_assign_build_rounds.py` ->
+      `results/04_classification/build_rounds.csv`. Exclusion: 7 rounds (6x50 + 38), each 18/32
+      survivor/excluded. Power and data: 3 rounds each over the 123 build survivors (50/50/23).
+- [x] **`src/schemas.py` written.** The Decision model, shared by both routes: `parse_decision()`
+      for the Reading Room (fence-tolerant, raises `ParseFailure` with the raw text for the retry
+      ledger) and `tool_schema(task)` for the Batch API. `wrong_text` is enforced exclusion-only.
+- [x] **Deb replied, 2026-08-27.** E3 stepped wedge **excluded** (DC48); longitudinality **follows
+      Ignore02**, D14 folds into D13 (DC49); E5 stays **self-declared**, knowingly incomplete
+      (DC28); `XHFTHUCG` Cattamanchi's label is wrong and goes to an **expert-review pile**, not a
+      correction (DC50). Round sizes may vary rather than forcing a re-cut (DC47). Still open: the
+      5 stepped-wedge papers NHLBI kept (O1), the 7 restricted-randomization rows, E17 (O3).
+- [x] **`promptbooks/v1/` cut, 2026-08-27; `CURRENT` → `v1`.** E3 ON, D14 folded into D13, E5 and D3
+      marked confirmed, plus a new **"Your reading conditions"** paragraph in all three prompt blocks
+      (environment description, never cited in `promptbook_evidence`) — needed because the pinned
+      minimal system prompt removes the only implicit statement of the model's situation.
+      **No accuracy delta is reportable**: `v0` was never scored, so there is no row to compare
+      against. `v1` is the first version that will be run. See
+      [`v1 doc.md`](../promptbooks/v1/v1%20doc.md).
+      **This directory absorbed an earlier un-run `v2`** (see DC53 below).
+- [x] **Drop the expert-review pile, 2026-08-27** — `scripts/18_drop_expert_review.py`, 6 papers.
+      `XHFTHUCG` Cattamanchi (DC50) plus the **5 analyzed stepped-wedge papers** NHLBI kept and
+      scored, which O1/DC51 previously kept in the scored set as accepted misses. **This reverses
+      DC51** (see DC52): once E3 is ON, scoring against a label the same reviewers' own 9
+      stepped-wedge exclusions contradict is the DC37 problem again — a number computed against an
+      answer nobody stands behind. Dropping loses no data and is reversible via
+      `16_reapply_drops.py`; keeping them baked a −0.9pp/−1.4pp floor into every exclusion figure
+      for the rest of the study.
+      `3JVAWNIE` Bernabe-Ortiz, `TT7PIVLD` Ciccone, `7NYXSVAI` Douin (build);
+      `QMLU4TM8` Courtright, `8H9BUEWH` Fiscella, `XHFTHUCG` Cattamanchi (holdout).
+      **What it costs:** build 338 → 335, holdout 145 → 142. Three exclusion rounds run short and
+      are **proceeded with, never re-cut** (DC47). No power/data round changes — all six are
+      gate-excluded or holdout.
+      **What it buys:** exclusion accuracy no longer carries an accepted-miss floor, so a round's Δ
+      is compared against 0 again and `evaluate.py` needs no "accepted misses" line.
+- [ ] **The expert-review list for Keith and Deb, after 2026-09-02** — one meeting, three piles,
+      all restorable. Nothing below is scored while it sits here.
+      1. **6 dropped to expert review** (script 18): Cattamanchi + the 5 stepped wedges above.
+         Cattamanchi is a label a reviewer read and rejected; the 5 follow from Deb's DC48 criterion
+         ruling, which she made **without re-reading these rows** — that distinction is what the
+         adjudication is for.
+      2. **5 NCI/NHLBI mismatches** (script 12, DC37) — the same paper labelled by both institutions
+         with labels that disagree. One is a full flip. Bartels 2024, Beck 2019 `RJD9XX6D`,
+         Gilbert 2022, Ockene 2021, Smith 2023; see `results/review/05_label_match_review.csv`.
+      3. **7 restricted-randomization rows** whose `data_should` never names the restriction — rows
+         1-3 (Douin `7NYXSVAI`, Fortmann `W2VQEXEG`, Kinnamon `XEIAGV9H`) are scored `yes` on the
+         same shape Cattamanchi was dropped for. See [Deb.md](Deb.md). **Douin is in pile 1 too.**
+      Restoring any of these is `scripts/16_reapply_drops.py` plus 07 → 04 → 05; the drop logs in
+      `results/review/` carry the reason for every row.
+- [x] **Reading Room built, 2026-08-27.** `src/reading_room.py` (the walls, importable and
+      tested), `scripts/20_reading_room.py` (run a round, save raw), `scripts/21_check_responses.py`
+      (validate, then write judgments). **299 offline tests pass**, covering 71 of the test plan's
+      72 cases — `python -m pytest ReadingRoom/tests/ -q`, free, spawns no model.
+      **A12, the live canary, was cut** (decided 2026-08-27): it was the only case that proved the
+      walls matter rather than assuming it, so this is a real reduction in assurance and is stated
+      as such in [ReadingRoom/README.md](../ReadingRoom/README.md). `canary_verdict()` is written
+      and unit-tested, so reinstating it is a script and not a redesign.
+      Writing the tests first caught four defects in code that already looked finished: a repeated
+      `--allowed-tools` flag slipping past `verify_argv`, `prepare_room` creating a directory inside
+      the repo *before* refusing it, an F12 refusal escaping as a bare `FileExistsError` on a worker
+      thread, and `errors="replace"` on the encode turning undecodable bytes into an ASCII `?`
+      indistinguishable from one the paper contained.
+- [x] **Smoke-tested against the real CLI, 2026-08-27** — 3 papers, CLI 2.1.197, all 3 passing every
+      check with 3 distinct confidence values. It found **five defects the 299 offline tests could
+      not**, two of which meant the room was not sealed — the table is in
+      [ReadingRoom/README.md](../ReadingRoom/README.md)'s *What the first live run found*, and it is
+      worth a paragraph in the methods write-up. The two that matter most:
+      **`--allowed-tools ""` does not empty the room** (it is a permission allowlist, not an
+      availability filter — 18 tools were still offered, including `TaskCreate`, which spawns a
+      subagent with a full file toolset), and **the room could not authenticate**, because A7 points
+      `CLAUDE_CONFIG_DIR` away from the directory holding the credentials.
+      The harness no longer trusts its own deny list: it asserts on the tool list the CLI *reports*,
+      and a `preflight()` probe spawn checks it before a round is spent rather than after.
+- [ ] **Second probe of the CLI, 2026-08-27 — 17 new test cases. A13-A17 built, group G not.**
+      A single throwaway call asking only *what metadata can we log?* turned up two more design
+      errors. Full table in [ReadingRoom/README.md](../ReadingRoom/README.md)'s *What the second
+      probe found*; the cases are A13-A17 and the new group **G** in
+      [TEST_PLAN.md](../ReadingRoom/tests/TEST_PLAN.md) (72 → 89 cases).
+      **A13-A17 are green and verified live (2026-08-27): 353 offline tests, and a real preflight
+      returning 0 tools offered and 271 billed input tokens against a 12,198-token default.**
+      Building them found a **sixth live defect**, and the worst one so far: the pinned system
+      prompt was written as three paragraphs, and on Windows `claude` is a `.cmd` shim whose `%*`
+      expansion **ends the command line at the first newline**. Measured through a real shim, the
+      prompt arrived as its opening sentence and `--strict-mcp-config` and `--settings` never
+      arrived at all — two walls gone, exit code 0, tools still empty, nothing in any log.
+      `verify_argv` could not have caught it: it inspects the argv we *built*, not the one the child
+      received. Fixed three ways — the prompt is one line, `load_system_prompt` refuses a newline,
+      and `--system-prompt` is now the **last** argument so nothing load-bearing sits downstream of
+      the only free-text value. Caught offline only because `fake_claude.py` is a real shim on
+      `PATH` rather than a monkeypatched `subprocess.run`.
+      1. **`--tools ""` exists and actually empties the room** — `system/init` returned
+         `"tools":[]`. The harness had been using `permissions.deny`, believing no availability
+         filter existed. `--tools ""` becomes the mechanism; the deny list drops to a second layer.
+      2. **Every call was carrying ~12,200 tokens of Claude Code's default agentic system prompt**
+         (coding-assistant persona, tool instructions, cwd/git/env sections). The room was sealed
+         against files and **wide open to a persona** — the promptbook was being tuned against a
+         coding agent and shipped to a bare Batch API classifier. Fixed by a pinned minimal
+         `--system-prompt`, guarded by a token ceiling on the preflight probe (A17).
+      3. **Everything is now logged**, in two layers: a per-round `run_environment.json` (model,
+         effort, thinking mode, `claude_code_version`, verbatim argv, sha256 of system prompt /
+         settings / promptbook, git commit, observed tool list, host/OS/python, start/finish) and
+         per-paper columns (`request_id`, `session_id`, durations, full token usage including
+         `billed_input_tokens`, cost, `stop_reason`/`terminal_reason`, service tier, and
+         `text_notes` recording how the paper's text was prepared).
+      4. **Effort will be pinned to `medium` on both sides** — `--effort medium` in the
+         Reading Room and `output_config.effort: medium` in the Batch API. The prior `high`
+         setting exhausted the subscription quota during one calibration batch; medium is the
+         production configuration and must be used for every new refinement, validation, and
+         holdout call. Same level on both sides or the promptbook is tuned on nothing.
+      5. **No dated model snapshot exists.** `claude-sonnet-5` *is* the complete ID; the write-up
+         must say "`claude-sonnet-5`, CLI 2.1.197" and not imply a pinned snapshot.
+      **Blocks the first scored round.** Order to build them is in TEST_PLAN's *Build order*,
+      round two; `fake_claude.py` has to grow a `usage` block first.
+- [x] **Promptbook versioning rule amended, 2026-08-27 — DC53.** DC15 as written made *every* edit a
+      version bump, which produced an un-run `v1` and an un-run `v2` hours apart, neither with a
+      number attached and neither comparable to anything. They are now **one `v1`**; both remain in
+      git history (`91403fa`, `37130f4`). A draft is editable in place only before its first paid/raw
+      request; that request captures the promptbook hash and makes the version **run-frozen**, even if
+      validation later rejects the response. A history row is a separate reporting milestone and must
+      come from accepted, provenance-comparable data. Before the first paid/raw request, a new `vN+1/`
+      still needs a **human-verified rubric change** (a criterion a reviewer ruled on, or a rule from a
+      pattern of misses per DC23); wording, formatting, and token trimming are not rubric changes.
+      Recorded in [Design_Choices.md](Design_Choices.md) as DC53 and in
+      [.claude/CLAUDE.md](../.claude/CLAUDE.md)'s Repo Rules.
+- [x] **Reuse every valid judgment already purchased, decided 2026-08-28.** New build-set planning
+      must anti-join against accepted judgments before creating any API request. This definitely
+      includes the 49 validated `exclusion` judgments already persisted in `data/review.db`, and it
+      includes valid `power_analysis` or `data_analysis` judgments wherever they are available.
+      A raw response is not reusable merely because the process exited 0: it becomes accepted only
+      after schema, semantic, token-binding, promptbook-version, and provenance checks pass and the
+      judgment is persisted. Current inventory: 49 exclusion judgments are accepted; data-analysis
+      round 1 contains 49 paid raw responses: 40 passed the checker but await `--write`, one failed
+      the schema/reasoning-length check, and eight had process failures; no power-analysis responses
+      exist. Persist only the 40 fully validated candidates before the API planner decides what is
+      missing; the nine failures remain missing until a narrow retry or human review resolves them.
 
-      **The fix, once decided:** teach the join to skip any candidate whose manifest `verdict` is
-      `DROPPED`, so only `IT2B87LL` remains and the ambiguity resolves on its own. Held until the same
-      policy question as the erratum item below is answered: whether `Correction to:` notices belong in
-      the corpus at all.
-- [ ] **Write `rubrics/exclusion.md` v0.** Nothing blocks this — start with "exclude if secondary
-      analysis". Only the scoring loop needs step 4.
-- [ ] **Decide on the extracted-text integrity scan.** 100M characters have never been checked for
-      anything but length: mojibake, multi-article PDFs, and truncation are all still unmeasured.
-- [ ] **Decide how an erratum affects its parent paper's power/data analysis.** Dropping the notice keeps
-      the corpus clean, but the correction itself may change the very numbers being judged — an erratum
-      that fixes a sample size, a test statistic, or a p-value makes the *uncorrected* article wrong on
-      exactly the criteria this study scores. Three papers are affected, each with its correction now
-      dropped and its parent still active:
-      `A3H3NDHF` → `J9F7U6CX`, `AT7F9XWR` → `MPSTWIIE`, `JBUFJCLU` → `IT2B87LL`.
-      Read the four notices, see whether any touch power or statistics, and decide whether the parent's
-      extracted text should carry the correction appended, be re-fetched as a corrected version, or be
-      judged as published. Record whichever rule is chosen — a reviewer will ask.
-- [ ] **Find the original paper for `NBBD4EVE`.** It is the one dropped correction whose parent is *not*
-      in the corpus: "Corrigendum: Analysis of cluster-randomized test-negative designs: cluster-level
-      methods" (best title match against the active corpus scored only 73). Either the article was never
-      fetched or it sits under a different title. Locate it, and if it belongs in the study, add it to
-      Zotero and re-fetch — otherwise record why it is absent.
+      Reuse is task-granular. For a build survivor with both analysis judgments, send no request;
+      with only data, send a legacy power-only request; with only power, send data-only; with
+      neither, use the combined route. This is an explicit cost-saving exception to the normal
+      combined-route preference. Preserve each judgment's original model/effort/route provenance.
+      The existing calls ran at `high` while all new calls run at `medium`, so a pooled reuse-first
+      build score is developmental and must be reported as mixed-configuration. It cannot establish
+      a DC17/G11 plateau or be described as a clean medium-effort estimate. The final holdout remains
+      one untouched, internally consistent medium-effort run.
+- [ ] **Implement the build-set Message Batches API path and offline validation.** Full architecture,
+      paid-call guards, reuse matrix, artifact layout, evaluation contract, cost controls, and test
+      cases are in [API_BUILD_SET_IMPLEMENTATION.md](API_BUILD_SET_IMPLEMENTATION.md). This handoff
+      stops before any synchronous preflight or batch submission; paid calls require a later,
+      explicit approval after the frozen request manifest and estimated maximum cost are reviewed.
+- [x] **Read-only evaluation dashboard written, 2026-08-28.** `src/evaluate.py` and
+      `scripts/22_evaluate.py` evaluate persisted judgments without calling a model or changing
+      SQLite. They write Markdown, CSV, and JSON reports showing coverage, the yes/no confusion
+      matrix, accuracy, sensitivity, specificity, precision, F1, balanced accuracy, confidence
+      summaries, and Cohen's kappa. The current report lands in
+      `results/04_classification/evaluation/current_build_v1/`. It is a snapshot only: history
+      appending and G11 comparison await request-level route/effort/run provenance, and a pooled
+      legacy-high/new-medium view is exploratory rather than a plateau result.
+- [ ] Still unwritten: `promptbook_builder.py`, `two_pass.py`, and the run log /
+      accuracy history in `results/04_classification/`.
+- [ ] **Refactor the promptbooks for one combined power/data analysis block.** The route
+      (`combined_analysis`) and its schema already exist (DC54/DC55); what does not exist is a
+      promptbook written *for* it. Today `build_combined_analysis_prompt()` brackets the two
+      standalone `power_analysis.md` and `data_analysis.md` files, so the shared preamble --
+      objective, reading conditions, answer-format table, abstention rules -- is sent **twice**
+      per paper. Merge them into one `combined_analysis.md` with a single preamble and two rule
+      blocks, keeping the two judgments separately validated and forbidding either half from
+      citing the other. **Measured saving is small** (~1.3k of ~25k tokens per post-gate paper,
+      ~5%): the paper text, not the promptbook, is what the request is made of. Do this for
+      prompt hygiene and one-place editing, and count on the input-size levers below for cost.
+- [ ] **Token/usage budget for the refinement loop.** Measured from `exclusion_r1` and
+      `data_analysis_r1` raw evidence, 2026-08-28: **~15.4k tokens per exclusion paper** and
+      **~24.9k per post-gate paper**, essentially all of it input, and `cache_read` is **zero on
+      every one of the 134 calls** -- each sealed process writes a fresh cache it never reads, so
+      the run pays the 1.25x cache-write premium for no reuse. One 50-paper exclusion round is
+      ~770k tokens; one full build-split regression (335 papers, which the Human Labelled Set
+      rule requires after any promptbook change) is **~5.2M tokens**, which is what exhausts the
+      5-hour subscription window in a single run. **The three levers below are the plan, in the
+      order they are being done.** Together they take a full regression from ~5.2M tokens on
+      subscription quota to ~4.1M on a separate budget that does not touch the 5-hour window.
+      Observed in the v1 power round: one request consumed roughly **1.6% of Claude Pro usage**;
+      treat this as an account-window estimate, not a token-to-percent conversion.
 
-**Re-running `00_fetch_zotero.py --set validation` undoes the duplicate merge** — the 15 removed NHLBI
+- [x] **Lever 1 — strip references. Done 2026-08-28.** The free win, and the one that also
+      improves accuracy. Measured over all 1783 cached papers: a standalone references heading is
+      detectable in 1747 (98%), and what follows it is **21.6% of the corpus by character**
+      (20.7M chars, ~6.9M tokens). No criterion E1-E18 is decided by a bibliography, and reference
+      titles actively cause false positives -- a reference list is dense with "stepped wedge",
+      "pilot" and "secondary analysis" attached to papers that are not the paper under review, and
+      the model cannot tell a cited title from a claim the paper makes about itself.
+      `scripts/19_strip_references.py` writes a stripped copy of each cache entry to
+      `data/extracted_text_stripped/` and the Reading Room reads that directory; the DC6 cache is
+      never modified. A separate directory rather than a flag because the bytes the model saw are
+      the evidence a judgment is audited against (DC56). Exclusion drops 15.4k → ~12.1k tokens per
+      paper; a 50-paper round drops ~855k → ~670k. **This changes what the model reads, so it
+      forces a promptbook version bump** (DC57).
+- [ ] **Lever 2 — stop paying for the full split on exploratory rounds.** The Human Labelled Set
+      rule ties the full 335-paper re-run to *appending a `promptbook_accuracy_history.csv` row*,
+      not to iterating. So refine on a fixed 50-paper subset for several fast rounds, append
+      nothing, and spend the full split only when claiming a plateau. Five cheap rounds plus one
+      full regression is ~7M tokens instead of ~31M. **No rule change is needed** -- the
+      discipline is simply not writing the CSV row, and DC32's warning about subset noise applies
+      to reported numbers, not to exploratory ones. This is what makes the first few batches
+      affordable.
+- [ ] **Lever 3 — the Batch API, when credits land.** The actual fix, and already half-built in
+      `src/api_contract.py`. 50% off, and critically it is a **separate budget that does not touch
+      the 5-hour window at all**. A references-stripped full exclusion regression is roughly 4.1M
+      input tokens, run overnight. Note that the Reading Room deliberately strips
+      `ANTHROPIC_API_KEY` from the child environment (DC22) to stay on subscription quota; that
+      decision is exactly what now costs the window, and it is worth revisiting explicitly rather
+      than by accident. Scope the Batch transport on top of `api_contract.py` rather than beside it.
+
+### Write-up and corpus documentation
+
+- [ ] **Refactor the corpus-breakdown `.tex` files.** Currently the breakdown is spread across
+      several tex sources with no single owner; consolidate before any of it goes to Deb.
+- [ ] **Corpus breakdown artifact** — a published page of the HLS/US split, the drop ladder, and
+      what each script removed and why. The full corpus-breakdown markdown named in `CLAUDE.md`
+      still does not exist; this replaces it.
+- [ ] **LaTeX doc for Deb's review**, one document covering the three open piles:
+      the **5 NCI/NHLBI label mismatches** (script 12, DC37), the **7 restricted-randomization
+      rows** whose `data_should` never names the restriction, and the **~5 stepped-wedge papers**
+      NHLBI kept and scored (O1/DC51, reversed by DC52). These are the same three piles listed under
+      *The expert-review list for Keith and Deb* above — this is the artifact that meeting reads.
+
+### Two ways to lose work, both real, both now guarded
+
+**`01_verify_identity.py` used to silently undo every human verdict** (DC44). It rewrites `verdict`
+for every manifest row from what the identity ladder can see in a PDF, so a `DROPPED` paper whose
+PDF was moved aside came back `PDF_UNREADABLE`, a `DROPPED` paper whose PDF stayed came back
+`VERIFIED` and re-entered the corpus, and a `WEAK` paper a human cleared scored `WEAK` again. One
+re-run on 2026-08-26 reversed all 75 drops and 2 cleared papers at once.
+
+**Fixed at the source: it now skips papers with a recorded decision** (`src/review_log.py`), and
+prints how many it protected. `scripts/16_reapply_drops.py` remains for the two cases left —
+repairing a manifest damaged before the guard existed, and undoing a deliberate
+`--rescore-decided` run.
+
+**Re-running `00_fetch_zotero.py --set human_labelled` undoes the duplicate merge** — the 15 removed NHLBI
 rows are gone from the manifest and their PDFs are moved aside, so `completed_ids()` no longer skips them
-and they come back. Re-run `scripts/06_merge_validation_duplicates.py` afterwards; it is idempotent and
+and they come back. Re-run `scripts/06_merge_hls_duplicates.py` afterwards; it is idempotent and
 skips pairs already merged.
 
 ## Goal
 
 Rate scientific papers on **power_analysis** and **data_analysis** correctness, after filtering the
-corpus with **exclusion** and **inclusion** criteria. **1287 study papers** to classify; a separate
-human-labeled validation set.
+corpus with **exclusion** criteria. **1306 study papers** to classify; a separate
+human-labeled Human Labelled Set (HLS).
 
-**The corpus is 1287 papers.** 2115 counted *collection placements*, not papers — 483 papers are filed
+**The corpus is 1306 papers.** 2115 counted *collection placements*, not papers — 483 papers are filed
 under two or more NIH institutes. Full reconciliation (2115 raw → 2113 paper-placements → 1494 unique)
-is in `results/unvalidated_set_summary.tex`. Also excluded: `sample NCI-new` (104 papers, disjoint from
-every other collection) and one non-article item (a `videoRecording`). The last 207 came off in the
-cross-set duplicate check — papers already sitting in the validation set with a human label
-(1494 → 1287).
+is in `results/01_corpus_build/unvalidated_set_summary.tex`. Also excluded: `sample NCI-new` (104 papers, disjoint from
+every other collection) and one non-article item (a `videoRecording`). 207 came off in the
+cross-set duplicate check — papers already sitting in the Human Labelled Set with a human label —
+and 23 of those came back when their HLS twin was itself dropped (DC42,
+`scripts/15_restore_dc42_duplicates.py`), leaving 184 removed (1494 → 1310, minus 4 later drops
+→ **1306 active**).
 
-**569 validation PDFs were fetched; 530 are active in the corpus and 523 carry one clean label.**
+**569 HLS PDFs were fetched; 530 are active in the corpus and 523 carry one clean label.**
 `FinalCollectionFor Publication` (NCI) held 232 and `Locked_26_01_08_337` (NHLBI) held 337. NCI's
 ground truth is complete (`GroundTruthDataNCI01.xlsx`, 232 rows). NHLBI's arrived in two disjoint
 files that together covered all 337: `crt_review_table_112.tex` (159 papers taken to full
 extraction) and `NHLBI_exclusions_178.csv` (178 rejected before extraction). The remaining 23 tex
 entries were cited but never judged and will not be — dropped by
-`scripts/09_drop_unreviewed_nhlbi.py`, not waited on. Of the 530 active papers, 7 are held for a
-human rather than loaded blind: 6 institutional disagreements and 1 unresolved citation. Every
-"500 / 350 / 150" figure in earlier drafts predates counting what is actually there.
+`scripts/09_drop_unreviewed_nhlbi.py`, not waited on. Of the 530, 5 were institutional disagreements
+— NCI and NHLBI reached different answers on the same paper — and are now dropped rather than held
+(DC37; `scripts/12_drop_institutional_disagreements.py`). Every "500 / 350 / 150" figure in earlier
+drafts predates counting what is actually there. **Current active corpus: run
+`python scripts/05_build_exclusions.py --check` for the up-to-date count** — this paragraph describes
+the fetch/label-load stage, before later drops (nonjudgeable exclusions, disagreements).
 
 All three label files are merged into `data/ground_truth.csv` by `scripts/07_build_ground_truth.py` — a
-wide union of the three source schemas, one row per validation paper, 567 of 569 joined to a `paper_id`.
+wide union of the three source schemas, one row per HLS paper, 567 of 569 joined to a `paper_id`.
 Source strings are preserved in `*_raw` columns beside their normalized forms. The sources and every
 quirk found in them are documented in
-[Ground Truth Raw/NOTES.md](Ground%20Truth%20Raw/NOTES.md).
+[Ground Truth Raw/NOTES.md](../Ground%20Truth%20Raw/NOTES.md).
 
 The criteria have real nuance — many things, including rare events, can make a paper "incorrect power
-analysis." The rubrics are built empirically from validation misses rather than written up front.
+analysis." The promptbooks are built empirically from Human Labelled Set misses rather than written up front.
 
 ## Study design
 
 Three decisions shape everything below.
 
-**The corpus is gated, not classified wholesale.** Exclusion and inclusion run first, on all 1287. Only
-survivors go to power_analysis and data_analysis. A paper proceeds only if exclusion says *keep* **and**
-inclusion says *include* — either one dropping it is enough to drop it.
+**The corpus is gated, not classified wholesale.** Exclusion runs first, on all 1306. Only survivors go
+to power_analysis and data_analysis. A paper proceeds if exclusion says *keep*.
+
+**`inclusion` was dropped as a fourth task — nothing in the human labels encodes it.** The only
+candidate column, NCI's `review_category`, covers 96 of the 176 kept papers, carries no NHLBI paper
+at all, and restates `stats` exactly where it is present (DC31). There is no human answer an
+inclusion call could be scored against. Exclusion alone is the gate. `review_category` stays in the
+database as a transcription of the source file, mapped to no task and read by nothing.
 
 **Power/data correctness is only meaningful for papers that pass the gate.** A dropped paper gets no
 power_analysis or data_analysis row at all — not a null, not an "N/A" decision, no row. This applies to
-the validation set too: build the power/data rubrics only on validation papers that pass the gate, and
+the Human Labelled Set too: build the power/data promptbooks only on HLS papers that pass the gate, and
 compute their accuracy over that subset. Scoring a paper the study would have thrown out measures
 nothing.
 
-This is **not** the flat `2115 x 4 = 8460` figure that earlier drafts used — wrong on both counts, the
-paper count and the gating. The real shape is two sequential batch jobs:
+This is **not** the flat `2115 x 4 = 8460` figure that earlier drafts used — wrong on every count: the
+paper count, the task count, and the gating. The real shape is two sequential batch jobs:
 
 ```
-job 1:  1287 x 2 (exclusion, inclusion)      = 2574 calls
+job 1:  1306 x 1 (exclusion)                 = 1306 calls
         + Opus review of low-confidence gate calls
-job 2:  <survivors> x 2 (power, data)        = 2 x however many survive
+job 2:  <survivors> x 1 (combined power + data) = 1 x however many survive
 ```
 
 Survivor count is unknown until job 1 finishes; it determines job 2's size and cost.
+The combined call contains two isolated rule blocks and returns two separately validated
+judgments; it does not combine the gate with either analysis and never contains more than one
+paper. This avoids sending the same full text twice while retaining task-level outcomes.
+
+### Combined post-gate analysis: implementation plan
+
+This is the intended production path, not an optional optimization. It replaces two full-text
+post-gate calls with one full-text call, while preserving two task-specific judgments in the
+database and in every accuracy report.
+
+1. **Freeze the contract.** Define `CombinedAnalysisDecision`: the blinded token plus one complete
+   `Decision` for `power_analysis` and one for `data_analysis`. Each subdecision keeps its own
+   decision, reasoning, evidence rule ID, and confidence. Neither field may refer to the other
+   task's conclusion.
+2. **Build the combined prompt from the existing two promptbooks.** Keep `power_analysis.md` and
+   `data_analysis.md` as independent rule sources, delimit their sections, require two answers in
+   a fixed order, and send the paper text once. The exclusion promptbook and prompt remain wholly
+   separate.
+3. **Extend the schema and validators.** Add a combined tool schema for the Batch API and a
+   fence-tolerant CLI parser. Validate each subdecision with the existing task-specific allowed
+   values, rule-prefix checks, reasoning cap, confidence range, and token echo. A malformed or
+   missing half is a failed combined attempt, never a fabricated null judgment.
+4. **Refactor Reading Room execution.** Add a post-gate combined task/route that samples only
+   build survivors, still starts one sealed process per paper, and runs at `medium` effort. Keep
+   the preflight, zero-tool assertion, raw stream capture, retry ledger, and one-paper isolation
+   unchanged.
+5. **Write two rows from one valid response.** Persist one `power_analysis` and one
+   `data_analysis` judgment for the same paper, sharing a run/response identifier. Preserve the
+   existing task names so labels, per-task accuracy, confidence thresholds, and downstream exports
+   remain task-specific.
+6. **Make retries and review atomic.** If either subdecision fails validation or either confidence
+   crosses the review threshold, repeat the *combined* call and record both returned judgments as
+   one review attempt. Do not re-send the same paper for only one analysis task.
+7. **Change the calibration and holdout flow.** After the gate reaches its stopping rule, run one
+   combined build round over all gate-survivor build papers; score power and data separately from
+   that shared response. The final holdout uses the identical combined configuration once.
+8. **Test before spending a full round.** Add schema, prompt-construction, persistence, partial
+   failure, retry, provenance, and no-cross-task-reference tests; then pass preflight and a
+   two-paper smoke test before the first scored combined round. Recalculate token use and the
+   Batch API budget from the resulting run log before launching production.
+
+The former separate power and data Reading Room routes remain the implementation baseline only
+until this plan is complete; they are not to be used for new scored production work.
 
 **The gate gets a second pass, the other tasks get one too — but the gate's matters more.** There are no
-human labels for the 1287, so a paper's fate rests on the model's own exclusion/inclusion call, and a
+human labels for the 1306, so a paper's fate rests on the model's own exclusion call, and a
 false exclusion is unrecoverable: the paper never reaches power/data analysis and silently leaves the
 study. Low-confidence gate calls go to Opus **before** gating, not after.
 
-**30% of the labeled papers are held out.** Rubrics are built and iterated on the build split; the
+**30% of the labeled papers are held out.** Promptbooks are built and iterated on the build split; the
 confidence threshold is tuned on that same split. The holdout is touched **once**, at the very end, with
 the final production config (Sonnet + Opus second pass). That single number is the honest accuracy
-estimate — everything measured on the build split is optimistic, because the rubric was written to fix
+estimate — everything measured on the build split is optimistic, because the promptbook was written to fix
 those exact papers.
 
 The same holdout is used for all four tasks. Splitting per-task would leak: a paper studied while
-building the exclusion rubric is no longer unseen when scoring data_analysis.
+building the exclusion promptbook is no longer unseen when scoring data_analysis.
 
 **The split is assigned once, by `db.assign_split()`, and refuses to re-run.** It hashes
 `seed + paper_id`, so it depends on nothing but a paper's identity — not row order, not when it was
@@ -169,41 +408,56 @@ seeing a disappointing holdout number is the easiest way to publish an inflated 
 
 ## Decision schema
 
-All four tasks return the same object via forced `tool_choice`, validated by pydantic
-(`src/schemas.py`):
+API requests return this object through native JSON Schema
+`output_config.format`; the sealed CLI asks for the same JSON and both routes are
+validated locally by Pydantic (`src/schemas.py`):
 
 ```python
 {
-  "decision":        "yes" | "no" | "undecidable",
+  "decision":        "yes" | "no" | "undecidable" | "wrong_text",  # wrong_text: exclusion only
   "reasoning":       str,    # why, in the model's own words
-  "rubric_evidence": str,    # which rubric rule(s) drove it, quoted or cited
+  "promptbook_evidence": str,    # which promptbook rule(s) drove it, quoted or cited
   "confidence":      float,  # 0-1
 }
 ```
 
+**`wrong_text` is exclusion-only, and is a different abstention from `undecidable`.** The model
+checks, before anything else, whether the fetched text describes a study at all — a survey
+instrument, a letter, a comment, or a form is `wrong_text`, not forced into `yes`/`no`. `undecidable`
+means the text is readable but the *call* is genuinely unclear; `wrong_text` means the text is
+probably not the paper. Both route to human review (see below), but under separate reasons, so a
+reviewer knows whether to read closely or to check Zotero for the right PDF. This complements
+`scripts/11_scan_text_integrity.py` (step 2b): the offline scan catches parse-level garbage
+(mojibake, truncation); `wrong_text` catches a cleanly-extracted document that is simply the wrong
+one — exactly the CONSORT-EHEALTH submission forms that scan later learned to detect by pattern
+(F8) were first the kind of thing this decision exists to catch at classification time, corpus-wide.
+
 | task | `yes` means | `no` means |
 |---|---|---|
 | exclusion | exclude this paper | keep it |
-| inclusion | include this paper | do not include |
 | power_analysis | power analysis is correct | incorrect |
 | data_analysis | data analysis is correct | incorrect |
 
+**`reasoning` is capped at 200 characters.** Long enough to name the deciding evidence, short enough that
+a human can scan 1306 of them. The cap is stated in every promptbook's prompt block; anything longer
+is the model narrating rather than deciding, and it costs output tokens on every paper.
+
 **A paper that reports no power analysis at all is `no` (incorrect)** — absent and wrong collapse into
-one label. Say this explicitly in `rubrics/power_analysis.md`; it is the most likely place for the model
+one label. Say this explicitly in `promptbooks/v0/power_analysis.md`; it is the most likely place for the model
 to hedge.
 
 **`undecidable` is an abstention, not a third category.** It means the evidence in the paper is
 genuinely insufficient to call either way — not that the call is hard, and never a substitute for a
-judgment the rubric already covers. "No power analysis reported" is `no`, not `undecidable`. The rubric
+judgment the promptbook already covers. "No power analysis reported" is `no`, not `undecidable`. The promptbook
 must say this outright, or the model will reach for `undecidable` whenever a case is merely difficult,
 and the human queue fills with work that did not need a human.
 
 Every `undecidable` goes to the human review queue. In the worst case a researcher looks at the paper
 directly, which is the point: a model that cannot decide should say so rather than guess.
 
-**`rubric_evidence` is separate from `reasoning` on purpose.** `reasoning` is the argument;
-`rubric_evidence` is which rule it rests on. Keeping them apart makes the rubric loop mechanical — when
-a paper is misjudged, you can see whether the rubric was misapplied, or was silent, or was wrong, and
+**`promptbook_evidence` is separate from `reasoning` on purpose.** `reasoning` is the argument;
+`promptbook_evidence` is which rule it rests on. Keeping them apart makes the promptbook loop mechanical — when
+a paper is misjudged, you can see whether the promptbook was misapplied, or was silent, or was wrong, and
 those three call for different fixes.
 
 ## Human review queue
@@ -217,6 +471,7 @@ whatever stage produced it:
 | step 1 | `PDF_MISSING` / `PDF_UNREADABLE` — nothing to classify |
 | step 0 | multi-PDF `warning` where step 1 came back `WEAK` |
 | any task | `decision == "undecidable"` after the Opus second pass |
+| exclusion | `decision == "wrong_text"` — check the fetched PDF, not the paper's eligibility |
 
 A paper is only truly undecidable once **both** passes have said so — a low-confidence or `undecidable`
 Sonnet call routes to Opus first. Papers in this queue are excluded from accuracy math rather than
@@ -237,7 +492,7 @@ scored as misses.
    A re-run skips any paper whose manifest row is `OK` and whose PDF matches its recorded md5 — verified
    locally, no API call. `--refresh` forces a full re-check; without it, a PDF swapped in Zotero after
    the first fetch goes unnoticed. A no-op re-run still costs ~3 minutes, since the collection walk has
-   to happen regardless; it is the ~1287 per-paper round trips that the skip avoids.
+   to happen regardless; it is the ~1306 per-paper round trips that the skip avoids.
 
    **Folder metadata.** Two columns record where a paper came from: `folder` is the immediate collection
    name (`NCI`), `folder_path` is the full path from the root (`Boring Task / NCI`). Depth is not
@@ -262,26 +517,26 @@ scored as misses.
 
    Multi-PDF warnings go in the manifest's `warning` column (persisted, not just printed) and are
    summarized at the end of a run — scoped to the records *that run* touched, not the whole manifest, so
-   a `--set validation` run doesn't dredge up the testing set's old warnings. `--list-warnings` prints
+   a `--set human_labelled` run doesn't dredge up the Unlabelled Set's old warnings. `--list-warnings` prints
    every warning on file, across every set and past run, without fetching anything. They do not block
    the paper — identity verification (step 1) is the net that catches a wrong pick.
 
    **Scope: the study papers live in one Zotero collection** — group `Glykos`, collection
-   `Boring Task` (both are the literal names in Zotero). The labeled validation papers are **not**
+   `Boring Task` (both are the literal names in Zotero). The labeled HLS papers are **not**
    in it and arrive by a separate route (open question 1). The `--set` flag both tags the
-   rows a run writes and picks the destination directory — `data/raw_pdfs/testing/` or
-   `data/raw_pdfs/validation/` — since Zotero records nothing about the split; it is a property of which
+   rows a run writes and picks the destination directory — `data/raw_pdfs/Unlabelled Set/` or
+   `data/raw_pdfs/Human Labelled Set/` — since Zotero records nothing about the split; it is a property of which
    collection you point at. Those directories exist to make the split visible at a glance; the manifest's
    `set` column stays authoritative, and every other attribute (`verdict`, `folder`, `status`) is a
    manifest filter, never a directory.
 
-   **Cross-set duplicate check, once both sets are fetched.** Testing and validation come from different
+   **Cross-set duplicate check, once both sets are fetched.** The two sets come from different
    Zotero groups, so the same physical paper can land in both with two different `paper_id`s —
-   `paper_id` can't catch it. Cross-check `set=testing` vs `set=validation` manifest rows by normalized
+   `paper_id` can't catch it. Cross-check `set=unlabelled` vs `set=human_labelled` manifest rows by normalized
    DOI/PMID/PMCID (PDF md5 as a fallback for records missing all three). If a paper appears in both:
-   drop it from `testing`, keep it in `validation` — it already has a human label, so classifying it
+   drop it from the Unlabelled Set, keep it in the Human Labelled Set — it already has a human label, so classifying it
    blind in the corpus wastes a call and risks a leaked-label sanity check.
-   **Claude: surface any overlap found to the user for a decision before starting the rubric loop or any
+   **Claude: surface any overlap found to the user for a decision before starting the promptbook loop or any
    classification run — do not resolve it silently.**
 
 1. **Verify identity** — DONE, `scripts/01_verify_identity.py` + `src/identity.py`. Light PyMuPDF
@@ -290,7 +545,7 @@ scored as misses.
 
    **Measured on the corpus (2026-08-10): 2041 VERIFIED (98.9%), 3 WEAK, 18 MISMATCH, 1 unreadable.**
    Of the VERIFIED, 1989 passed on DOI and 52 on title+author (accepted manuscripts carry no DOI).
-   Full per-signal detail in `results/identity_report.csv`; verdicts also land in the manifest's
+   Full per-signal detail in `results/01_corpus_build/identity_report.csv`; verdicts also land in the manifest's
    `verdict` / `verdict_reason` / `title_score` columns.
 
    **A title match is not proof on its own — check `title_pos`.** Title similarity searches all of
@@ -329,7 +584,7 @@ scored as misses.
      ```
    A valid DOI in the text that differs from the Zotero DOI is a hard `MISMATCH` regardless of title
    score — that is the signature of the wrong PDF on the right record. Thresholds are provisional;
-   calibrate them on the validation set before trusting them on the 1287.
+   calibrate them on the Human Labelled Set before trusting them on the 1306.
 
    `author_frac` needs **every** author surname, so it reads from `data/zotero_meta.jsonl` via
    `load_meta()` — the manifest only carries `first_author`.
@@ -338,12 +593,18 @@ scored as misses.
    Prepend the Zotero metadata to that one prompt and add `metadata_mismatch: bool` to the schema. A
    paper flagged there gets the `METADATA_MISMATCH` sentinel and never reaches the other three tasks.
    Doing it on every task would repeat the same check four times and mix an identity question into
-   rubric-driven judgments, which the "never conflate tasks" rule exists to prevent.
+   promptbook-driven judgments, which the "never conflate tasks" rule exists to prevent.
 
 2. **Extract** — DONE, `scripts/02_extract_pdfs.py`. Full text for `VERIFIED` papers only (which
    includes every `WEAK` paper resolved in step 3, since the review GUI writes their verdict back as
    `VERIFIED`). PyMuPDF primary, pdfplumber fallback, pytesseract only on exception. Cached to
    `data/extracted_text/{paper_id}.json`. Parsed once per paper, ever.
+
+   **2a. Prepare** — `scripts/19_strip_references.py`, added 2026-08-28. A second, derived cache
+   at `data/extracted_text_stripped/`, same filenames, with the bibliography removed and an audit
+   record (`references_strip`) attached to each file. Offline, free, idempotent, and re-derivable
+   from step 2 at any time. This is what the Reading Room and the Batch run read; step 2's cache
+   is never modified, which is what keeps DC6 true. See DC56.
 
    **Driven off the manifest, not a directory listing.** MISMATCH and DROPPED papers are still sitting
    in `data/raw_pdfs/`, so a glob would extract exactly the files step 1 exists to keep out.
@@ -352,7 +613,7 @@ scored as misses.
    failures, zero pages without a text layer. 100,245,032 characters (~25M tokens), median 51,713 per
    paper. Only two fall under 3,000 characters and both are genuinely short documents rather than broken
    extractions — `NBBD4EVE` is a Corrigendum, `A3H3NDHF` an Erratum. Per-paper detail in
-   `results/extraction_report.csv`.
+   `results/01_corpus_build/extraction_report.csv`.
 
    **OCR is dead code here, and that is worth knowing.** Not one PDF in the corpus needs it; Tesseract is
    not installed on the build machine. The rung stays for future fetches, but it now records *why* it
@@ -385,6 +646,29 @@ scored as misses.
    20 papers with multi-arm Table 1s: all 20 keep arm labels. If power/data_analysis later turn out to
    miss table content, the move is `pymupdf4llm`, not pdfplumber grids.
 
+2b. **Scan the cached text for bad parses** — `scripts/11_scan_text_integrity.py`. Offline, no
+   re-parsing. Seven checks, in report order: **F1** mojibake, **F2** a second `Abstract` heading
+   *after* the first reference list (two articles in one PDF), **F3** no reference marker anywhere
+   (extraction stopped early), **F4** chars-per-page under 40% of the corpus median, **F5** full text
+   shorter than 3x the Zotero abstract, **F6** under 60% letters (font-encoding failure), **F7** over
+   30% duplicate lines (headers swamping the body).
+
+   **Measured 2026-08-25: 48 of 1772 flagged, 4 genuinely wrong documents.** All 4 are Unlabelled Set
+   and all passed identity on `TITLE_AUTHOR_MATCH` — a submission form carries the paper's own title
+   and first author, so title+author matching cannot catch it. `J2RUD3YQ` was a conference-abstract
+   submission; `FRIPQN6I`, `GY63DGR9`, `Y2SLUV8T` are CONSORT-EHEALTH forms printed from Google Forms.
+   Listed in `results/review/11_text_integrity_flagged.csv` for replacement or drop.
+
+   The other 44 are false positives, and the thresholds were tuned against them: counting `Abstract`
+   twice flagged 70 papers (journals print "Abstract (continued)"; reference lists cite conference
+   abstracts; "to abstract data" is a verb), and "ends without a full stop" flagged 257 (papers end on
+   a Wiley licence footer). The 12 remaining F4 papers are accepted manuscripts in double-spaced
+   repository layout — legitimately thin per page.
+
+   **This vindicates a rule step 1 rejected.** `consort-ehealth` was tested as a header phrase and
+   dropped for hitting 6 papers of which 3 were real. Those 3 false positives cost 3 true positives —
+   exactly the documents found here.
+
 3. **Review the flagged PDFs by hand** — `scripts/03_review_mismatches.py`, a small tkinter window that
    walks `results/review/01_papers_to_review.csv` one paper at a time. Each screen shows what step 1
    found, opens the PDF, the DOI, PubMed, and the Zotero record, and offers four choices: **No Issue**
@@ -409,7 +693,8 @@ scored as misses.
 
 4. **Ground truth** — `src/db.py` + `scripts/04_load_ground_truth.py`. Loads every `GroundTruth*.xlsx`
    into SQLite and records the split as a column, so it is fixed once and cannot drift between runs.
-   **NCI is loaded (230 rows); NHLBI's labels have not arrived yet, so the split is not yet assigned.**
+   **Done: all three label files are loaded (483 papers) and the split was assigned 2026-08-26 —
+   338 build / 145 holdout, 123/53 survivors. It refuses to re-run.**
 
    **The join is the hard part, and it is why this is a script and not a spreadsheet import.** The
    labels identify papers the way a reference list does — `83. (Hershman, Bansal, Barlow, et al., 2023)`
@@ -432,37 +717,91 @@ scored as misses.
    a wrong label silently corrupts every accuracy number computed afterwards, so unresolved citations go
    to a human and stay out of the database.
 
-   Label columns map one-to-one onto the four tasks: `Reason excluded` → exclusion, `Review Category` →
-   inclusion, `Power` → power_analysis, `Stats` → data_analysis. The 134/96 shape confirms the gate — only
+   Label columns map onto the three tasks: `Reason excluded` → exclusion, `Power` → power_analysis,
+   `Stats` → data_analysis. `Review Category` maps to nothing and is read by nothing (DC31).
+   The 347/176 split across all 523 labels confirms the gate (136/96 on NCI alone) — only
    papers the humans kept carry power/stats labels, exactly as `expected_decision()` assumes.
 
-5. **Rubrics** — four independent markdown files in `rubrics/`, versioned by git commit. Never merged,
-   never cross-referenced.
+5. **Promptbooks** — three independent markdown files, one per task. Never merged, never
+   cross-referenced.
 
-6. **Rubric loop** — `src/rubric_builder.py`, one task at a time, using **Opus** via forced tool-use:
-   load rubric -> sample <100 unreviewed papers **from the build split** -> judge -> compare to the SQLite label
+   **Versioned by directory, not just by commit.** A judgment records
+   `promptbook_version`, so a rule that changes under a fixed version makes every earlier
+   judgment unreproducible.
+
+   **A version has draft, run-frozen, and reporting states (DC53).** Before its first paid/raw model
+   request it is a draft: edits happen in place, and a new directory requires a **human-verified
+   rubric change**, not a rewording. The first paid/raw request records the promptbook hash and makes
+   that version run-frozen, so its bytes can validate and audit the resulting evidence even if no
+   judgment or accuracy row survives. A `promptbook_accuracy_history.csv` row is a later reporting
+   milestone that requires accepted, configuration-comparable data; its absence never permits editing
+   a run-frozen version in place.
+
+   ```
+   promptbooks/
+     CURRENT              one line: the active version, e.g. "v0"
+     _TEMPLATE doc.md     copy this into each new version
+     v0/
+       exclusion.md  power_analysis.md  data_analysis.md
+       v0 doc.md          what changed, why, which papers, what it scored
+     v1/  v2/  ...
+   ```
+
+   **To change a run-frozen rule:** copy `vN/` to `vN+1/`, edit there, update `CURRENT`, fill in the
+   new version's doc, commit. During the pre-run draft phase, DC53 permits in-place wording edits and
+   requires a human-verified rubric change for a new directory. Include an accuracy delta in a version
+   bump only when a comparable reporting row exists.
+
+   **`vX doc.md` is the human record; the CSV is the machine record.** The doc is tables only
+   (no prose): what changed and why, the paper_ids each rule was written against, and every
+   round run against that version with its accuracy, `undecidable` rate, `wrong_text` rate and
+   parse-retry count. Every number in it must match a row in
+   `results/04_classification/promptbook_accuracy_history.csv`, which is what gets plotted and
+   cited — the doc explains, the CSV counts. DC23's other half lives here too: a miss with no
+   pattern behind it is logged in the doc's "misses not generalized" table rather than written
+   into a rule.
+
+   Each promptbook opens with the same two-paragraph documentation rule — rules are numbered
+   lines, rationale goes in the version doc, and a frozen version is never edited.
+
+6. **Promptbook loop** — `src/promptbook_builder.py`, one task at a time, using **Opus** for rubric
+   drafting and the sealed CLI/API route for scored judgments:
+   load promptbook -> sample <100 unreviewed papers **from the build split** -> judge -> compare to the SQLite label
    -> log every result -> on a miss, hand-write or have Opus propose (for review) a generalized rule or
-   worked example, append it to that task's rubric, commit with the accuracy delta in the message.
-   Opus is worth the cost here: one-time, low-volume, high-stakes, and it shapes the rubric Sonnet
+   worked example, append it to that task's promptbook, commit with the accuracy delta in the message.
+   Opus is worth the cost here: one-time, low-volume, high-stakes, and it shapes the promptbook Sonnet
    relies on for the cheap full run.
 
-   **Option: run the rubric loop through the Claude Code CLI instead of the API, to spend subscription
+   **Option: run the promptbook loop through the Claude Code CLI instead of the API, to spend subscription
    quota rather than API credits.** `claude -p "<prompt>" --output-format json` runs headless and
-   authenticates off the subscription login. A small script walks `data/extracted_text/*.json`, pipes
-   each paper's text in with the current rubric, and writes one response JSON per paper to a new
-   directory for hand-inspection. Only for rubric refinement — the full run stays on the Batches API
-   (see the standing rule). Two trade-offs to accept if we go this way: no forced `tool_choice`, so the
-   prompt has to ask for JSON and the wrapper validates with pydantic and re-prompts on a parse failure;
-   and one process per paper, so no prompt caching and it runs slower. Fine at <100 papers a round.
+   authenticates off the subscription login. A small script walks `data/extracted_text_stripped/*.json`, pipes
+   each paper's text in with the current promptbook, and writes one response JSON per paper to a new
+   directory for hand-inspection. Only for promptbook refinement — the full run stays on the Batches API
+   (see the standing rule). Two trade-offs to accept if we go this way: no provider-enforced JSON
+   Schema, so the prompt has to ask for JSON and the wrapper validates with Pydantic and re-prompts on
+   a parse failure; and one process per paper, so no prompt caching and it runs slower. Fine at <100
+   papers a round.
+
+   **Decided: the CLI carries the promptbook loop's scored numbers too, not just its drafts.** The cost
+   is a known one — **log every parse failure and retry, with paper_id and attempt count.** Retries are
+   not randomly distributed: a paper that makes the model hedge or wrap its JSON in prose is usually a
+   genuinely borderline paper, so retries land on exactly the cases the accuracy number is most
+   sensitive to. Logged, that is a measurable rate to report beside accuracy; unlogged, it is an
+   invisible bias in the direction of the study's own subject matter. Report the retry rate in the
+   methods section.
 
    **Label leakage must be blocked structurally — `claude -p` is agentic, not a completion endpoint.**
    Run inside the repo it has file tools, and `data/ground_truth.csv`, `data/review.db`, and an
-   auto-loaded CLAUDE.md naming both are right there. Telling it not to look is not a control. Four rules,
+   auto-loaded CLAUDE.md naming both are right there. Telling it not to look is not a control. Five rules,
    enforced by the wrapper:
    - **Run from a scratch directory outside the repo** — no CLAUDE.md, no memory index, no relative path
      to the answers resolves. Never `--add-dir` the repo.
-   - **No tools, one turn** (`--max-turns 1`, empty allowed-tools) — makes it a pure text completion,
-     behaviorally identical to an API call.
+   - **No tools, one turn** (`--tools ""` and `--max-turns 1`, with `permissions.deny` behind them and
+     an assertion that the CLI reported zero tools) — makes it a pure text completion, behaviorally
+     identical to an API call. `--allowed-tools ""` is *not* this: it is a permission allowlist and
+     removes nothing.
+   - **No persona** (`--system-prompt`, pinned and hashed) — otherwise the call carries Claude Code's
+     own agentic system prompt and stops being behaviorally identical to the API call it is standing in for.
    - **Text on stdin, never a file path.** Write outputs outside the scratch cwd, so one paper's response
      is not readable by the next.
    - **Blind the identifier** — send a random token, keep the token→`paper_id` map in the wrapper, so a
@@ -476,53 +815,63 @@ scored as misses.
    Each invocation is independent — fresh process, no shared history — unless `--resume`, `--continue`,
    or a reused `--session-id` is passed. Don't.
 
-7. **Regression** — `src/evaluate.py` re-runs the current rubric against the whole build split, computes
-   accuracy/precision/recall, appends to `results/rubric_accuracy_history.csv` with the commit hash.
+7. **Regression** — `src/evaluate.py` evaluates persisted judgments against the whole build split and
+   writes a read-only accuracy/precision/recall snapshot. It does **not** rerun a model or append
+   `results/04_classification/promptbook_accuracy_history.csv` today. A later explicit history action
+   must first verify complete request-level provenance and a homogeneous model/effort/route/prompt hash;
+   mixed legacy-high/new-medium reuse cannot supply a DC17 plateau row.
 
    **Plateau = two consecutive rounds each improving accuracy by less than 1 percentage point.** Then
-   stop and move to step 7. Track the `undecidable` rate alongside accuracy: a rate that climbs while
-   accuracy holds means the rubric is teaching the model to abstain rather than to judge.
+   stop and move to step 7.
 
-8. **Sonnet check** — once a rubric plateaus on Opus, re-run the build split with **Sonnet** and record that
-   accuracy alongside. The rubric was shaped by Opus's reasoning; if Sonnet is materially worse, tighten
-   the rubric for Sonnet before spending on the full run. Skipping this means discovering the gap after
+   **A new rule needs a pattern, not a paper.** A new promptbook rule needs a **pattern** behind it — several similar misses, never a single paper. A promptbook rewritten hard against one disagreement encodes noise from that sample instead of a general rule, and the rounds are under 100 papers. Collect the
+   round's misses, find the repeated shape, write the rule against that; log a one-off rather than
+   generalizing it. Track the `undecidable` rate alongside accuracy: a rate that climbs while
+   accuracy holds means the promptbook is teaching the model to abstain rather than to judge.
+
+8. **Sonnet check** — once a promptbook plateaus on Opus, re-run the build split with **Sonnet** and record that
+   accuracy alongside. The promptbook was shaped by Opus's reasoning; if Sonnet is materially worse, tighten
+   the promptbook for Sonnet before spending on the full run. Skipping this means discovering the gap after
    thousands of calls.
 
 9. **Two-pass tuning** — `src/two_pass.py`: Sonnet everywhere, anything under the confidence threshold
-   routes to Opus. Tune the threshold **on the build split**, once all four rubrics have plateaued and passed
+   routes to Opus. Tune the threshold **on the build split**, once all four promptbooks have plateaued and passed
    step 7.
 
-10. **Gate run** — batch job 1: exclusion + inclusion across all 1287 (2574 calls), Opus second pass on
-   low-confidence calls, then apply the gate (`keep AND include`). Record the survivor count and the
+10. **Gate run** — batch job 1: exclusion across all 1306 (1306 calls), Opus second pass on
+   low-confidence calls, then apply the gate (`keep`). Record the survivor count and the
    drop reason per paper — this is a study result in its own right, not just plumbing.
 
-11. **Analysis run** — batch job 2: power_analysis + data_analysis across the survivors only, same
-    two-pass. Merge in SQLite/pandas and export.
+11. **Analysis run** — batch job 2: one combined power + data call across the survivors only,
+    with two independently validated judgments and an atomic two-pass review. Merge in
+    SQLite/pandas and export task-specific results.
 
 12. **Holdout** — run the holdout once, end to end, with the exact production config. Report that number.
 
 ## Phase order
 
-**Do not parallelize across tasks.** Take `exclusion` to a plateau before touching `inclusion`,
-then `power_analysis`, then `data_analysis`.
+**Do not parallelize the gate with post-gate analysis.** Take `exclusion` to a plateau, then refine
+and run the combined post-gate power + data route.
 
 - [x] Repo, `requirements.txt`, `.env`, git init
 - [x] `src/pdf_extract.py` — two-stage: `extract_head_text()` for identity, `extract_pdf_text()` for the full pass
 - [x] `src/zotero_fetch.py`, `scripts/00_fetch_zotero.py` — fetch + md5 check + manifest + metadata
 - [x] Dry-run the fetch, confirm the collection tree resolves, then pull the study papers
-- [x] Settle where the validation PDFs come from and fetch them with `--set validation` — 569 fetched
+- [x] Settle where the HLS PDFs come from and fetch them with `--set human_labelled` — 569 fetched
       (232 NCI + 337 NHLBI)
-- [x] Cross-check testing vs validation for duplicate papers (DOI/PMID/PMCID); flag any overlap to the
+- [x] Cross-check US vs HLS for duplicate papers (DOI/PMID/PMCID); flag any overlap to the
       user before proceeding
 - [x] Identity verification (`01_verify_identity.py`) — thresholds calibrated, verdicts in the manifest
-- [x] Cross-set duplicate check — 207 testing papers also in validation; removed from testing
-      (1494 → 1287), logged in `results/review/02_removed_testing_duplicates.csv`
-- [x] **Decide the 15 NCI↔NHLBI duplicate pairs inside validation.** Resolved by
+- [x] Cross-set duplicate check — 207 US papers also in the HLS; removed from the US
+      (1494 → 1306), logged in `results/review/02_removed_us_duplicates.csv`
+- [x] **Decide the 15 NCI↔NHLBI duplicate pairs inside the HLS.** Resolved by
       `scripts/04_load_ground_truth.py`, not by a manual decision: 9 pairs agree on every label and are
-      collapsed to one `validation_labels` row automatically; 6 disagree — sometimes completely (one
-      pair has NCI calling both analyses correct and NHLBI calling both incorrect, for the same
-      paper) — and both sides are held out, listed in `results/review/05_label_match_review.csv` for a
-      human to adjudicate by reading the paper. Neither side is silently preferred.
+      collapsed to one `validation_labels` row automatically; 6 disagree — one pair a complete flip
+      (NCI: both analyses correct; NHLBI: both incorrect). Both sides held out, never silently
+      preferred, in `results/review/05_label_match_review.csv`.
+- [x] **Institutional disagreements dropped, assumed unresolved.** 5 of the 6 (one resolved once
+      Patterson's ambiguity closed). Fully dropped from the active corpus, not just held out of the
+      labels — `scripts/12_drop_institutional_disagreements.py` (DC37). May be restored if adjudicated.
 - [x] Triage the 24 flagged papers with `scripts/03_review_mismatches.py` — 20 PDFs replaced, 4 marked
       fine, none dropped. Audit trail in `results/review/04_papers_reviewed_results.csv`
 - [x] Rewrite `scripts/02_extract_pdfs.py` for two-stage extraction; extract `VERIFIED` (1856 papers,
@@ -530,33 +879,219 @@ then `power_analysis`, then `data_analysis`.
 - [x] `src/db.py` — labels + append-only judgments schema, with the split guard
 - [x] Load the ground truth into SQLite (`scripts/04_load_ground_truth.py`, rewritten to read
       `data/ground_truth.csv` rather than parse a spreadsheet itself) — 523 papers in
-      `validation_labels`; `--assign-split` now hard-refuses while any active validation paper still
+      `validation_labels`; `--assign-split` now hard-refuses while any active HLS paper still
       lacks a label (`--allow-incomplete` overrides deliberately)
-- [ ] **Resolve `(Patterson et al., 2022a)` / `(2022b)`** — only **one** real corpus paper is actually
-      affected, not two: the two citations resolve to `IT2B87LL` (the article) and `JBUFJCLU`
-      (`Correction to:` the same article, already `DROPPED` from the manifest). The join still can't
-      choose between them because it reads `zotero_meta.jsonl`, which was never pruned when `JBUFJCLU`
-      was dropped — not because there is a genuine second paper waiting on a label. Still blocked on
-      the same policy question below: whether `Correction to:` notices belong in the corpus at all.
+- [x] **Resolved `(Patterson et al., 2022a)` / `(2022b)`.** One real paper, `IT2B87LL`; the join now
+      skips `MANUAL_DROPPED` candidates like `JBUFJCLU` so the suffix resolves on its own. `IT2B87LL`
+      itself was then dropped as `duplicate_group_random_drop` — a coin-flip exclusion the model can
+      never reproduce (E17) — so the whole pair is out of the study.
 - [x] Merge every label file into `data/ground_truth.csv` (`scripts/07_build_ground_truth.py`) —
       569 rows, 567 joined to paper_ids; NCI 2×2 reproduces the published 20/11/5/60. Also fixed here:
-      15 NHLBI citations were resolving to a paper_id `06_merge_validation_duplicates.py` had already
+      15 NHLBI citations were resolving to a paper_id `06_merge_hls_duplicates.py` had already
       retired (the join reads `zotero_meta.jsonl`, which the merge script never prunes) — now remapped
       to the surviving paper_id, logged in the `paper_id_note` column.
 - [x] **The 23 unlabeled NHLBI papers are dropped, not chased.** `scripts/09_drop_unreviewed_nhlbi.py` —
       manifest verdict `DROPPED`, files moved to `data/removed_pdfs/nhlbi_unreviewed/`, logged in
-      `results/review/09_nhlbi_unreviewed_dropped.csv`. Active validation corpus: 553 → 530.
-- [ ] **Fix the batching scheme before `--assign-split`** — build/holdout sizes, whether to stratify on
-      gate-survivor status, and the rubric-loop round size
+      `results/review/09_nhlbi_unreviewed_dropped.csv`. Active Human Labelled Set: 553 → 530.
+- [x] **Batching scheme settled** — 30% holdout **stratified on gate-survivor status** (~53 survivors
+      held out, guaranteed rather than left to the hash); promptbook rounds sample 50 from the build
+      split. Stratification implemented and the split run, 2026-08-26.
 - [x] Exclusion ledger (`scripts/05_build_exclusions.py`) — every departed paper with its reason and
-      who decided; reconciles 2063 fetched → 1814 active
-- [ ] `rubrics/exclusion.md` v0 — literally just "exclude if secondary analysis"
-- [ ] Rubric loop on exclusion against the build split until plateau; Sonnet check
-- [ ] Same for inclusion, then power_analysis, then data_analysis
+      who decided; reconciles 2063 fetched → active corpus (`--check` for the current count)
+- [x] `promptbooks/v0/exclusion.md` — 17 criteria, prompt block, `wrong_text` decision added. Deb has
+      confirmed E13, the protocol-citation rule, E3 (now ON, DC48) and E5 (self-declared, DC28);
+      only E17 is unruled, and nothing blocks on it (O3).
+- [x] **Extracted-text integrity scan** (`scripts/11_scan_text_integrity.py`, step 2b) — 45 of 1772
+      flagged, 4 genuinely wrong documents found: 3 replaced and re-extracted, 1 dropped
+      (`J2RUD3YQ` — no full text exists, only a conference-abstract supplement; DC43).
+- [x] **`NBBD4EVE`'s parent found and confirmed out of scope** — does not belong in the study (DC38).
+- [ ] Promptbook loop on exclusion against the build split until plateau; Sonnet check
+- [ ] Refactor and validate combined power + data analysis on gate survivors
+- [ ] Validate/persist all reusable Reading Room responses, then freeze the API build-set request
+      manifest after task-granular anti-join (never repurchase an accepted paper/task judgment)
+- [ ] Implement and pass the offline API-build test plan in `API_BUILD_SET_IMPLEMENTATION.md`
 - [ ] Tune the two-pass confidence threshold on the build split
 - [ ] Gate run (job 1), record survivors
 - [ ] Analysis run (job 2) on survivors
 - [ ] Holdout run — report this number
+
+## Build rounds
+
+**The build split is cut into fixed rounds once, not sampled fresh each time.** A round drawn at
+random every run makes two rounds incomparable, and the plateau rule (two consecutive rounds each
+under 1pp, DC17) would then measure sampling noise as often as it measures the promptbook.
+
+`scripts/17_assign_build_rounds.py` -> `results/04_classification/build_rounds.csv`
+(`paper_id, task, round, stratum`). Deterministic: it hashes `seed + paper_id`, so it regenerates
+byte-identically on any machine. Re-running is a no-op unless the build split itself changed, and if
+it did, that is a finding rather than a refresh.
+
+**Rounds are per task, because the denominators differ.** The gate is scored on the whole build
+split; power and data analysis only ever see gate survivors (DC10), so their rounds come from the
+123 build survivors, not all 338.
+
+| Task | Papers | Rounds | Shape |
+|---|---:|---:|---|
+| exclusion | 338 | 7 | 6x50 + 38, each **18 survivor / 32 excluded** |
+| power_analysis | 123 | 3 | 50 / 50 / 23 |
+| data_analysis | 123 | 3 | 50 / 50 / 23 |
+
+**Each exclusion round is stratified on gate-survivor status** in the build split's own proportion
+(123/338 = 36.4%). Without it a round could come out 80% excluded and its accuracy would not be
+comparable to the next round's, which is the one thing rounds exist to be. The strata are dealt
+round-robin weighted by size, so the proportion falls out of the ordering rather than being
+computed per round.
+
+Rounds 1-3 are the proof-of-concept budget for run 1. There is no requirement to use all 7.
+
+## The Reading Room
+
+The isolated harness the promptbook loop runs in. Named for what it is: a sealed room where a
+reviewer is handed exactly one paper, may not bring anything else in, and hands back exactly one
+filled-in form. Nothing else enters or leaves.
+
+**It exists because `claude -p` is agentic, not a completion endpoint.** Run inside this repo it has
+file tools, and `data/ground_truth.csv`, `data/review.db`, and an auto-loaded CLAUDE.md naming both
+are sitting right there. Telling it not to look is not a control; removing the ability to look is.
+
+### The five walls
+
+Revised 2026-08-27 after two live probes of the CLI. Both probes found that a
+wall rested on a **wrong belief about what a flag means**, which is why the
+"how" column now names the flag that actually does the work.
+
+| Wall | How | What it stops |
+|---|---|---|
+| **Empty room** | `cwd` is a fresh scratch directory per paper, outside the repo. Never `--add-dir`. A per-paper `CLAUDE_CONFIG_DIR` holding only the credentials | No CLAUDE.md, no memory index, no relative path to the answers resolves, no previous paper's transcript |
+| **No hands** | `--tools ""` (the availability filter), plus `permissions.deny`, plus `--max-turns 1`, plus an assertion that `system/init` reported `"tools":[]` | Makes it a pure text completion. **`--allowed-tools ""` is only a permission allowlist and removes nothing** — that was the first probe's finding |
+| **No persona** | `--system-prompt` pointing at a pinned minimal prompt, sha256'd into the run record | The model is a reader, not Claude Code the coding agent. Without this the room carries ~12,200 tokens of agentic system prompt the Batch API run will not have — **the second probe's finding** |
+| **Paper by hand** | Text on **stdin**, never a path. Output captured from stdout, written by the wrapper outside the scratch cwd | One paper's response is not readable by the next |
+| **No name** | Send a random token; the wrapper keeps token → `paper_id` | A leak is not lookup-able even if one happens |
+
+The wrapper writes the JSON, not Claude. That removes the whole class of "did it corrupt the output
+file" failure, and it means the model has no write target to be confused about.
+
+**Target conditions, to be pinned in the runner before the next scored round**:
+`claude-sonnet-5`, `--effort medium` (`output_config.effort: medium` on the Batch
+API side), adaptive thinking — the only mode
+on this model, with no CLI switch and `budget_tokens` removed. A promptbook
+refined under one configuration and shipped under another is tuned on nothing:
+record any configuration change as a distinct provenance stratum and do not pool
+it for DC17/G11. A **model or effort** change is a stratum but not a version bump
+— the promptbook bytes are unchanged and so is the text they are applied to. A
+change to **what the model reads** is both, and forces a version bump even with
+the promptbook byte-identical (DC57): `v1`-on-whole-text and `v1`-on-stripped-text
+are two configurations wearing one label, because a rule reading "excludes if the
+paper describes a stepped-wedge design" behaves differently against a document
+carrying 40 reference titles containing that phrase. The existing high-effort
+reuse exception remains explicitly mixed.
+
+**Every run is recorded in two layers** — a per-round `run_environment.json` for
+the invariants and per-paper run-log columns for what varies. A third thing is
+recorded outside both, in the text itself: each `data/extracted_text_stripped/`
+file carries a `references_strip` block (source hash, ruleset, chars removed,
+reason), and `run_log.csv`'s `text_notes` repeats the per-paper outcome as
+`refs_removed=N` / `refs_kept:<reason>` / `refs_unprepared`. So a judgment is
+traceable to the exact bytes the model saw, not merely to the paper it came from. The CLI exposes no
+temperature and no seed, so identical bytes are unreachable and the write-up must
+not claim them; what is reproducible is the *procedure*, recorded completely
+enough to be set up again. Group **G** of the test plan fails a round whose
+record has a hole in it. Note that no dated model snapshot exists —
+`claude-sonnet-5` is the complete ID.
+
+### Two scripts
+
+**`scripts/20_reading_room.py`** — runs one round. Reads `promptbooks/CURRENT`, samples from the
+build split, and for each paper spawns one `claude -p` process with the promptbook and the paper
+text on stdin. **Papers are judged one at a time, never batched into one prompt**: ten papers in one
+context would let the model make exactly the cross-paper judgments E12 and E17 forbid, and position
+effects inside the batch would contaminate the accuracy number.
+
+**Serial is the default; `--parallel` is opt-in (DC58).** Running 5-8 processes concurrently buys
+wall-clock this project has with quota it does not: a pool commits `--workers` papers of the 5-hour
+subscription window before the first result is readable, and a round that has gone wrong cannot then
+be stopped. Serially, a sealing breach (`tool_use`/`tool_result`) **ends the round on the paper it
+happened on** with the rest of the quota unspent, a Ctrl-C lands on the paper actually running, and
+the per-paper line carries a running billed-token total so the operator can see the window draining.
+Under `--parallel` the pool has already submitted everything, so a breach is collected and the round
+finishes — the same behaviour as before.
+
+**`scripts/21_check_responses.py`** — validates what came back, before any of it is scored. In
+order: exit code → **zero `tool_use` blocks** in `--output-format stream-json`, and discard the
+whole run if any appear → JSON parses, recording whether fence-stripping was needed → pydantic
+(`src/schemas.py`) → `decision` in the allowed set, `wrong_text` only on exclusion → `reasoning`
+within 200 characters → `promptbook_evidence` cites a rule ID that actually exists in the promptbook
+in force → `confidence` in [0,1] and not constant across papers → the blinded token echoes back.
+Failures go to a retry ledger (`paper_id`, attempt, failure kind), which is DC24's reportable number.
+After the configured retry budget, retain the raw evidence and mark the request review-required; never
+write a synthetic `undecidable` judgment for a parser or transport failure.
+
+### Reproducible procedure, not reproducible bytes
+
+Never pass `--resume`, `--continue`, or a reused `--session-id`; each invocation must be a fresh
+process with no shared history. Pin the full model ID, `--strict-mcp-config` with no servers, and a
+committed `--settings` file. Point `CLAUDE_CONFIG_DIR` somewhere empty so no user-level CLAUDE.md or
+memory loads.
+
+**The CLI exposes neither temperature nor seed**, so identical bytes are not achievable and claiming
+otherwise would be false. What is achievable is a reproducible *procedure*: log the model ID, CLI
+version, promptbook version (the git commit), and the verbatim raw response before parsing. That is
+what a reader needs to re-run it, and it is what the run log already records.
+
+### Verified three ways
+
+1. `--output-format stream-json` logs every `tool_use` block. Assert zero per paper; discard any run
+   with one.
+2. **Canary run**: ~20 papers against a decoy `ground_truth.csv` with flipped labels, tools
+   deliberately *on*. If accuracy tracks the decoy, it is reading rather than reasoning.
+3. The holdout, run once through the Batch API, which does not depend on trusting the loop at all.
+
+## Batch run log
+
+**Every batch run writes a header row to `results/04_classification/run_log.csv` before it starts, and closes it when
+it finishes.** A run nobody can date, price, or attribute to a model is not reproducible, and this is
+the cheapest possible insurance against having to re-run 1306 papers to answer a reviewer.
+
+```
+run_id, task, started_at, finished_at, duration_s,
+processing_type,        # api_batch | api_sync | cli
+model,                  # claude-sonnet-5, claude-opus-5, ...
+promptbook_version,     # git commit of the promptbook in force
+n_papers, n_ok, n_undecidable, n_parse_retries, n_failed,
+input_tokens, output_tokens, cost_usd,
+split,                  # build | holdout | none (full corpus)
+git_commit,             # of the repo, not just the promptbook
+notes
+```
+
+`cost_usd` is null on a CLI run (subscription quota, not billed per call) — record
+`processing_type` so a null reads as "not applicable" rather than "we forgot".
+`n_parse_retries` is DC24's number and belongs here, not in a side file.
+
+`started_at` is written **before** the first call, so an interrupted run still leaves a dated row
+saying what was attempted.
+
+## Erratum pass
+
+**The erratum pass is Unlabelled-Set-only.** Four correction notices exist, all `DROPPED`:
+
+| notice | set | parent | parent status |
+|---|---|---|---|
+| `A3H3NDHF` | US | `J9F7U6CX` | active |
+| `AT7F9XWR` | US | `MPSTWIIE` | active |
+| `NBBD4EVE` | US | *unknown* | **not found — see O6** |
+| `JBUFJCLU` | HLS | `IT2B87LL` | **dropped, out of the study** |
+
+The one Human-Labelled-Set notice no longer needs handling. Its parent `IT2B87LL` was the
+`(Patterson et al., 2022a/b)` paper, and the humans had excluded that by random coin flip — a
+`duplicate_group_random_drop`, which the promptbook forbids the model to reproduce (E17). So
+`IT2B87LL` left the scored set with the other 41 nonjudgeable exclusions, and the whole pair is out.
+Nothing in the HLS depends on a correction notice any more.
+
+Run the remaining two as a small pass over the notice **plus its parent's full text**, so the
+question "does this correction change the power or data analysis being scored?" is asked with both
+documents in context. Two papers does not justify a batch job, and folding them into the main 1306
+would ask the model to judge a correction notice as if it were a trial. `NBBD4EVE` waits on O6.
 
 ## Exclusion ledger
 
@@ -566,15 +1101,15 @@ evidence is scattered across five files that share no schema:
 
 | Stage | Where it lives now | Papers |
 |---|---|---|
-| Collection placements → unique papers | `results/unvalidated_set_summary.tex` | 2115 → 1494 |
-| Cross-set duplicates (kept in validation) | `results/review/02_removed_testing_duplicates.csv` | 207 |
+| Collection placements → unique papers | `results/01_corpus_build/unvalidated_set_summary.tex` | 2115 → 1494 |
+| Cross-set duplicates (kept in the HLS) | `results/review/02_removed_us_duplicates.csv` | 207 |
 | Wrong document / unreadable, dropped by hand | manifest `verdict=DROPPED` + `04_papers_reviewed_results.csv` | 2 so far |
 | Correction notices | same route, `CORRECTION_NOTICE` in the review queue | 4 found |
-| Validation internal duplicates | `results/review/03_validation_internal_duplicates.csv` | 15 pairs, undecided |
+| HLS internal duplicates | `results/review/03_hls_internal_duplicates.csv` | 15 pairs, undecided |
 | Unjoinable labels | `results/review/05_label_match_review.csv` | 2 |
 | Gate exclusions (model) | SQLite `judgments`, once the gate runs | unknown |
 
-**Consolidate these into `results/exclusions.csv`**, one row per departed paper:
+**Consolidate these into `results/01_corpus_build/exclusions.csv`**, one row per departed paper:
 `paper_id, set, stage, reason, evidence, decided_by (rule/human/model), decided_at, source_record`.
 Built by a script that reads the files above rather than maintained by hand — a ledger someone has to
 remember to update is a ledger that is wrong by the time it matters.
@@ -593,12 +1128,12 @@ Opus second pass produces two rows, not an overwrite:
 
 ```
 paper_id, task, judgment_index, pass_name, model_used, decision, reasoning,
-rubric_evidence, confidence, rubric_version, timestamp
+promptbook_evidence, confidence, promptbook_version, timestamp
 ```
 
 **`judgment_index`** — how many times this paper has been judged on this task, including the row it sits
 on. First ever judgment of `4XKQ7B2M` on `exclusion` is `1`; its Opus review is `2`; a re-run after the
-next rubric edit is `3`, and so on. Counts across the whole project, not per run: rubric-building rounds
+next promptbook edit is `3`, and so on. Counts across the whole project, not per run: promptbook-building rounds
 re-judge the same papers repeatedly, and the total is the number you want when asking how much scrutiny
 a paper has already received.
 
@@ -607,15 +1142,15 @@ impossible, so an interrupted batch can be resumed by replaying it without riski
 silently inflating the accuracy math.
 
 Useful slices:
-- Passes within one rubric version: filter on `rubric_version`, then read `pass_name`.
+- Passes within one promptbook version: filter on `promptbook_version`, then read `pass_name`.
 - Papers the model keeps struggling with: `judgment_index` high while `decision` keeps flipping.
 - Current answer for a paper: highest `judgment_index` for that `(paper_id, task)`.
 
 `pass_name` is `primary` or `review`. Keeping both rows is what lets you ask why Opus overturned Sonnet,
-which rubric rule each leaned on, and whether the disagreement clusters somewhere the rubric is weak.
+which promptbook rule each leaned on, and whether the disagreement clusters somewhere the promptbook is weak.
 Overwriting would destroy exactly the evidence that makes the second pass worth paying for.
 
-`rubric_version` is the git commit hash of the rubric in force at the time, so any judgment can be
+`promptbook_version` is the git commit hash of the promptbook in force at the time, so any judgment can be
 traced back to the exact rules that produced it.
 
 ## Manifest
@@ -629,12 +1164,12 @@ attachment_key, md5, status, detail, warning, verdict, verdict_reason, title_sco
 set, fetched_at
 ```
 
-Rows are **merged on `paper_id`**, never overwritten wholesale — the validation papers come from a
+Rows are **merged on `paper_id`**, never overwritten wholesale — the HLS papers come from a
 different source and share this file, so a study re-fetch must not delete them.
 
 `verdict` / `verdict_reason` / `title_score` are filled by step 1
 (`scripts/01_verify_identity.py`); the full per-signal detail behind them lives in
-`results/identity_report.csv`. `set` is `testing` (the study papers to classify) or `validation` (the
+`results/01_corpus_build/identity_report.csv`. `set` is `unlabelled` (the study papers to classify) or `human_labelled` (the
 human-labeled papers), set by the fetch's `--set` flag.
 
 ## Zotero metadata
@@ -643,7 +1178,7 @@ human-labeled papers), set by the fetch's `--set` flag.
 the same way. Gitignored: derived data, re-creatable from Zotero, and large once abstracts are in it.
 
 ```json
-{"paper_id": "4XKQ7B2M", "set": "testing",
+{"paper_id": "4XKQ7B2M", "set": "unlabelled",
  "folders": ["NCI"], "folder_paths": ["Boring Task / NCI"],
  "zotero_version": 1423, "title": "...", "authors": ["Smith", "Jones", "Lee"],
  "first_author": "Smith", "doi": "10.1001/...", "pmid": "", "pmcid": "",
@@ -660,7 +1195,7 @@ with or without the colon), then `archiveID`, then the item `url` (`pubmed.ncbi.
 `/pmc/articles/PMC456`). Field values are run through the same patterns rather than trusted raw — a
 "dedicated" field can still contain `PMID: 123`. PMCID is normalized to carry its `PMC` prefix, the form
 PubMed and the labels file use. The fetch prints DOI/PMID/PMCID coverage at the end of a run — worth
-watching, since these are what will join this corpus to the validation labels.
+watching, since these are what will join this corpus to the human labels.
 
 `zotero_item` is the escape hatch — volume, issue, pages, ISSN, URL, tags, itemType and anything else
 Zotero holds stay recoverable without re-pulling the library. `zotero_version` is what would enable an
@@ -668,7 +1203,7 @@ Zotero holds stay recoverable without re-pulling the library. `zotero_version` i
 
 ## Open questions
 
-**1. Where do the 500 validation papers and their PDFs come from?** They are *not* under *Boring Task*,
+**1. Where do the 500 HLS papers and their PDFs come from?** They are *not* under *Boring Task*,
 so the fetch script never sees them. Two things are unsettled: (a) where the PDFs live — another Zotero
 collection/group, or a local folder; and (b) how `validation_labels.csv` keys them — almost certainly
 DOI or PMCID, not a Zotero item key. If they come from Zotero, the same fetch code points at a different
@@ -676,35 +1211,35 @@ collection and `paper_id` stays a Zotero key, joined to the labels by normalized
 a folder, they need their own `paper_id` scheme and a metadata source for identity verification.
 Blocks step 3.
 
-Partially settled: the validation PDFs live in Zotero, but split across **two separate groups —
+Partially settled: the HLS PDFs live in Zotero, but split across **two separate groups —
 NCI and NHLBI — each with its own group ID and collection key**, not one shared collection like
 *Boring Task*. `00_fetch_zotero.py` fetches one `--collection` (and its subtree) from one group per
-run, so pulling the validation set needs **two runs**, one per group, both with `--set validation` so
+run, so pulling the Human Labelled Set needs **two runs**, one per group, both with `--set human_labelled` so
 they merge into the same manifest rows rather than overwriting each other. `.env`'s
 `ZOTERO_LIBRARY_ID`/`ZOTERO_COLLECTION_KEY` will need to point at each group in turn (or the script
 extended to accept a library ID override alongside `--collection`).
 
 **Settled for the PDFs.** NCI: group `5573699`, collection `V3822KC9` ("FinalCollectionFor
-Publication", flat, 232 papers, no subcollections), fetched 2026-08-10 with `--set validation`, zero
+Publication", flat, 232 papers, no subcollections), fetched 2026-08-10 with `--set human_labelled`, zero
 multi-attachment warnings. NHLBI: group `6363893`, fetched as `Locked_26_01_08_337`, **337 papers**.
-569 validation PDFs are on disk and all 569 are VERIFIED.
+569 HLS PDFs are on disk and all 569 are VERIFIED.
 
-**Still open: the NHLBI *labels*.** Only `GroundTruthDataNCI01.xlsx` has arrived. Until NHLBI's
-equivalent lands, 337 of the 569 validation papers have PDFs but no human answer, so they can be
-neither scored nor split. This is what blocks `--assign-split`.
+**Settled: the NHLBI *labels* arrived** in two disjoint files (`crt_review_table_112.tex` and
+`NHLBI_exclusions_178.csv`) rather than one spreadsheet. All three are merged by
+`07_build_ground_truth.py`; 483 papers carry a clean label and are split.
 
-**2. Do all validation papers carry labels for all four tasks?** **No — and by design.** Measured on
-NCI01: of 232 rows, 136 carry an exclusion reason and nothing else, and 96 carry Power / Stats /
-Review Category. That is the gate showing up in the ground truth exactly as intended — a paper the
+**2. Do all HLS papers carry labels for all four tasks?** **No — and by design.** Measured on
+NCI01: of 232 rows, 136 carry an exclusion reason and nothing else, and 96 carry Power and Stats.
+That is the gate showing up in the ground truth exactly as intended — a paper the
 humans excluded never got scored on power or stats — and `db.expected_decision()` returns `None` for
 those, so they drop out of the denominator rather than counting as misses.
 
-The consequence for the split is real though: a single 30% holdout drawn over *all* labeled papers
-leaves only ~29 gate survivors to score power_analysis and data_analysis on, which is thin for a
-headline accuracy number. Two options when the NHLBI labels arrive: stratify the split on
-gate-survivor status so both tasks get a proportional holdout, or accept the wide interval and report
-it. Decide before calling `--assign-split`, because it only runs once.
+The consequence for the split was real, and it is why the split is stratified. A single 30% holdout
+drawn over *all* labeled papers leaves whatever number of gate survivors the hash deals into the
+holdout, and survivors are the only papers power_analysis and data_analysis can be scored on.
+**Resolved by stratifying on gate-survivor status** (DC30), which makes the 53-survivor holdout a
+guarantee rather than a coin flip. Still thin for a headline number — report the interval.
 
-**3. Rubric updates on a miss: manual or model-assisted?** Manual = you read the miss and write the
-rule. Model-assisted = feed the miss + current rubric to Opus and have it propose the edit. Faster, but
+**3. Promptbook updates on a miss: manual or model-assisted?** Manual = you read the miss and write the
+rule. Model-assisted = feed the miss + current promptbook to Opus and have it propose the edit. Faster, but
 every proposed rule needs a spot-check before it is committed. Not yet decided.

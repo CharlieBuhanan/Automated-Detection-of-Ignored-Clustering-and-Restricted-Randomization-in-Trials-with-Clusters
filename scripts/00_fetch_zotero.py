@@ -1,21 +1,22 @@
-"""Pull the corpus out of Zotero into data/raw_pdfs/<set>/.
+"""Pull the corpus out of Zotero into data/raw_pdfs/<Set Name>/.
 
 Fetches every record in the configured collection and all of its
 subcollections, at any depth.
 
 Usage:
-    python scripts/00_fetch_zotero.py                                    # the testing corpus
-    python scripts/00_fetch_zotero.py --collection ABCD1234 --set validation
+    python scripts/00_fetch_zotero.py                                    # the Unlabelled Set
+    python scripts/00_fetch_zotero.py --collection ABCD1234 --set human_labelled
     python scripts/00_fetch_zotero.py --dry-run                          # show the tree, download nothing
     python scripts/00_fetch_zotero.py --list-warnings                    # print every warning on file, fetch nothing
 
---set tags the rows it writes: "testing" (papers to classify) or "validation"
-(papers with human labels). Zotero has no idea which is which, so it comes from
-whichever collection you point at.
+--set tags the rows it writes: "unlabelled" (the Unlabelled Set, papers to
+classify) or "human_labelled" (the Human Labelled Set, papers with human
+labels). Zotero has no idea which is which, so it comes from whichever
+collection you point at. The slug maps to its directory via SET_DIRS.
 
 The end-of-run summary (status counts, identifier coverage, warnings, failures)
 covers only the records *this run* touched, not the whole manifest -- a
-`--set validation` run no longer re-prints the testing set's old warnings.
+`--set human_labelled` run no longer re-prints the Unlabelled Set's old warnings.
 `--list-warnings` is the way to see every warning ever recorded, across both
 sets, on demand.
 
@@ -43,8 +44,8 @@ from tqdm import tqdm
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from zotero_fetch import (
     MANIFEST_COLUMNS,
-    SET_TESTING,
-    SET_VALIDATION,
+    SET_HUMAN_LABELLED,
+    SET_UNLABELLED,
     STATUS_OK,
     CollectionNotFound,
     build_meta_records,
@@ -53,6 +54,7 @@ from zotero_fetch import (
     connect,
     iter_fetch_records,
     resolve_subtree,
+    set_dir,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -76,7 +78,7 @@ def write_manifest(rows: list[dict], path: Path) -> None:
     """Merge rows into the manifest CSV, keyed on paper_id.
 
     Merged rather than overwritten so this script never deletes rows it did
-    not fetch -- the validation papers come from a different source and will
+    not fetch -- the Human Labelled Set papers come from a different source and will
     share this file. Existing rows for the same paper_id are replaced, so a
     re-fetch still refreshes its own data.
 
@@ -102,8 +104,8 @@ def write_manifest(rows: list[dict], path: Path) -> None:
 def write_meta_jsonl(meta_records: list[dict], path: Path) -> None:
     """Merge full Zotero metadata into data/zotero_meta.jsonl, keyed on paper_id.
 
-    Same merge rule as the manifest, for the same reason: a `--set validation`
-    run must not erase the rows a `--set testing` run wrote.
+    Same merge rule as the manifest, for the same reason: a `--set human_labelled`
+    run must not erase the rows a `--set unlabelled` run wrote.
 
     This is the complete record -- including every author and Zotero's raw
     item -- where the manifest CSV is only the scannable summary.
@@ -140,9 +142,9 @@ def main():
     )
     parser.add_argument(
         "--set",
-        choices=[SET_TESTING, SET_VALIDATION],
-        default=SET_TESTING,
-        help="Which half of the corpus this collection holds (default: testing)",
+        choices=[SET_UNLABELLED, SET_HUMAN_LABELLED],
+        default=SET_UNLABELLED,
+        help="Which half of the corpus this collection holds (default: unlabelled)",
     )
     parser.add_argument("--dry-run", action="store_true", help="Show the collection tree and record count without downloading")
     parser.add_argument(
@@ -231,7 +233,7 @@ def main():
     # One directory per set, so the split is visible in the file tree. The
     # manifest's `set` column stays authoritative -- it is what tells later
     # steps which directory to look in.
-    pdf_dir = ROOT / "data" / "raw_pdfs" / args.set
+    pdf_dir = set_dir(ROOT, args.set)
     manifest_path = ROOT / "data" / "zotero_manifest.csv"
     meta_path = ROOT / "data" / "zotero_meta.jsonl"
 
@@ -243,7 +245,7 @@ def main():
 
     existing = load_manifest(manifest_path)
     # Intersected with this run's records because the manifest and the PDF
-    # directory are shared: NCI and NHLBI both land in raw_pdfs/validation/, so
+    # directory are shared: NCI and NHLBI both land in "raw_pdfs/Human Labelled Set/", so
     # an unintersected count reports the *other* group's papers as "skipping"
     # even though none of them are in this collection.
     skip_ids = set() if args.refresh else completed_ids(existing, pdf_dir) & set(records)
@@ -298,7 +300,7 @@ def main():
 
     # Zotero has no PMID/PMCID field -- these are scraped out of Extra, the
     # URL, or archiveID. Coverage is worth knowing now, because these are the
-    # identifiers that will join this corpus to the validation labels.
+    # identifiers that will join this corpus to the human labels.
     for field in ("doi", "pmid", "pmcid"):
         have = sum(1 for r in rows if r[field])
         print(f"  {field}: {have}/{len(rows)} ({have / len(rows):.0%})" if rows else f"  {field}: 0")

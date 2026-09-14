@@ -1,4 +1,4 @@
-"""Merge the human-labeled ground truth from every institute into one CSV (PLAN.md step 4).
+"""Merge the human-labeled ground truth from every institute into one CSV (research design/PLAN.md step 4).
 
 HOW TO RUN
     python scripts/07_build_ground_truth.py            # write data/ground_truth.csv
@@ -27,7 +27,7 @@ WHY THIS EXISTS
 
     A PAPER CAN HAVE MORE THAN ONE ROW. 15 papers were fetched into both the NCI
     and NHLBI Zotero groups and independently reviewed by both institutes --
-    `06_merge_validation_duplicates.py` already collapsed their *manifest* entries
+    `06_merge_hls_duplicates.py` already collapsed their *manifest* entries
     to one paper_id (the NCI side), but each institute's citation still resolves
     to its own row here, both correctly pointing at the surviving paper_id (see
     `remap_merged_duplicates` below). 8 of the 15 pairs agree on every label; 7
@@ -62,6 +62,7 @@ from rapidfuzz import fuzz
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
+from zotero_fetch import SET_HUMAN_LABELLED
 
 RAW = ROOT / "Ground Truth Raw"
 META = ROOT / "data" / "zotero_meta.jsonl"
@@ -78,10 +79,10 @@ SOURCE_FOLDERS = {
     "NCI": "FinalCollectionFor Publication",
     "NHLBI": "Locked_26_01_08_337",
 }
-# 06_merge_validation_duplicates.py rewrites a merged pair's folder to "Both NCI
+# 06_merge_hls_duplicates.py rewrites a merged pair's folder to "Both NCI
 # and NHLBI" -- but only in data/zotero_manifest.csv. zotero_meta.jsonl, which
 # candidate_pool() below actually reads, is the fetch's untouched output: every
-# validation record there still carries exactly the one folder it was fetched
+# Human Labelled Set record there still carries exactly the one folder it was fetched
 # under, so both halves of a merged pair are found through their own institute's
 # entry and no "matches either name" fallback is needed here.
 
@@ -443,11 +444,11 @@ def join_by_identifier(row: dict, doi_idx: dict, pmid_idx: dict) -> tuple[str, s
     return "", "", ""
 
 
-MERGED_DUPLICATES = ROOT / "results" / "review" / "06_merged_validation_duplicates.csv"
+MERGED_DUPLICATES = ROOT / "results" / "review" / "06_merged_hls_duplicates.csv"
 
 
 def load_duplicate_remap() -> dict:
-    """removed_paper_id -> kept_paper_id, from 06_merge_validation_duplicates.py's log.
+    """removed_paper_id -> kept_paper_id, from 06_merge_hls_duplicates.py's log.
 
     `zotero_meta.jsonl` is the fetch's raw output and was never pruned when 06
     collapsed 15 NCI/NHLBI duplicate pairs down to one manifest row each -- it
@@ -463,10 +464,35 @@ def load_duplicate_remap() -> dict:
     return dict(zip(frame["removed_paper_id"], frame["kept_paper_id"]))
 
 
+# Papers dropped for not being a study at all. Only these leave the match pool:
+# a paper dropped *because of its label* (NHLBI_UNREVIEWED, NONJUDGEABLE_EXCLUSION)
+# must still join, or the drop and the join become circular -- the label that
+# caused the drop could never be matched to the paper again.
+NOT_A_STUDY = {"MANUAL_DROPPED"}
+
+
+def dropped_paper_ids() -> set:
+    """paper_ids retired from the corpus for not being studies.
+
+    The join searches zotero_meta.jsonl, which is never pruned when a paper is
+    dropped -- so without this a retired record stays a live match candidate.
+    That is what made `(Patterson et al., 2022a/b)` unresolvable: the article
+    and its own `Correction to:` notice both answered to the same author-year,
+    so the join could not choose and sent both to a human. The notice is
+    DROPPED; skipping it leaves exactly one candidate and the pair resolves.
+    """
+    with open(MANIFEST, encoding="utf-8") as handle:
+        return {r["paper_id"] for r in csv.DictReader(handle)
+                if r["verdict"] == "DROPPED" and r["verdict_reason"] in NOT_A_STUDY}
+
+
 def candidate_pool(meta: dict, institute: str) -> dict:
     folder = SOURCE_FOLDERS[institute]
+    dropped = dropped_paper_ids()
     return {pid: rec for pid, rec in meta.items()
-            if rec.get("set") == "validation" and folder in rec.get("folders", [])}
+            if rec.get("set") == SET_HUMAN_LABELLED
+            and folder in rec.get("folders", [])
+            and pid not in dropped}
 
 
 def join_nhlbi(row: dict, pool: dict) -> tuple[str, str, str]:
@@ -540,10 +566,19 @@ def join_nci(row: dict, pool: dict, index: dict) -> tuple[str, str, str]:
     if not parts:
         return "", "", ""
     first, extras, year, suffix = surname(parts[0]), [surname(p) for p in parts[1:]], match.group(3), match.group(4)
-    if suffix:  # "2022a" means the labeller could not tell two papers apart
+    hits = index.get((first, year), [])
+
+    if suffix:
+        # "2022a" means the labeller hit two references sharing author and year
+        # and could not separate them either -- so the suffix carries no
+        # information about which is which. Accept it only when the pool has
+        # exactly one candidate left, which is no longer a choice at all.
+        # (Patterson 2022a/b: the rival was that same article's `Correction to:`
+        # notice, now DROPPED and out of the pool.) More than one, still a human's.
+        if len(hits) == 1:
+            return hits[0], "author_year_suffix_sole_candidate", "100"
         return "", "", ""
 
-    hits = index.get((first, year), [])
     if len(hits) == 1:
         return hits[0], "author_year", "100"
     for pid in hits:
@@ -629,7 +664,7 @@ def main() -> None:
         row["paper_id_note"] = ""
 
     # 15 papers were fetched into both Zotero groups and reviewed by both
-    # institutes. 06_merge_validation_duplicates.py already retired the NHLBI
+    # institutes. 06_merge_hls_duplicates.py already retired the NHLBI
     # half's manifest row, but zotero_meta.jsonl -- which the join above reads --
     # was never pruned, so an NHLBI citation can resolve to that retired paper_id.
     # Remap it to the survivor so every row points at a paper_id that actually
@@ -700,17 +735,17 @@ def main() -> None:
 
 
 def active_validation_paper_ids() -> set:
-    """paper_ids that actually need a label: the manifest's current validation
+    """paper_ids that actually need a label: the manifest's current Human Labelled Set
     rows, minus anything dropped from the corpus.
 
     Deliberately not the raw per-institute meta pools -- those still contain
     both halves of every NCI/NHLBI duplicate pair, one of which no longer has a
-    PDF, a manifest row, or extracted text once 06_merge_validation_duplicates.py
+    PDF, a manifest row, or extracted text once 06_merge_hls_duplicates.py
     has run. Diffing against that stale, larger set undercounts real coverage.
     """
     with open(MANIFEST, encoding="utf-8") as handle:
         return {row["paper_id"] for row in csv.DictReader(handle)
-                if row["set"] == "validation" and row["verdict"] != "DROPPED"}
+                if row["set"] == SET_HUMAN_LABELLED and row["verdict"] != "DROPPED"}
 
 
 def report(rows: list[dict]) -> None:
@@ -741,7 +776,7 @@ def report(rows: list[dict]) -> None:
     active = active_validation_paper_ids()
     labeled = {r["paper_id"] for r in rows if r["labeled"] == "1" and r["paper_id"]}
     covered, missing = active & labeled, active - labeled
-    print(f"\ncorpus coverage: {len(covered)} of {len(active)} active validation "
+    print(f"\ncorpus coverage: {len(covered)} of {len(active)} active HLS "
           f"papers have a label ({len(missing)} missing)")
     stray = labeled - active
     if stray:

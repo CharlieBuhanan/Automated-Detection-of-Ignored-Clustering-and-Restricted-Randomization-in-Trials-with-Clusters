@@ -1,0 +1,11 @@
+task,split,promptbook_version,configuration_status,threshold,confidence_n,low_confidence_n,low_confidence_rate,retained_n,retained_accuracy,retained_sensitivity,retained_specificity
+data_analysis,build,v1,comparable,0.5,40,0,0.0,40,0.825,0.2,0.9143
+data_analysis,build,v1,comparable,0.55,40,0,0.0,40,0.825,0.2,0.9143
+data_analysis,build,v1,comparable,0.6,40,3,0.075,37,0.8108,0.2,0.9062
+data_analysis,build,v1,comparable,0.65,40,13,0.325,27,0.8148,0.0,0.88
+data_analysis,build,v1,comparable,0.7,40,17,0.425,23,0.8261,0.0,0.8636
+data_analysis,build,v1,comparable,0.75,40,27,0.675,13,0.8462,0.0,0.9167
+data_analysis,build,v1,comparable,0.8,40,37,0.925,3,1.0,,1.0
+data_analysis,build,v1,comparable,0.85,40,37,0.925,3,1.0,,1.0
+data_analysis,build,v1,comparable,0.9,40,38,0.95,2,1.0,,1.0
+data_analysis,build,v1,comparable,0.95,40,39,0.975,1,1.0,,1.0

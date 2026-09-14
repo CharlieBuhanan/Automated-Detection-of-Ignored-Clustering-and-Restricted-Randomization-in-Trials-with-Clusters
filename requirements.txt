@@ -1,4 +1,6 @@
-anthropic
+# Native JSON Schema structured output (`output_config.format`) for the Batch
+# implementation.  `anthropic` 1.0.0 requires Python >=3.10.
+anthropic==1.0.0
 pyzotero
 pymupdf
 pdfplumber

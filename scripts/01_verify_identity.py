@@ -1,8 +1,8 @@
-"""Verify every fetched PDF is the paper Zotero says it is (PLAN.md step 1).
+"""Verify every fetched PDF is the paper Zotero says it is (research design/PLAN.md step 1).
 
 HOW TO RUN
     python scripts/01_verify_identity.py                      # both sets, offline
-    python scripts/01_verify_identity.py --set validation     # one set only
+    python scripts/01_verify_identity.py --set human_labelled # one set only
     python scripts/01_verify_identity.py --retry-attachments  # + repair stage (needs Zotero)
     python scripts/01_verify_identity.py --show MISMATCH      # list one verdict's papers
 
@@ -21,7 +21,7 @@ WHAT IT DOES
 
 OUTPUTS
     data/zotero_manifest.csv    verdict, verdict_reason, title_score per paper
-    results/identity_report.csv every signal per paper, for diagnosis
+    results/01_corpus_build/identity_report.csv  every signal per paper, for diagnosis
     Terminal                    verdict counts, then anything needing a human
 
 Nothing is deleted and no paper is dropped here. MISMATCH papers stay in the
@@ -41,22 +41,25 @@ from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 import identity
+from review_log import collect_decisions
 from pdf_extract import extract_head_text
 from zotero_fetch import (
     MANIFEST_COLUMNS,
-    SET_TESTING,
-    SET_VALIDATION,
+    SET_HUMAN_LABELLED,
+    SET_UNLABELLED,
     STATUS_OK,
     _md5,
     connect,
     load_meta,
     select_pdf_attachment,
+    set_dir,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
 META = ROOT / "data" / "zotero_meta.jsonl"
-REPORT = ROOT / "results" / "identity_report.csv"
+REPORT = ROOT / "results" / "01_corpus_build" / "identity_report.csv"
+REVIEW_DIR = ROOT / "results" / "review"
 
 REPORT_COLUMNS = [
     "paper_id", "set", "folder", "verdict", "verdict_reason", "explanation",
@@ -83,7 +86,7 @@ def write_manifest(rows: list[dict]) -> None:
 
 
 def pdf_path_for(row: dict) -> Path:
-    return ROOT / "data" / "raw_pdfs" / row["set"] / f"{row['paper_id']}.pdf"
+    return set_dir(ROOT, row["set"]) / f"{row['paper_id']}.pdf"
 
 
 def verify_one(pdf_path: Path, meta: dict) -> dict:
@@ -128,7 +131,7 @@ def open_libraries(library_ids: list[str], api_key: str, library_type: str) -> l
 
     The manifest records which *collection* a paper came from but not which
     *group* -- and the corpus spans three (the study library plus NCI and
-    NHLBI for validation). Rather than guess, the repair stage probes each
+    NHLBI for the Human Labelled Set). Rather than guess, the repair stage probes each
     client until one recognizes the item key. Only failures reach this path,
     so the extra calls are few.
     """
@@ -230,7 +233,7 @@ def write_report(rows: list[dict], results: dict, repairs: dict) -> None:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--set", choices=[SET_TESTING, SET_VALIDATION],
+    parser.add_argument("--set", choices=[SET_UNLABELLED, SET_HUMAN_LABELLED],
                         help="Only verify one half of the corpus (default: both)")
     parser.add_argument("--retry-attachments", action="store_true",
                         help="For papers that fail, download the record's other PDF attachments and keep one that verifies. Needs Zotero access.")
@@ -238,6 +241,9 @@ def main():
                         help="Zotero group ID to search during --retry-attachments. Repeatable; defaults to ZOTERO_LIBRARY_ID plus ZOTERO_EXTRA_LIBRARY_IDS in .env.")
     parser.add_argument("--show", metavar="VERDICT",
                         help="Print every paper with this verdict (VERIFIED/WEAK/MISMATCH/PDF_UNREADABLE) and exit.")
+    parser.add_argument("--rescore-decided", action="store_true",
+                        help="Also re-verify papers a human already decided on. Overwrites those "
+                             "decisions -- only for deliberately re-checking a replaced PDF.")
     args = parser.parse_args()
 
     all_rows = read_manifest()
@@ -246,6 +252,17 @@ def main():
     rows = [r for r in all_rows if r["status"] == STATUS_OK]
     if args.set:
         rows = [r for r in rows if r["set"] == args.set]
+
+    # A human decision is not recomputable from the PDF, so it is not rescored.
+    # Skipping is the whole guard: a dropped paper's PDF has been moved aside,
+    # so verifying it would return PDF_UNREADABLE and erase the drop; a dropped
+    # paper whose PDF stayed would come back VERIFIED and silently re-enter the
+    # corpus; and a WEAK paper a human cleared would score WEAK again, because
+    # what resolved it was a person reading the file. See src/review_log.py.
+    decided = {} if args.rescore_decided else collect_decisions(REVIEW_DIR)
+    skipped = [r for r in rows if r["paper_id"] in decided]
+    rows = [r for r in rows if r["paper_id"] not in decided]
+
     if not rows:
         sys.exit("No fetched papers to verify. Run scripts/00_fetch_zotero.py first.")
 
@@ -255,6 +272,14 @@ def main():
                 print(f"{row['paper_id']} [{row['set']}] {row.get('verdict_reason','')} "
                       f"score={row.get('title_score','')}\n    {row['title'][:100]}")
         return
+
+    if skipped:
+        kinds = Counter(decided[r["paper_id"]][1] for r in skipped)
+        print(f"Skipping {len(skipped)} paper(s) with a recorded human decision "
+              f"(pass --rescore-decided to override):")
+        for reason, n in kinds.most_common():
+            print(f"  {n:5}  {reason}")
+        print()
 
     print(f"Verifying {len(rows)} paper(s) against Zotero metadata...\n")
     results = run_verification(rows, meta_by_id)

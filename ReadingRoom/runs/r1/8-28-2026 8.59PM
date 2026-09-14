@@ -1,0 +1,62 @@
+PS C:\Users\charl\OneDrive\Desktop\CU Anschutz Research\Cluster-Paper Review> py -3.12 scripts/20_reading_room.py --task data_analysis --round 1 --resume --resume-raw-dir results/04_classification/raw/data_analysis_r1 --effort high
+==========================================================================
+READING ROOM -- data_analysis round 1
+==========================================================================
+  promptbook   : v1  (promptbooks\v1\data_analysis.md)
+  model        : claude-sonnet-5
+  text         : data\extracted_text
+  papers       : 49  (nominal 50; short rounds are proceeded with, never re-cut -- DC47)
+    skipped 7NYXSVAI: manifest verdict=DROPPED
+  --resume     : 40 accepted, 0 awaiting checker, 0 review-required, 9 to go
+  room         : C:\Users\charl\AppData\Local\Temp\reading_room_aah3q75y
+  preflight    : logged in, 0 tools offered (the room is empty)
+  system prompt: 271 billed input tokens on a two-word probe (A17 ceiling 2,000; the CLI default measured 12,198)
+  CLI version  : 2.1.197
+  effort       : high  (pinned; the Batch API run passes the same level)
+  workers      : 1  (serial: no pool, one paper at a time)
+==========================================================================
+  [  1/9] ok              FHVQQIX3   15.0s   72,859 chars     34k tok  [refs_unprepared]
+  [  2/9] ok              9DKJKFAS   10.1s   88,330 chars     74k tok  [refs_unprepared]
+  [  3/9] ok              H7N83IW2    7.7s   47,691 chars     97k tok  [refs_unprepared]
+  [  4/9] ok              LU33978L    9.2s   54,250 chars    125k tok  [refs_unprepared]
+  [  5/9] ok              TEXLFQSL    6.2s   63,992 chars    156k tok  [refs_unprepared]
+  [  6/9] ok              VMHXT33Z   11.5s   57,782 chars    185k tok  [refs_unprepared]
+  [  7/9] ok              JCPBMIPX    5.9s   51,103 chars    209k tok  [refs_unprepared]
+  [  8/9] ok              FEHWGZSQ    8.5s   73,304 chars    244k tok  [refs_unprepared]
+  [  9/9] ok              U7PLGE75   14.2s   51,246 chars    270k tok  [refs_unprepared]
+==========================================================================
+  tokens  -> 270,015 billed in+out across 9 call(s)
+DONE -- 9/9 responses saved
+==========================================================================
+  raw     -> results\04_classification\raw\data_analysis_r1
+  ledger  -> results\04_classification\retry_ledger.csv
+  run env -> results\04_classification\raw\data_analysis_r1\run_environment.json  (commit e0adbcf5f401-dirty)
+  cost    -> $1.88 reported by the CLI (blank where it reported none -- never defaulted to 0, G7)
+
+  Next: python scripts/21_check_responses.py --task data_analysis --round 1   py -3.12 scripts/21_check_responses.py --task data_analysis --round 1 --promptbook-version v1 --writePaper Review> 
+==========================================================================
+CHECK RESPONSES -- data_analysis round 1
+==========================================================================
+  promptbook : v1 (15 rules)
+  responses  : 49
+  superseded : 9 earlier attempt(s) ignored (latest raw response per paper; evidence kept on disk)
+  ran under  : claude-sonnet-5 / effort high / CLI 2.1.197 / commit 619a0329711f
+
+  passed     : 48
+  failed     : 1
+      parse        1   (Dx1)
+
+  decisions  : {'no': 41, 'yes': 7}
+  data_analysis undecidable: 0/48 (0.0%)
+  data_analysis confidence : 13 distinct value(s), 0.55-0.95
+
+  --- FEHWGZSQ [D] ---
+      1 validation error for Decision
+reasoning
+  Value error, reasoning is 211 chars, cap is 200 [type=value_error, input_value="Randomization stratified...triction ignored (D11).", input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/value_error
+
+  report -> results\04_classification\checked\data_analysis_r1.csv
+
+  wrote 8 judgment(s) to data/review.db (promptbook v1, pass primary)
+PS C:\Users\charl\OneDrive\Desktop\CU Anschutz Research\Cluster-Paper Review> 

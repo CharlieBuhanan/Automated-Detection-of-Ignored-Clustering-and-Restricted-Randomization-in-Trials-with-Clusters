@@ -19,7 +19,7 @@ WHY THIS EXISTS
     a methods section, and conflating them is a fair criticism to invite.
 
 OUTPUTS
-    results/exclusions.csv   one row per excluded paper
+    results/01_corpus_build/exclusions.csv   one row per excluded paper
     Terminal                 reconciliation from fetched down to active
 """
 
@@ -32,11 +32,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from identity import looks_like_correction
+from zotero_fetch import SET_HUMAN_LABELLED, SET_UNLABELLED
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
 REVIEW_DIR = ROOT / "results" / "review"
-LEDGER = ROOT / "results" / "exclusions.csv"
+LEDGER = ROOT / "results" / "01_corpus_build" / "exclusions.csv"
 
 COLUMNS = [
     "paper_id", "set", "stage", "removed_from", "reason", "evidence",
@@ -60,29 +61,38 @@ def read_csv(path: Path) -> list[dict]:
 
 
 def cross_set_duplicates(titles: dict) -> list[dict]:
-    """Testing papers removed because the same paper sits in validation."""
+    """Unlabelled Set papers removed because the same paper sits in the Human Labelled Set.
+
+    DC42: the removal is conditional on the HLS twin surviving. A paper restored
+    by scripts/15_restore_dc42_duplicates.py is back in the corpus and is not an
+    exclusion any more, so it is skipped here -- leaving it in would count the
+    same paper as both active and excluded, and the reconciliation would fail.
+    """
+    restored = {r["paper_id"] for r in read_csv(REVIEW_DIR / "15_dc42_restored.csv")}
     rows = []
-    for row in read_csv(REVIEW_DIR / "02_removed_testing_duplicates.csv"):
+    for row in read_csv(REVIEW_DIR / "02_removed_us_duplicates.csv"):
         paper_id = row["removed_paper_id"]
+        if paper_id in restored:
+            continue
         rows.append({
             "paper_id": paper_id,
-            "set": "testing",
+            "set": SET_UNLABELLED,
             "stage": "cross_set_duplicate",
             "removed_from": "corpus",
-            "reason": f"same paper as validation {row['matched_validation_paper_id']}, "
+            "reason": f"same paper as Human Labelled Set {row['matched_validation_paper_id']}, "
                       f"which already carries a human label",
             "evidence": f"matched on {row['matched_on']}"
                         + (", PDF bytes identical" if row.get("pdf_bytes_identical") == "True" else ""),
             "decided_by": BY_RULE,
             "decided_at": "",
-            "source_record": "results/review/02_removed_testing_duplicates.csv",
+            "source_record": "results/review/02_removed_us_duplicates.csv",
             "title": titles.get(paper_id, row.get("title", "")),
         })
     return rows
 
 
 def merged_validation_duplicates() -> list[dict]:
-    """Validation rows folded into their NCI twin.
+    """Human Labelled Set rows folded into their NCI twin.
 
     Not an exclusion in the usual sense -- the paper is still in the study, it
     just has one row instead of two. It belongs here anyway: without it the
@@ -90,10 +100,10 @@ def merged_validation_duplicates() -> list[dict]:
     nothing to explain where they went.
     """
     rows = []
-    for row in read_csv(REVIEW_DIR / "06_merged_validation_duplicates.csv"):
+    for row in read_csv(REVIEW_DIR / "06_merged_hls_duplicates.csv"):
         rows.append({
             "paper_id": row["removed_paper_id"],
-            "set": "validation",
+            "set": SET_HUMAN_LABELLED,
             "stage": "validation_internal_duplicate",
             "removed_from": "corpus",
             "reason": f"same paper as {row['kept_paper_id']}, fetched from both the "
@@ -104,7 +114,7 @@ def merged_validation_duplicates() -> list[dict]:
                            else ", different PDF bytes"),
             "decided_by": BY_RULE,
             "decided_at": row.get("merged_at", ""),
-            "source_record": "results/review/06_merged_validation_duplicates.csv",
+            "source_record": "results/review/06_merged_hls_duplicates.csv",
             "title": row["title"],
         })
     return rows
@@ -200,7 +210,7 @@ def nhlbi_unreviewed_drops(titles: dict) -> list[dict]:
         paper_id = row["paper_id"]
         rows.append({
             "paper_id": paper_id,
-            "set": "validation",
+            "set": SET_HUMAN_LABELLED,
             "stage": "nhlbi_unreviewed",
             "removed_from": "corpus",
             "reason": row["reason"],
@@ -214,37 +224,122 @@ def nhlbi_unreviewed_drops(titles: dict) -> list[dict]:
     return rows
 
 
+def nonjudgeable_exclusion_drops(titles: dict) -> list[dict]:
+    """HLS papers whose exclusion reason the promptbook forbids the model to use.
+
+    protocol_paper and duplicate_group_random_drop are cross-paper judgments, so
+    a model judging each paper alone can never reproduce them. Scoring against
+    them would charge the model for obeying its own rules; they leave the scored
+    set instead. See scripts/10_drop_nonjudgeable_exclusions.py.
+    """
+    log = REVIEW_DIR / "10_nonjudgeable_exclusions_dropped.csv"
+    if not log.exists():
+        return []
+    rows = []
+    for row in read_csv(log):
+        paper_id = row["paper_id"]
+        rows.append({
+            "paper_id": paper_id,
+            "set": SET_HUMAN_LABELLED,
+            "stage": "nonjudgeable_exclusion",
+            "removed_from": "corpus",
+            "reason": row["reason"],
+            "evidence": f"human exclusion_reason={row['exclusion_reason']!r} "
+                        f"({row.get('source_institute', '')})",
+            "decided_by": BY_HUMAN,
+            "decided_at": row.get("dropped_at", ""),
+            "source_record": "results/review/10_nonjudgeable_exclusions_dropped.csv",
+            "title": titles.get(paper_id, ""),
+        })
+    return rows
+
+
 def unjoinable_labels(titles: dict) -> list[dict]:
-    """Human labels that could not be turned into one trustworthy answer.
+    """Citations that never resolved to a paper_id at all.
 
-    These do not remove a paper from the corpus -- the paper is still there and
-    still gets classified. What is lost is the ground truth for it, which
-    shrinks the validation denominator, so it belongs in the ledger with
-    `removed_from` saying exactly what was lost.
-
-    scripts/04_load_ground_truth.py writes two different problems to this file,
-    and they read differently here: an institutional disagreement already knows
-    its paper_id (NCI and NHLBI both reviewed it, they just disagreed), while an
-    unresolved citation genuinely does not (the citation itself never resolved).
+    Unlike an institutional disagreement, these do not know which paper is
+    meant -- the citation itself could not be matched. Institutional
+    disagreements are handled separately by institutional_disagreement_drops()
+    below: scripts/12_drop_institutional_disagreements.py fully drops those
+    papers from the corpus now (DC37), so listing them here too would double
+    them in the ledger under two different `removed_from` values for the same
+    underlying fact.
     """
     rows = []
     for row in read_csv(REVIEW_DIR / "05_label_match_review.csv"):
-        is_disagreement = row["problem"].startswith("institutional")
+        if row["problem"].startswith("institutional"):
+            continue
         rows.append({
             "paper_id": row.get("paper_id", ""),
-            "set": "validation",
-            "stage": "institutional_disagreement" if is_disagreement else "label_unjoinable",
+            "set": SET_HUMAN_LABELLED,
+            "stage": "label_unjoinable",
             "removed_from": "validation_labels",
             "reason": row["problem"],
-            "evidence": (f"NCI: {row.get('nci_answer', '')}; NHLBI: {row.get('nhlbi_answer', '')}"
-                        if is_disagreement else
-                        f"citation {row['citation_raw']!r}"
+            "evidence": (f"citation {row['citation_raw']!r}"
                         + (f"; cite_key {row['cite_key']!r}" if row.get("cite_key") else "")
                         + (f"; best match score {row['match_score']}" if row.get("match_score") else "")),
             "decided_by": BY_RULE,
             "decided_at": "",
             "source_record": "results/review/05_label_match_review.csv",
             "title": titles.get(row.get("paper_id", ""), ""),
+        })
+    return rows
+
+
+def institutional_disagreement_drops(titles: dict) -> list[dict]:
+    """HLS papers dropped because NCI and NHLBI disagreed and neither is preferred.
+
+    scripts/12_drop_institutional_disagreements.py's own log, not the review
+    file directly -- that script physically drops the paper from the manifest,
+    same as nhlbi_unreviewed_drops() and nonjudgeable_exclusion_drops() do for
+    their own categories.
+    """
+    log = REVIEW_DIR / "12_institutional_disagreements_dropped.csv"
+    if not log.exists():
+        return []
+    rows = []
+    for row in read_csv(log):
+        paper_id = row["paper_id"]
+        rows.append({
+            "paper_id": paper_id,
+            "set": SET_HUMAN_LABELLED,
+            "stage": "institutional_disagreement",
+            "removed_from": "corpus",
+            "reason": row["reason"],
+            "evidence": f"NCI: {row.get('nci_answer', '')}; NHLBI: {row.get('nhlbi_answer', '')}",
+            "decided_by": BY_HUMAN,
+            "decided_at": row.get("dropped_at", ""),
+            "source_record": "results/review/12_institutional_disagreements_dropped.csv",
+            "title": titles.get(paper_id, ""),
+        })
+    return rows
+
+
+def expert_review_drops(titles: dict) -> list[dict]:
+    """HLS papers dropped because a reviewer judged the label itself wrong (DC50).
+
+    scripts/18_drop_expert_review.py's own log. Distinct from an institutional
+    disagreement, where two reviewers split: here one reviewer read the row and
+    rejected it, so there is no second answer to weigh -- the label is simply not
+    trusted until the pile is adjudicated.
+    """
+    log = REVIEW_DIR / "18_expert_review_dropped.csv"
+    if not log.exists():
+        return []
+    rows = []
+    for row in read_csv(log):
+        paper_id = row["paper_id"]
+        rows.append({
+            "paper_id": paper_id,
+            "set": SET_HUMAN_LABELLED,
+            "stage": "expert_review_pending",
+            "removed_from": "corpus",
+            "reason": row["reason"],
+            "evidence": f"{row.get('judged_by', '')}: {row.get('what_is_wrong', '')}",
+            "decided_by": BY_HUMAN,
+            "decided_at": row.get("dropped_at", ""),
+            "source_record": "results/review/18_expert_review_dropped.csv",
+            "title": titles.get(paper_id, ""),
         })
     return rows
 
@@ -264,6 +359,9 @@ def main():
               + merged_validation_duplicates()
               + manual_drops(manifest)
               + nhlbi_unreviewed_drops(titles)
+              + nonjudgeable_exclusion_drops(titles)
+              + institutional_disagreement_drops(titles)
+              + expert_review_drops(titles)
               + unjoinable_labels(titles))
 
     # Two different kinds of removal, and conflating them makes the arithmetic
@@ -302,12 +400,17 @@ def main():
     # assume the ledger is the whole story.
     print("\n  NOTE: the 2115 collection placements -> 1494 unique papers reduction predates")
     print("        the manifest and is not enumerable per-paper here. It is documented in")
-    print("        results/unvalidated_set_summary.tex and must be cited separately.")
+    print("        results/01_corpus_build/unvalidated_set_summary.tex and must be cited separately.")
 
-    pending = read_csv(REVIEW_DIR / "03_validation_internal_duplicates.csv")
-    if pending:
-        print(f"\n  PENDING: {len(pending)} validation rows ({len(pending)//2} pairs) are flagged as")
-        print("           internal duplicates and not yet decided; none are excluded yet.")
+    # Only pairs 06_merge_hls_duplicates.py has not yet folded together are
+    # pending. Counting the whole flagged file kept reporting all 15 pairs as
+    # undecided long after the merge resolved them.
+    merged = {r["removed_paper_id"] for r in read_csv(REVIEW_DIR / "06_merged_hls_duplicates.csv")}
+    pending = [r for r in read_csv(REVIEW_DIR / "03_hls_internal_duplicates.csv")
+               if r["paper_id"] not in merged]
+    if len(pending) > len(merged):
+        print(f"\n  PENDING: {len(pending) - len(merged)} HLS row(s) are flagged as")
+        print("           internal duplicates and not yet merged.")
 
     if args.check:
         print("\n--check: nothing written.")

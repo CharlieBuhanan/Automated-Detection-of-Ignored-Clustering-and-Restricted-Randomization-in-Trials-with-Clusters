@@ -19,7 +19,7 @@ WHAT IT DOES
 
     Nothing is deleted. Both the PDF and its cached extracted text are moved
     to data/removed_pdfs/nhlbi_unreviewed/, mirroring how 03_review_mismatches.py
-    and 06_merge_validation_duplicates.py handle every other drop -- except
+    and 06_merge_hls_duplicates.py handle every other drop -- except
     those two delete the cached text once a paper leaves; this one does not,
     because the full text is exactly what a later review would need if the
     NHLBI team ever does reach these papers.
@@ -49,7 +49,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-from zotero_fetch import MANIFEST_COLUMNS
+from zotero_fetch import MANIFEST_COLUMNS, SET_HUMAN_LABELLED, set_dir
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "data" / "zotero_manifest.csv"
@@ -57,7 +57,7 @@ GROUND_TRUTH = ROOT / "data" / "ground_truth.csv"
 LOG = ROOT / "results" / "review" / "09_nhlbi_unreviewed_dropped.csv"
 MOVED_PDF_DIR = ROOT / "data" / "removed_pdfs" / "nhlbi_unreviewed"
 MOVED_TEXT_DIR = MOVED_PDF_DIR / "extracted_text"
-PDF_DIR = ROOT / "data" / "raw_pdfs" / "validation"
+PDF_DIR = set_dir(ROOT, SET_HUMAN_LABELLED)
 CACHE_DIR = ROOT / "data" / "extracted_text"
 
 VERDICT_REASON = "NHLBI_UNREVIEWED"

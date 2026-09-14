@@ -79,7 +79,7 @@ def extract_head_text(pdf_path: Path, pages: int = HEAD_PAGES) -> tuple[str, int
 
     Deliberately separate from extract_pdf_text: identity is decided on front
     matter (title, authors, DOI), and full extraction is expensive to run over
-    a corpus that has not been verified yet. PLAN.md step 1 runs this; step 2
+    a corpus that has not been verified yet. research design/PLAN.md step 1 runs this; step 2
     runs the full pass, on verified papers only.
 
     The last page is NOT included, though an earlier draft called for it to
@@ -125,7 +125,7 @@ def extract_pdf_text(pdf_path: Path) -> dict:
     """Extract text from a single PDF, trying pymupdf -> pdfplumber -> ocr in
     order and stopping at the first non-sparse result (falling through on
     any extractor exception). paper_id is taken from the filename stem, so
-    e.g. data/raw_pdfs/validation/PMC1234567.pdf -> paper_id "PMC1234567".
+    e.g. data/raw_pdfs/Human Labelled Set/PMC1234567.pdf -> paper_id "PMC1234567".
 
     Returns a dict ready to cache to JSON:
         paper_id, source_path, method (which extractor won, "none" if all

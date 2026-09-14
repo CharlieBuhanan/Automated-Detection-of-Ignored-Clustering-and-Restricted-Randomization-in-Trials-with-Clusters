@@ -1,0 +1,110 @@
+PS C:\Users\charl\OneDrive\Desktop\CU Anschutz Research\Cluster-Paper Review> py -3.12 scripts/20_reading_room.py --task power_analysis --round 1
+==========================================================================
+READING ROOM -- power_analysis round 1
+==========================================================================
+  promptbook   : v1  (promptbooks\v1\power_analysis.md)
+  model        : claude-sonnet-5
+  text         : data\extracted_text
+  papers       : 49  (nominal 50; short rounds are proceeded with, never re-cut -- DC47)
+    skipped 7NYXSVAI: manifest verdict=DROPPED
+  room         : C:\Users\charl\AppData\Local\Temp\reading_room_ifmrh06k
+  preflight    : logged in, 0 tools offered (the room is empty)
+  system prompt: 271 billed input tokens on a two-word probe (A17 ceiling 2,000; the CLI default measured 12,198)
+  CLI version  : 2.1.197
+  effort       : medium  (pinned; the Batch API run passes the same level)
+  workers      : 1  (serial: no pool, one paper at a time)
+==========================================================================
+  [  1/49] ok              WCA66X4I    4.8s   89,104 chars     39k tok  [refs_unprepared]
+  [  2/49] ok              6XFGQN39    7.1s   72,091 chars     71k tok  [refs_unprepared]
+  [  3/49] ok              D24FD6G2    7.6s   50,885 chars     96k tok  [refs_unprepared]
+  [  4/49] ok              2RDD8DGI    3.7s   46,963 chars    120k tok  [refs_unprepared]
+  [  5/49] ok              HPIL7WVW    5.7s   56,905 chars    149k tok  [refs_unprepared]
+  [  6/49] ok              KMRQTRP3    3.8s   44,409 chars    171k tok  [refs_unprepared]
+  [  7/49] ok              5VWZPNEQ    4.8s   90,307 chars    210k tok  [refs_unprepared]
+  [  8/49] ok              MTLFVN94    6.5s   53,920 chars    236k tok  [refs_unprepared]
+  [  9/49] ok              ZETJJPRR    3.4s   46,952 chars    259k tok  [refs_unprepared]
+  [ 10/49] ok              CKEF67C5    4.9s   52,817 chars    285k tok  [refs_unprepared]
+  [ 11/49] ok              C9P63S2B    7.7s   79,760 chars    322k tok  [refs_unprepared]
+  [ 12/49] ok              2BDG7GVP    3.6s   44,081 chars    343k tok  [refs_unprepared]
+  [ 13/49] ok              BAABE7JM    3.8s   45,709 chars    364k tok  [refs_unprepared]
+  [ 14/49] ok              LGEECHQM    7.6s   60,076 chars    391k tok  [refs_unprepared]
+  [ 15/49] ok              UPVYYFVQ    4.0s  108,489 chars    451k tok  [refs_unprepared]
+  [ 16/49] ok              XFPCQLGP    6.0s   57,974 chars    480k tok  [refs_unprepared]
+  [ 17/49] ok              NQ4Y7FIA    3.3s  113,178 chars    526k tok  [refs_unprepared]
+  [ 18/49] ok              BLWKH6C8    3.8s   54,159 chars    551k tok  [refs_unprepared]
+  [ 19/49] ok              C69UAKKB    5.5s   83,781 chars    590k tok  [refs_unprepared]
+  [ 20/49] ok              FHVQQIX3    3.7s   72,859 chars    623k tok  [refs_unprepared]
+  [ 21/49] ok              4GUDDLNQ    6.7s   75,461 chars    659k tok  [refs_unprepared]
+  [ 22/49] ok              B3KTU9TU    5.8s   55,644 chars    685k tok  [refs_unprepared]
+  [ 23/49] ok              WY9D5UIK    3.8s   26,659 chars    700k tok  [refs_unprepared]
+  [ 24/49] ok              SGCHKJTH    3.6s   78,541 chars    735k tok  [refs_unprepared]
+  [ 25/49] ok              DFJE8ALD    5.3s   49,870 chars    759k tok  [refs_unprepared]
+  [ 26/49] ok              9LTSBSEE    3.5s   60,323 chars    789k tok  [refs_unprepared]
+  [ 27/49] ok              IPR6QU8P    3.5s   55,690 chars    818k tok  [refs_unprepared]
+  [ 28/49] ok              SH5J2R2J    5.2s   56,113 chars    845k tok  [refs_unprepared]
+  [ 29/49] ok              UHEKLJLC    5.2s   61,789 chars    875k tok  [refs_unprepared]
+  [ 30/49] ok              TGSIADX6    4.7s   47,354 chars    897k tok  [refs_unprepared]
+  [ 31/49] ok              BR4Y6FSS    3.6s   49,294 chars    922k tok  [refs_unprepared]
+  [ 32/49] ok              26LDPI8G    4.6s   53,389 chars    948k tok  [refs_unprepared]
+  [ 33/49] ok              7M6ST2JQ   17.5s   51,879 chars    976k tok  [refs_unprepared]
+  [ 34/49] ok              L8CPLJYW    6.0s   56,303 chars   1.00M tok  [refs_unprepared]
+  [ 35/49] ok              TBFRUAMD    5.9s   74,621 chars   1.04M tok  [refs_unprepared]
+  [ 36/49] ok              BW2B5H9P    4.9s   40,164 chars   1.06M tok  [refs_unprepared]
+  [ 37/49] ok              DCYTWR4N    3.4s   33,338 chars   1.07M tok  [refs_unprepared]
+  [ 38/49] ok              72N55PAH    3.4s   49,491 chars   1.10M tok  [refs_unprepared]
+  [ 39/49] ok              84YU8UCD    5.4s   65,279 chars   1.13M tok  [refs_unprepared]
+  [ 40/49] process_failure UMV6NC2L    1.8s   74,924 chars   1.13M tok  [refs_unprepared]
+  [ 41/49] process_failure WD74R75C    1.8s   51,441 chars   1.13M tok  [refs_unprepared]
+  [ 42/49] process_failure 9DKJKFAS    1.7s   88,330 chars   1.13M tok  [refs_unprepared]
+  [ 43/49] process_failure H7N83IW2    1.8s   47,691 chars   1.13M tok  [refs_unprepared]
+  [ 44/49] process_failure LU33978L    1.8s   54,250 chars   1.13M tok  [refs_unprepared]
+  [ 45/49] process_failure TEXLFQSL    1.8s   63,992 chars   1.13M tok  [refs_unprepared]
+  [ 46/49] process_failure VMHXT33Z    1.9s   57,782 chars   1.13M tok  [refs_unprepared]
+  [ 47/49] process_failure JCPBMIPX    1.8s   51,103 chars   1.13M tok  [refs_unprepared]
+  [ 48/49] process_failure FEHWGZSQ    1.8s   73,304 chars   1.13M tok  [refs_unprepared]
+  [ 49/49] process_failure U7PLGE75    1.8s   51,246 chars   1.13M tok  [refs_unprepared]
+==========================================================================
+  tokens  -> 1,130,657 billed in+out across 49 call(s)
+DONE -- 39/49 responses saved
+==========================================================================
+  raw     -> results\04_classification\raw\power_analysis_v1_r1
+  ledger  -> results\04_classification\retry_ledger.csv
+  run env -> results\04_classification\raw\power_analysis_v1_r1\run_environment.json  (commit eecb7fca193a-dirty)
+  cost    -> $7.73 reported by the CLI (blank where it reported none -- never defaulted to 0, G7)
+
+  Next: python scripts/21_check_responses.py --task power_analysis --round 1  python scripts/21_check_responses.py --task power_analysis --round 1earch\Cluster-Paper Review> 
+==========================================================================
+CHECK RESPONSES -- power_analysis round 1
+==========================================================================
+  promptbook : v1 (18 rules)
+  responses  : 49
+  ran under  : claude-sonnet-5 / effort medium / CLI 2.1.197 / commit eecb7fca193a
+
+  passed     : 37
+  failed     : 12
+      parse        2   (Dx2)
+      process     10   (-x10)
+
+  decisions  : {'no': 30, 'yes': 7}
+  power_analysis undecidable: 0/37 (0.0%)
+  power_analysis confidence : 10 distinct value(s), 0.55-0.90
+
+  --- 2RDD8DGI [D] ---
+      1 validation error for Decision
+reasoning
+  Value error, reasoning is 208 chars, cap is 200 [type=value_error, input_value="ICC (0.001), effect size...ustering accounted for.", input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/value_error
+
+  --- UPVYYFVQ [D] ---
+      1 validation error for Decision
+reasoning
+  Value error, reasoning is 235 chars, cap is 200 [type=value_error, input_value='Sample size calc uses in... across families noted.', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/value_error
+
+  --- UMV6NC2L [] ---
+      exit code 1
+
+  report -> results\04_classification\checked\power_analysis_r1.csv
+
+  Nothing written -- not the database or retry ledger. Re-run with --write to insert 37 judgment(s) and file 39 final ledger row(s).
+PS C:\Users\charl\OneDrive\Desktop\CU Anschutz Research\Cluster-Paper Review> 
