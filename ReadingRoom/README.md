@@ -192,8 +192,14 @@ observed tool list, host, OS, python version, start and finish times.
 
 The `run_log.csv` row per paper holds what varies: `request_id`, `session_id`,
 durations, `stop_reason`, `terminal_reason`, full token counts,
-`total_cost_usd`, `service_tier`, `inference_geo`, `context_window`, `attempt`,
-`exit_code`.
+`total_cost_usd`, `estimated_cost_usd_current`, `pricing_version`,
+`service_tier`, `inference_geo`, `context_window`, `attempt`, `exit_code`.
+
+`total_cost_usd` is retained exactly as the CLI reported it. It is provenance,
+not the current estimate: an installed CLI can carry an obsolete price card.
+`estimated_cost_usd_current` is independently calculated by `src/pricing.py`
+from the recorded model usage and cache TTL using the dated `pricing_version`.
+If either the model price or cache TTL is unknown, the estimate stays blank.
 
 **A field the CLI did not send is written as an empty cell, never as a zero.** A
 fabricated `0` for `total_cost_usd` is indistinguishable from a free call, and

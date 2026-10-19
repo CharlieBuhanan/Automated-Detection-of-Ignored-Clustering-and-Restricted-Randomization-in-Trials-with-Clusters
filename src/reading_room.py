@@ -46,6 +46,7 @@ from functools import partial
 from pathlib import Path
 
 import db
+import pricing
 import reference_strip
 import schemas
 
@@ -1905,7 +1906,8 @@ PROVENANCE_COLUMNS = [
     "stop_reason", "terminal_reason",
     "input_tokens", "output_tokens", "cache_read_input_tokens",
     "cache_creation_input_tokens", "billed_input_tokens",
-    "total_cost_usd", "service_tier", "speed", "inference_geo",
+    "total_cost_usd", "estimated_cost_usd_current", "pricing_version",
+    "service_tier", "speed", "inference_geo",
     "fast_mode_state", "context_window", "max_output_tokens",
     "permission_denials",
 ]
@@ -1979,6 +1981,18 @@ def paper_provenance(stream_text: str) -> dict:
     billed = billed_input_tokens(usage)
     if billed is not None:
         row["billed_input_tokens"] = billed
+
+    # Preserve the CLI's reported total above, but do not use it as the current
+    # estimate: CLI 2.1.197 retained Sonnet's discontinued $3/$15 price card.
+    # Current Claude Code results state the cache TTL in the raw usage block.
+    # If a future version omits it, leave the estimate absent rather than guess.
+    try:
+        estimate = pricing.estimate_result_cost(result)
+    except pricing.PricingError:
+        estimate = None
+    if estimate is not None:
+        row["estimated_cost_usd_current"] = float(estimate.total_usd)
+        row["pricing_version"] = estimate.pricing_version
 
     for event in stream_events(stream_text):
         if event.get("type") == "assistant" and event.get("request_id"):

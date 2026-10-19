@@ -530,8 +530,14 @@ def main() -> int:
           f"{calls_made} call(s){unreported}")
 
     ok = sum(1 for r in log_rows if r["outcome"] == "ok")
-    cost = sum(r["total_cost_usd"] for r in log_rows
-               if isinstance(r.get("total_cost_usd"), (int, float)))
+    provider_cost = sum(r["total_cost_usd"] for r in log_rows
+                        if isinstance(r.get("total_cost_usd"), (int, float)))
+    current_cost = sum(r["estimated_cost_usd_current"] for r in log_rows
+                       if isinstance(r.get("estimated_cost_usd_current"),
+                                     (int, float)))
+    priced = sum(1 for r in log_rows
+                 if isinstance(r.get("estimated_cost_usd_current"),
+                               (int, float)))
     print(f"DONE -- {ok}/{len(log_rows)} responses saved\n{bar}")
     print(f"  raw     -> {raw_dir.relative_to(ROOT)}")
     print(f"  ledger  -> {LEDGER.relative_to(ROOT)}")
@@ -539,8 +545,9 @@ def main() -> int:
           f"  (commit {environment['git_commit'][:12]}"
           + ("-dirty" if environment["git_commit"].endswith("-dirty") else "")
           + ")")
-    print(f"  cost    -> ${cost:.2f} reported by the CLI "
-          f"(blank where it reported none -- never defaulted to 0, G7)")
+    print(f"  cost    -> ${current_cost:.2f} current estimate across "
+          f"{priced}/{calls_made} call(s)"
+          f"; ${provider_cost:.2f} reported by the CLI")
     print(f"\n  Next: python scripts/21_check_responses.py --task {args.task} "
           f"--round {args.round}")
     return 0

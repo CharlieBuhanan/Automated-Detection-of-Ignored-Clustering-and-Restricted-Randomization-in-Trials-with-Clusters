@@ -7,7 +7,8 @@ All figures measured from the corpus on 2026-08-26, not estimated:
 scaffolding), ~300 output. Corpus: 1,306 US papers; survivors projected at 36%
 (the HLS rate, 176/483) = **476**, so 1,306 + 476×2 = **2,258 single-pass calls**.
 
-Prices per 1M tokens, Batch API at half:
+Current standard API prices per 1M tokens are shown below. Every Batch API
+calculation in this document applies the 50% batch discount to these rates:
 
 | Model | Input | Output |
 |---|---:|---:|
