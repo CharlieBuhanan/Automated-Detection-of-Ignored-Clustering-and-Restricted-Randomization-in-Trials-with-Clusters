@@ -9,7 +9,7 @@ Standing rules live in [.claude/CLAUDE.md](../.claude/CLAUDE.md).
 about **$60** against a $100 budget.** The goal is to prove the pipeline end to end,
 not to produce the final numbers: single pass, no self-consistency voting,
 refinement on the CLI against subscription quota so the budget goes entirely to
-the Batch API production run. Full breakdown in [Costs.md](Costs.md).
+the API production run (now UF NaviGator, DC59). Full breakdown in [Costs.md](Costs.md).
 
 What that buys: a survivor count with per-paper drop reasons, power and data
 accuracy on the survivors, and one holdout number. What it does not buy:
@@ -23,13 +23,41 @@ have plateaued. Those wait for run 2.
 - [ ] Refactor the draft email to Deb and Keith.
 - [ ] Convene the Keith/Deb expert-review meeting for the three restorable review piles.
 - [ ] Complete Group G of the Reading Room CLI test plan.
-- [ ] Implement and offline-validate the build-set Message Batches API path.
+- [ ] **Implement NaviGator API calls** (DC59), replacing the Message Batches API path. Base URL
+      `https://api.ai.it.ufl.edu`. Reuse the manifest, guard, ledger, and validation design in
+      [API_BUILD_SET_IMPLEMENTATION.md](API_BUILD_SET_IMPLEMENTATION.md); swap only the transport.
+      - Endpoint: OpenAI-style `/v1/chat/completions` or Anthropic-style `/v1/messages`. Test both once
+        Claude is enabled for the team.
+      - Structured output: confirm which JSON-schema option NaviGator passes through for Claude. Local
+        Pydantic validation stays either way.
+      - No batch endpoint (assumed): bounded concurrency, rate-limit backoff, retries, resumable per paper.
+      - Effort: confirm how the `medium` effort setting (DC55) maps through NaviGator.
+      - Cost: record each call's `x-litellm-response-cost` header; check whether prompt caching works.
+      - Offline tests first. The user runs every paid call (`scripts/navigator_check.py` is the access test).
 - [ ] Write `promptbook_builder.py`, `two_pass.py`, and the run-log / accuracy-history artifacts.
 - [ ] Refactor the power and data-analysis promptbooks into one combined analysis block.
 - [ ] Use a fixed exploratory subset for promptbook-refinement rounds; reserve a full regression for a plateau claim.
-- [ ] Complete the Batch API transport once credits are available.
+- [ ] Keith requests the NaviGator team for Claude access ([Deb.md](Deb.md) item 1). NaviGator calls
+      cannot use Claude until then.
 - [ ] Consolidate the corpus-breakdown `.tex` sources and publish the corpus-breakdown artifact.
 - [ ] Prepare the LaTeX review document covering the three Deb/Keith adjudication piles.
+
+## Possibility: compare free UF models via NaviGator (not planned yet)
+
+UF NaviGator's **local** HiPerGator models run on the personal key's free $100/month credit (no
+team needed). The llama test call (2026-11-09) billed ~$0.40 per 1M input tokens, so one exclusion
+pass over all 1,306 papers is roughly **$8**. Cloud Claude still needs Keith's team (Deb.md item 1).
+
+- **Worth testing:** `gpt-oss-120b`, `nemotron-3-super-120b-a12b`, `llama-3.3-70b-instruct`,
+  `gemma-4-31b-it`, `medgemma-27b-it` (medical-tuned).
+- **Skip:** image (flux), audio (whisper, kokoro), embeddings (nomic, sfr), `granite-3.3-8b` (too small).
+- **Caveats:** likely weaker than Claude on subtle stats calls, so measure on the build split only.
+  Check each model's context limit (papers are ~15k tokens). JSON-output support varies; local
+  Pydantic validation still applies.
+- **Design question:** the study is framed as "classify with Claude". A model comparison could be
+  a secondary result, but ask Deb and Keith before adding it.
+- **When:** after the pipeline refactor, as a small exclusion-only comparison on build papers. The
+  user runs it (never Claude Code).
 
 ## Roadmap record
 
@@ -178,7 +206,8 @@ have plateaued. Those wait for run 2.
       build score is developmental and must be reported as mixed-configuration. It cannot establish
       a DC17/G11 plateau or be described as a clean medium-effort estimate. The final holdout remains
       one untouched, internally consistent medium-effort run.
-- [ ] **Implement the build-set Message Batches API path and offline validation.** Full architecture,
+- [ ] ~~**Implement the build-set Message Batches API path and offline validation.**~~ **Transport
+      superseded by NaviGator (DC59)**; the rest of this design still applies. Full architecture,
       paid-call guards, reuse matrix, artifact layout, evaluation contract, cost controls, and test
       cases are in [API_BUILD_SET_IMPLEMENTATION.md](API_BUILD_SET_IMPLEMENTATION.md). This handoff
       stops before any synchronous preflight or batch submission; paid calls require a later,
@@ -237,7 +266,8 @@ have plateaued. Those wait for run 2.
       discipline is simply not writing the CSV row, and DC32's warning about subset noise applies
       to reported numbers, not to exploratory ones. This is what makes the first few batches
       affordable.
-- [ ] **Lever 3 — the Batch API, when credits land.** The actual fix, and already half-built in
+- [ ] **Lever 3 — the API route, now UF NaviGator (DC59).** No batch discount there, but still a
+      budget separate from the 5-hour window. Originally the Batch API, half-built in
       `src/api_contract.py`. 50% off, and critically it is a **separate budget that does not touch
       the 5-hour window at all**. A references-stripped full exclusion regression is roughly 4.1M
       input tokens, run overnight. Note that the Reading Room deliberately strips
@@ -776,7 +806,7 @@ scored as misses.
    quota rather than API credits.** `claude -p "<prompt>" --output-format json` runs headless and
    authenticates off the subscription login. A small script walks `data/extracted_text_stripped/*.json`, pipes
    each paper's text in with the current promptbook, and writes one response JSON per paper to a new
-   directory for hand-inspection. Only for promptbook refinement — the full run stays on the Batches API
+   directory for hand-inspection. Only for promptbook refinement — the full run goes through the NaviGator API
    (see the standing rule). Two trade-offs to accept if we go this way: no provider-enforced JSON
    Schema, so the prompt has to ask for JSON and the wrapper validates with Pydantic and re-prompts on
    a parse failure; and one process per paper, so no prompt caching and it runs slower. Fine at <100
@@ -1044,7 +1074,7 @@ what a reader needs to re-run it, and it is what the run log already records.
    with one.
 2. **Canary run**: ~20 papers against a decoy `ground_truth.csv` with flipped labels, tools
    deliberately *on*. If accuracy tracks the decoy, it is reading rather than reasoning.
-3. The holdout, run once through the Batch API, which does not depend on trusting the loop at all.
+3. The holdout, run once through the NaviGator API, which does not depend on trusting the loop at all.
 
 ## Batch run log
 

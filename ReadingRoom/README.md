@@ -87,7 +87,7 @@ so. That is the failure this directory exists to prevent.
 |---|---|---|
 | **Empty room** | `cwd` = a fresh scratch dir **per paper**, outside the repo. Never `--add-dir`. A per-paper `CLAUDE_CONFIG_DIR` holding only the credentials | No CLAUDE.md, no memory, no relative path to the answers, no previous paper's transcript |
 | **No hands** | `--tools ""`, plus `permissions.deny`, plus `--max-turns 1`, plus an assertion that the CLI **reported** zero tools | Makes it a pure text completion. `--tools ""` is the availability filter and the mechanism; `--allowed-tools ""` is only a permission allowlist and removes nothing |
-| **No persona** | `--system-prompt` carrying one pinned minimal prompt, sha256'd into the run log | The model is a reader, not Claude Code the coding agent. **This is the wall that makes the Reading Room and the Batch API the same experiment** |
+| **No persona** | `--system-prompt` carrying one pinned minimal prompt, sha256'd into the run log | The model is a reader, not Claude Code the coding agent. **This is the wall that makes the Reading Room and the NaviGator API the same experiment** |
 | **Paper by hand** | Text on **stdin**, never a path. Output captured from stdout | One paper's response is not readable by the next |
 | **No name** | Send a random token; the wrapper keeps token → `paper_id` | A leak is not lookup-able even if one happens |
 
@@ -177,7 +177,7 @@ or a reused `--session-id`.
 | | | Why this value |
 |---|---|---|
 | Model | `claude-sonnet-5` | Pinned to the model the **batch** run uses. A promptbook refined against one model and shipped against another is tuned on nothing |
-| Effort | `medium` | `--effort` here, `output_config.effort` on the Batch API — the same level on both sides, for the same reason |
+| Effort | `medium` | `--effort` here, the matching effort setting on the NaviGator API — the same level on both sides, for the same reason |
 | Thinking | adaptive | The only on-mode on Sonnet 5. Not settable from the CLI, and `budget_tokens` is removed on this model |
 | System prompt | pinned minimal, hashed | `prompts/system_prompt.txt`. **One line** — see live finding 7 |
 | Tools | none, asserted | `--tools ""` + `permissions.deny` + `init.tools == []` |
@@ -231,7 +231,7 @@ harness that has only been tested against a fake.
 | 3 | **The room could not log in.** A7 points `CLAUDE_CONFIG_DIR` at an empty dir — which is also where the CLI keeps `.credentials.json` | The fake CLI does not authenticate |
 | 4 | The CLI writes session transcripts into `CLAUDE_CONFIG_DIR`, so after paper 1 that dir contained `projects/` and A7 refused every later paper | Needs a real process that writes as a side effect |
 | 5 | A `wrong_text` answer was rejected for citing no rule id — but the promptbook **itself** specifies `WRONG_TEXT` as the evidence there. The model was right and the checker was wrong | Needs a real model reading the real promptbook |
-| 6 | **Every call was carrying ~12,200 tokens of Claude Code's agentic system prompt** — coding persona, tool instructions, cwd/git/env/memory sections. Visible as `cache_creation 9140` + `cache_read 3058` on a two-word prompt. The room was sealed against **files** and wide open to a **persona**, and the promptbook was being tuned against a coding agent then shipped to a bare Batch API classifier | Nothing in the harness looked at token counts |
+| 6 | **Every call was carrying ~12,200 tokens of Claude Code's agentic system prompt** — coding persona, tool instructions, cwd/git/env/memory sections. Visible as `cache_creation 9140` + `cache_read 3058` on a two-word prompt. The room was sealed against **files** and wide open to a **persona**, and the promptbook was being tuned against a coding agent then shipped to a bare NaviGator API classifier | Nothing in the harness looked at token counts |
 | 7 | **A newline in `--system-prompt` silently removes walls.** On Windows `claude` is a `.cmd` shim and cmd.exe's `%*` ends the command line at the first newline: a three-paragraph prompt arrived as its opening sentence, and `--strict-mcp-config` and `--settings` never arrived at all. Exit code 0, tools still empty, nothing in any log | `verify_argv` inspects the argv we *built*, not the one the child received. Caught only because `fake_claude.py` is a **real shim on `PATH`**, not a monkeypatched `subprocess.run` |
 
 **What changed as a result.** `--tools ""` is the mechanism and `permissions.deny`
@@ -252,7 +252,7 @@ every paper identically.
 1. **`stream-json` assertion** — zero `tool_use` and zero `tool_result` blocks
    per paper, plus zero tools *offered*; any round with one is discarded whole.
    Asserted in both scripts.
-2. **The holdout**, run once through the Batch API, which does not depend on
+2. **The holdout**, run once through the NaviGator API, which does not depend on
    trusting this loop at all.
 
 **The canary was cut (2026-08-27).** The plan was ~20 papers against a decoy

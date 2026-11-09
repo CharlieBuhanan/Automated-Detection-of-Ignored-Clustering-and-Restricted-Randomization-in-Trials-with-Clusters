@@ -1,5 +1,10 @@
 # Build-set API implementation and offline-validation handoff
 
+> **Transport superseded 2026-11-09 (DC59):** production now runs through UF NaviGator, not
+> Anthropic Message Batches. Keep this document's manifest, guard, ledger, validation, and
+> evaluation design; replace batch creation, polling, and download with NaviGator calls. See the
+> PLAN.md task "Implement NaviGator API calls".
+
 Status: design handoff, 2026-08-28. Implement this plan without making any live
 Anthropic request. A synchronous preflight, batch creation, polling, result
 download, cancellation, and deletion are all out of scope until the user gives

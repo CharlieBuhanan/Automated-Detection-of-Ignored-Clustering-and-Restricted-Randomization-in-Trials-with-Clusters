@@ -15,7 +15,7 @@ Everything else has been settled; the decisions are recorded as DC1-DC55 below.
 | **O2** | **Inter-rater statistic for the 15 dual-reviewed pairs.** Deferred, not declined: raw agreement is 12/15 = 80%. Decide before writing the methods section whether Cohen's kappa is reported alongside it. | Methods section |
 | **O3** | **The 7 rows flagged `restricted_rand = yes` whose `should` never asks for it.** Three were scored *correct* despite the restriction being unaccounted for — the Cattamanchi shape (DC50). Written up as a table for Deb in [Deb.md](Deb.md); decides whether they join the expert-review pile, and whether `data_should` can be compared against `promptbook_evidence` at all. | Nothing yet |
 | **O4** | **Is the 5-hour subscription ceiling metered on raw tokens or on cost-equivalent?** If cost-equivalent, the 1.25× cache-write premium is costing ~20% for nothing — `cache_read` is zero on all 134 calls measured, because each sealed process writes a cache it never reads — and killing that premium jumps above lever 2 in priority. If raw tokens, it is worth nothing and can be ignored. Cheap to settle: one round's usage blocks against the observed window. | Ordering of the cost levers (PLAN.md TODO) |
-| **O6** | **How many refinement rounds until plateau?** Decides whether lever 2 (exploratory rounds on a fixed 50-paper subset, no history row) is sufficient on its own, or whether Batch API credits are a prerequisite for finishing rather than an optimization. Nothing to decide yet — it is answered by rounds 1-3 under `v2`, and it is worth writing the guess down first. | Whether lever 3 is on the critical path |
+| **O6** | **How many refinement rounds until plateau?** Decides whether lever 2 (exploratory rounds on a fixed 50-paper subset, no history row) is sufficient on its own, or whether NaviGator API access is a prerequisite for finishing rather than an optimization. Nothing to decide yet — it is answered by rounds 1-3 under `v2`, and it is worth writing the guess down first. | Whether lever 3 is on the critical path |
 
 ---
 
@@ -80,6 +80,13 @@ Everything else has been settled; the decisions are recorded as DC1-DC55 below.
   paper payload without mixing gate and analysis or task audit trails.
 - **DC55 — Production effort is pinned to `medium`.** Decided 2026-08-28. Reading Room and Batch API
   scored calls use `medium`, not the unaffordable prior `high`; preflight is required after a change.
+- **DC59 — The full run goes through UF NaviGator, not the Anthropic Message Batches API.** Decided
+  2026-11-09. Claude is reached through UF's NaviGator Toolkit on a faculty team (Keith, HOBI),
+  billed to a UF department, instead of Anthropic API credits. NaviGator likely has no batch
+  endpoint, so the batch discount is lost (full run ≈ $120 at standard prices vs ≈ $59 batched)
+  and runs become rate-limited concurrent calls. The manifest, guard, ledger, and validation design
+  in API_BUILD_SET_IMPLEMENTATION.md is kept; only the transport changes. Supersedes DC22's
+  full-run transport.
 - **DC57 — References-stripping is a new promptbook version, without restarting the baseline.**
   Decided 2026-08-28. The promptbook bytes do not change, but the text supplied to the model does;
   `v2` records that new reading condition. `exclusion_r1` remains the baseline: its 49 accepted
@@ -361,7 +368,8 @@ Everything else has been settled; the decisions are recorded as DC1-DC55 below.
   from and has not re-read them. `judged_by` says which is which, and the adjudication must not
   flatten the two.
 
-- **DC22 — Message Batches API for the full run; `claude -p` CLI for the promptbook loop.** The full
+- **DC22 — Message Batches API for the full run; `claude -p` CLI for the promptbook loop.**
+  **Full-run transport superseded by DC59 (2026-11-09): UF NaviGator, not the Batches API.** The full
   run is batch classification, not agentic tool use — Batches API, not sync calls, no MCP. The
   promptbook-refinement rounds run through the CLI instead, on subscription quota, **including their
   scored numbers** (see DC14 and DC24 for the trade-off that buys). Label leakage there is blocked

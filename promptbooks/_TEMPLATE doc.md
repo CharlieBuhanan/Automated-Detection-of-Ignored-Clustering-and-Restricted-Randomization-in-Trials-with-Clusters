@@ -18,7 +18,7 @@ plotted and cited. Anything in a table below must match a row there.
 | Parent | `vX-1` (or `—` for v0) |
 | Git commit | hash of the commit that froze this version |
 | Model used to build it | Claude Opus 5 / Sonnet 5 |
-| Route | CLI / Batch API |
+| Route | CLI / NaviGator API |
 | Status | draft / run-frozen / superseded / abandoned |
 
 A version is a mutable draft only before its first paid/raw model request. That

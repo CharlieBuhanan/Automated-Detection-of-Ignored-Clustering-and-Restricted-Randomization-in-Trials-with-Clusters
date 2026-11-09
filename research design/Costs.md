@@ -2,6 +2,10 @@
 
 Budget for run 1: **$100. Target ~$60.** Proof of concept, not the final study.
 
+> **2026-11-09: production moves to UF NaviGator (DC59).** NaviGator likely has no batch discount,
+> so the batch figures below roughly double at standard prices (full run ≈ $120 instead of ≈ $59).
+> NaviGator's Claude rates are not known yet; the suggested team budget is $300/month.
+
 All figures measured from the corpus on 2026-08-26, not estimated:
 **15,470 input tokens per call** (13,570 paper text + 1,600 promptbook + ~300
 scaffolding), ~300 output. Corpus: 1,306 US papers; survivors projected at 36%
@@ -21,7 +25,7 @@ calculation in this document applies the 50% batch discount to these rates:
 ## The plan for run 1
 
 Refinement on the **Claude Code CLI** against subscription quota ($0 API,
-DC22). The $100 is reserved entirely for the Batch API production run.
+DC22). The $100 is reserved for the API production run (now NaviGator, DC59).
 
 | Stage | Calls | Model | Cost |
 |---|---:|---|---:|

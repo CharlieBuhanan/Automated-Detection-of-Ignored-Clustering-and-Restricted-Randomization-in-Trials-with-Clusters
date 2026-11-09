@@ -86,14 +86,14 @@ The only group where a failure is FATAL. These prove the room is sealed.
 | A12 | ~~Canary: decoy flipped-label `ground_truth.csv` reachable, tools ON~~ | **Not built (2026-08-27).** Scoring function `canary_verdict()` is implemented and tested; the live run was cut | **FATAL** |
 | A13 | `--tools` absent from argv, or given a non-empty value | Refuse to launch. **`--tools ""` is the availability filter and the actual mechanism**; `--allowed-tools` (A5) is only a permission allowlist and removes nothing | **REFUSE** |
 | A14 | `system/init` reports a non-empty `tools` array | Discard the round. Checked against the list the CLI **observes**, never a hand-written name list, so a tool added in a future CLI needs no one to remember it | **FATAL** |
-| A15 | `--system-prompt` absent, or its bytes ≠ the pinned prompt file | Refuse to launch. Without it the model is Claude Code the coding agent, not a bare classifier, and the Batch API run is a different environment | **REFUSE** |
-| A16 | `--effort` absent, or ≠ the pinned level | Refuse to launch — effort must match what the Batch API run will pass | **REFUSE** |
+| A15 | `--system-prompt` absent, or its bytes ≠ the pinned prompt file | Refuse to launch. Without it the model is Claude Code the coding agent, not a bare classifier, and the NaviGator API run is a different environment | **REFUSE** |
+| A16 | `--effort` absent, or ≠ the pinned level | Refuse to launch — effort must match what the NaviGator API run will pass | **REFUSE** |
 | A17 | Preflight probe's `input_tokens + cache_creation_input_tokens` exceeds the ceiling for its two-word prompt | Refuse the round before any paper — A15 passed but did not take effect. **Measured on CLI 2.1.197:** 12,198 tokens with the default system prompt, **183** with the pinned minimal one. The ceiling is a real number, not a guess; set it well below 12,198 and above 183 with headroom for a longer pinned prompt | **REFUSE** |
 
 **A13-A17 came from the second probe, 2026-08-27.** A13/A14 replace a wrong
 belief (`--allowed-tools ""` empties the room — it does not). A15/A17 close a
 confound nobody had noticed: the room was sealed against *files* but wide open to
-Claude Code's own ~12,200-token agentic system prompt, which the Batch API run
+Claude Code's own ~12,200-token agentic system prompt, which the NaviGator API run
 will not have.
 
 ## B. Round and split selection (B1-B10)
