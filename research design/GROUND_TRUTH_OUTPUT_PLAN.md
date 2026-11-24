@@ -1,6 +1,6 @@
 # Plan: model output in ground-truth format
 
-**Status:** Planning only. Nothing is built yet.
+**Status:** Steps 1-3 built 2026-11-24 (field dictionary, schemas, v2 promptbooks); steps 4-7 not started.
 **Artifact:** https://claude.ai/artifact/QWtopzdiZFmfwPqZMNba4K
 **Schema page (for Deb):** https://claude.ai/artifact/VBmQr3SP4Zjzn8EnerxzYT
 
@@ -109,8 +109,8 @@ model, which includes holdout papers. That breaks "holdout touched once, at the 
 | Source | # | Columns |
 |---|---:|---|
 | Our code (corpus facts) | 13 | `paper_id`, `paper_id_note`, `source_institute`, `source_file`, `source_row`, `citation_raw`, `cite_key`, `matched_by`, `match_score`, `source_note`, `source_doi`, `source_pmid`, `reason_source` |
-| Model | 22 | `excluded`, `exclusion_reason`, `power_correct`, `data_correct`, `n_trt`, `n_levels`, `comment_levels`, `n_outer`, `n_2nd`, `n_3rd`, `n_4th`, `unit_rand`, `ind_samp_unit`, `restricted_rand_raw`, `icc`, `n_long`, `stepped_wedge_raw`, `data_done`, `data_should`, `data_comment`, `power_done`, `power_should` |
-| Worked out from model answers | 6 | `labeled`; `restricted_rand` and `stepped_wedge` (yes/no/unclear); `exclusion_reason_raw`, `power_correct_raw`, `data_correct_raw` (the model's text before standardizing) |
+| Model | 20 | `excluded`, `exclusion_reason`, `power_correct`, `data_correct`, `n_trt`, `n_levels`, `comment_levels`, `n_outer`, `n_2nd`, `n_3rd`, `n_4th`, `unit_rand`, `ind_samp_unit`, `restricted_rand_raw`, `icc`, `n_long`, `stepped_wedge_raw`, `data_done`, `data_comment`, `power_done` |
+| Worked out from model answers | 8 | `labeled`; `restricted_rand` and `stepped_wedge` (yes/no/unclear); `exclusion_reason_raw`, `power_correct_raw`, `data_correct_raw` (the model's text before standardizing); `data_should`, `power_should` (from `correlated_units`, restriction status, and `n_long`; changed 2026-11-24 so the model never states the same fact three times) |
 | Left blank | 2 | `review_category`, `review_category_raw` |
 
 Reasoning, cited rule, and confidence are kept alongside, outside the CSV. Output goes in
@@ -142,9 +142,9 @@ Reasoning, cited rule, and confidence are kept alongside, outside the CSV. Outpu
 - [x] Rebuild `power_done` as "what it accounted for" (schema page updated)
 - [x] Deb answers Q1-Q8 (2026-11-09); Q3 and three follow-ups still open in Deb.md items 2-3
 - [ ] Code the 88 human `power_done` strings into the same parts (clustering / restricted / longitudinal / method), person-checked, so scoring compares like with like
-- [ ] Field dictionary file (step 1)
-- [ ] Schemas in `src/schemas.py`, incl. `other: <label>` handling (step 2)
-- [ ] Promptbook: `combined_analysis.md` + exclusion reason, lists framed as starting points (step 3)
+- [x] Field dictionary file (step 1): `data/field_dictionary.csv`, built by `scripts/24_build_field_dictionary.py`
+- [x] Schemas in `src/schemas.py`, incl. `other: <label>` handling (step 2): `ExclusionWithReason`, `FullAnalysis`; tests in `ReadingRoom/tests/test_o_full_analysis_schema.py`
+- [x] Promptbook: `combined_analysis.md` + exclusion reason, lists framed as starting points (step 3): in place in un-run `v2` (see `v2 doc.md`)
 - [ ] Pipeline + new-label log (step 4)
 - [ ] 43-column export and per-column scoring (step 5)
 - [ ] Offline tests → 2-paper paid test (user runs) → calibration → frozen cost estimate (step 6)

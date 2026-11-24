@@ -1,0 +1,54 @@
+{
+  "paper_id": "TOKEN0001",
+  "design": {
+    "n_trt": 2,
+    "levels": [
+      {"unit": "patient", "count": {"kind": "approximate", "value": 20, "low": null, "high": null, "per": "physician"}},
+      {"unit": "physician", "count": {"kind": "exact", "value": 64, "low": null, "high": null, "per": null}},
+      {"unit": "clinic", "count": {"kind": "exact", "value": 16, "low": null, "high": null, "per": null}},
+      {"unit": "matched_pair", "count": {"kind": "exact", "value": 8, "low": null, "high": null, "per": null}}
+    ],
+    "unit_rand": "clinic",
+    "ind_samp_unit": "matched_pair",
+    "correlated_units": ["physician", "clinic"],
+    "restricted_randomization": {"status": "restricted", "schemes": ["pair_matched"], "variables": "clinic size and region"},
+    "icc": {"status": "reported", "values": [
+      {"kind": "exact", "value": 0.05, "low": null, "high": null, "applies_to": "clinic"},
+      {"kind": "range", "value": null, "low": 0.01, "high": 0.03, "applies_to": "physician"}
+    ]},
+    "n_long": 2,
+    "stepped_wedge": "no"
+  },
+  "power_analysis": {
+    "decision": "no",
+    "reasoning": "Design effect for clinic only; physician level and the pair matching are not in the calculation.",
+    "promptbook_evidence": "P9",
+    "confidence": 0.8,
+    "done": {
+      "reported": "yes",
+      "clustering": "some_levels",
+      "units_accounted": ["clinic"],
+      "restricted_rand": "ignored",
+      "longitudinality": "ignored",
+      "method": "formula",
+      "source_note": "Donner & Klar design effect",
+      "timing": "before_trial"
+    }
+  },
+  "data_analysis": {
+    "decision": "yes",
+    "reasoning": "Mixed model with clinic and physician random effects and a pair fixed effect.",
+    "promptbook_evidence": "D5, D10",
+    "confidence": 0.75,
+    "done": {
+      "method": "mixed_effects",
+      "planned_only": false,
+      "levels_modeled": ["physician", "clinic"],
+      "clustering": "all_levels",
+      "restricted_rand": "accounted",
+      "longitudinality": "accounted",
+      "small_sample_correction": "yes"
+    },
+    "comment": {"tags": [], "note": null}
+  }
+}

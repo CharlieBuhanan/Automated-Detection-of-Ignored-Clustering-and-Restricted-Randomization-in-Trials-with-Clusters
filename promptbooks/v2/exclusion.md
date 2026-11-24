@@ -16,11 +16,12 @@ The first one that matches decides and goes in `promptbook_evidence`. No hit →
 
 **Work through the criteria in order, then commit.**
 
-**Answer format.** Return exactly these four fields:
+**Answer format.** Return exactly these five fields:
 
 | field | value |
 |---|---|
 | `decision` | `yes` = exclude this paper · `no` = keep it · `undecidable` = text missing, truncated, or unreadable · `wrong_text` = the text is not a study report at all |
+| `exclusion_reason` | when `decision` is `yes`: the number of the criterion that decided it, e.g. `E5` (E1-E11 or E13-E16; it must also appear in `promptbook_evidence`). Otherwise `null`. |
 | `reasoning` | why, in your own words. **200 characters maximum.** |
 | `promptbook_evidence` | the criterion number that decided it, e.g. `E5`; `WRONG_TEXT` if that decision |
 | `confidence` | 0.0-1.0 |

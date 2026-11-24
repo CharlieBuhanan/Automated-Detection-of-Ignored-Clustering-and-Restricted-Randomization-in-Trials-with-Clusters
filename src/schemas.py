@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import re
 from copy import deepcopy
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -326,3 +327,656 @@ def combined_analysis_tool_schema() -> dict:
             "additionalProperties": False,
         },
     }
+
+
+# ============================================================================
+# Ground-truth-shaped output (research design/GROUND_TRUTH_OUTPUT_PLAN.md)
+# ============================================================================
+#
+# The models above are the round-1 contract and stay unchanged so that
+# already-paid raw replies still re-check. Everything below is the new contract
+# for the 43-column HLS output:
+#
+#   ExclusionWithReason   the gate call, now also returning `exclusion_reason`
+#   FullAnalysis          one post-gate call: study design, then power, then data
+#
+# Strictness is the point (plan step 2). Every key is required, unknown keys
+# are rejected, nothing is coerced ("10" is not 10), and an answer that
+# contradicts itself is rejected rather than repaired. A rejected answer is a
+# logged retry, never a patched one.
+#
+# Column names, export rules, and scoring rules live in
+# data/field_dictionary.csv; the vocabularies below are the single source for
+# its `allowed_values` column (a test checks they agree).
+
+NOT_REPORTED = "not_reported"   # the paper was checked and does not say
+UNCLEAR = "unclear"             # the paper says something contradictory or unreadable
+
+# Decision 18: every list is a starting point. A value outside it is written
+# `other: <short label>` and logged, so recurring labels can be promoted into
+# the list in a later promptbook version (pattern rule, never one paper).
+OTHER_LABEL_MAX = 60
+_OTHER = re.compile(r"^other: (\S.*)$")
+
+# Units are lowercase singular. `matched_pair` and `stratum` are restriction
+# groupings, not sources of correlation: they appear as an outer level when
+# clusters were randomized within them (10 of 87 human `ind_samp_unit` values),
+# but never in `correlated_units`.
+PERSON_UNITS = ("patient", "participant", "student")
+CLUSTER_UNITS = ("clinic", "school", "classroom", "practice", "hospital", "ward",
+                 "physician", "nursing_home", "village", "community", "household",
+                 "family", "worksite", "site")
+GROUPING_UNITS = ("matched_pair", "stratum")
+UNITS = PERSON_UNITS + CLUSTER_UNITS + GROUPING_UNITS
+
+RESTRICTION_SCHEMES = ("pair_matched", "matched_sets", "stratified", "blocked",
+                       "constrained", "minimization")
+DATA_METHODS = ("mixed_effects", "gee", "cluster_level", "cluster_robust_se",
+                "permutation", "bayesian_hierarchical", "cluster_fixed_effects",
+                "individual_level")
+POWER_METHODS = ("formula", "simulation")
+DATA_COMMENT_TAGS = ("unclear_reporting", "missing_method", "wrong_level",
+                     "restriction_ignored", "longitudinality_ignored",
+                     "label_inconsistency", "few_clusters_no_correction")
+
+# DC45: the promptbook's E-numbers are the exclusion taxonomy. E12 (protocol)
+# and E17 (random duplicate drop) are retired cross-paper rules and E18 is the
+# abstention, so none of them can be a reason.
+EXCLUSION_REASONS = {
+    "E1": "preprint", "E2": "methodology_journal", "E3": "stepped_wedge_design",
+    "E4": "secondary_in_title", "E5": "secondary_analysis", "E6": "baseline_only",
+    "E7": "implementation_study", "E8": "methods_paper", "E9": "not_randomized",
+    "E10": "not_group_randomized", "E11": "qualitative_study", "E13": "pilot_study",
+    "E14": "cohort_study", "E15": "review_article", "E16": "comment_or_letter",
+}
+
+# Q1 (Deb, 2026-11-09): a GEE with 40 or fewer randomized clusters, counted in
+# total until told otherwise (Deb.md 3a), needs a small-sample correction.
+# Recorded as a data_comment tag; whether it decides data_correct is Deb.md 3b.
+FEW_CLUSTERS_MAX = 40
+
+NOTE_MAX_CHARS = 200
+VARIABLES_MAX_CHARS = 120
+SOURCE_NOTE_MAX_CHARS = 80
+
+
+def open_choice(value: str, allowed: tuple[str, ...], field: str) -> str:
+    """Accept a listed value or `other: <label>`; reject anything else.
+
+    Not a normalizer: `Clinic` or `nursing home` is rejected, not rewritten,
+    because a reply that misspells the list is a prompt problem worth seeing.
+    """
+    if value in allowed:
+        return value
+    match = _OTHER.match(value)
+    if match:
+        label = match.group(1).strip()
+        if len(label) > OTHER_LABEL_MAX:
+            raise ValueError(
+                f"{field}: other-label is {len(label)} chars, cap is {OTHER_LABEL_MAX}")
+        return f"other: {label}"
+    raise ValueError(
+        f"{field} must be one of {allowed} or 'other: <label>', got {value!r}")
+
+
+def is_other(value: str | None) -> bool:
+    return bool(value) and value.startswith("other: ")
+
+
+def other_label(value: str) -> str:
+    """The free label of an `other: <label>` value (the paper's own wording)."""
+    return value[len("other: "):] if is_other(value) else value
+
+
+def _unique(values: list[str], field: str) -> list[str]:
+    if len(set(values)) != len(values):
+        raise ValueError(f"{field} lists a value twice: {values}")
+    return values
+
+
+class _Strict(BaseModel):
+    """Base for the new contract: no extra keys, no coercion, no defaults."""
+
+    model_config = ConfigDict(extra="forbid", strict=True, str_strip_whitespace=True)
+
+
+class _Judgment(_Strict):
+    """The four fields every scored judgment carries (DC13, DC27)."""
+
+    decision: Literal["yes", "no", "undecidable"]
+    reasoning: str = Field(min_length=1, max_length=REASONING_MAX_CHARS)
+    promptbook_evidence: str = Field(min_length=1)
+    confidence: float = Field(ge=0.0, le=1.0)
+
+    def as_decision(self, *, task: str, paper_id: str | None) -> Decision:
+        """The legacy per-task row, so storage and rule checks stay shared."""
+        return Decision.model_validate({
+            "decision": self.decision, "reasoning": self.reasoning,
+            "promptbook_evidence": self.promptbook_evidence,
+            "confidence": self.confidence, "task": task, "paper_id": paper_id})
+
+
+# ------------------------------------------------------------ exclusion gate
+
+
+class ExclusionWithReason(_Strict):
+    """The gate call plus a standard reason (plan decision 4).
+
+    `exclusion_reason` duplicates the deciding rule on purpose: it is the field
+    the CSV exports, while `promptbook_evidence` may cite several rules. The
+    two must agree, so the export never names a rule the model did not cite.
+    """
+
+    decision: Literal["yes", "no", "undecidable", "wrong_text"]
+    exclusion_reason: Literal[tuple(EXCLUSION_REASONS)] | None  # type: ignore[valid-type]
+    reasoning: str = Field(min_length=1, max_length=REASONING_MAX_CHARS)
+    promptbook_evidence: str = Field(min_length=1)
+    confidence: float = Field(ge=0.0, le=1.0)
+    # Wrapper-owned: echoed on the CLI route, absent from the API schema.
+    paper_id: str | None = None
+
+    @model_validator(mode="after")
+    def _reason_matches_decision(self) -> ExclusionWithReason:
+        if self.decision != "yes":
+            if self.exclusion_reason is not None:
+                raise ValueError(
+                    f"exclusion_reason must be null unless decision is 'yes' "
+                    f"(decision={self.decision!r})")
+            return self
+        if self.exclusion_reason not in EXCLUSION_REASONS:
+            raise ValueError(
+                f"an exclusion needs exclusion_reason from {list(EXCLUSION_REASONS)}, "
+                f"got {self.exclusion_reason!r}")
+        cited = [f"{letter}{number}" for letter, number
+                 in RULE_ID.findall(self.promptbook_evidence)]
+        if self.exclusion_reason not in cited:
+            raise ValueError(
+                f"exclusion_reason {self.exclusion_reason} is not cited in "
+                f"promptbook_evidence ({self.promptbook_evidence[:80]!r})")
+        return self
+
+    def as_decision(self) -> Decision:
+        return Decision.model_validate({
+            "decision": self.decision, "reasoning": self.reasoning,
+            "promptbook_evidence": self.promptbook_evidence,
+            "confidence": self.confidence, "task": "exclusion",
+            "paper_id": self.paper_id})
+
+    def reason_name(self) -> str | None:
+        """The readable export value, e.g. 'secondary_analysis'."""
+        return EXCLUSION_REASONS.get(self.exclusion_reason or "")
+
+
+# ------------------------------------------------------------- study design
+
+
+class ClusterCount(_Strict):
+    """How many units sit at one level. `per` marks a per-parent count."""
+
+    kind: Literal["exact", "approximate", "range", "not_reported", "unclear"]
+    value: int | None = Field(ge=0)
+    low: int | None = Field(ge=0)
+    high: int | None = Field(ge=0)
+    per: str | None
+
+    @model_validator(mode="after")
+    def _shape(self) -> ClusterCount:
+        has_value = self.value is not None
+        has_range = self.low is not None or self.high is not None
+        if self.kind in ("exact", "approximate"):
+            if not has_value or has_range:
+                raise ValueError(f"a {self.kind} count needs value and no low/high")
+        elif self.kind == "range":
+            if has_value or self.low is None or self.high is None:
+                raise ValueError("a range count needs low and high and no value")
+            if self.low >= self.high:
+                raise ValueError(f"range low {self.low} must be below high {self.high}")
+        elif has_value or has_range or self.per is not None:
+            raise ValueError(f"a {self.kind} count carries no numbers and no per")
+        return self
+
+
+class Level(_Strict):
+    unit: str
+    count: ClusterCount
+
+    @field_validator("unit")
+    @classmethod
+    def _unit(cls, value: str) -> str:
+        return open_choice(value, UNITS, "unit")
+
+
+class RestrictedRandomization(_Strict):
+    status: Literal["restricted", "none", "not_reported", "unclear"]
+    schemes: list[str]
+    variables: str | None = Field(max_length=VARIABLES_MAX_CHARS)
+
+    @field_validator("schemes")
+    @classmethod
+    def _schemes(cls, values: list[str]) -> list[str]:
+        return _unique([open_choice(v, RESTRICTION_SCHEMES, "scheme") for v in values],
+                       "schemes")
+
+    @model_validator(mode="after")
+    def _schemes_iff_restricted(self) -> RestrictedRandomization:
+        if (self.status == "restricted") != bool(self.schemes):
+            raise ValueError("schemes must be non-empty exactly when status is 'restricted'")
+        if self.status != "restricted" and self.variables is not None:
+            raise ValueError("variables must be null unless status is 'restricted'")
+        return self
+
+
+class IccValue(_Strict):
+    kind: Literal["exact", "range"]
+    value: float | None = Field(ge=-1.0, le=1.0)
+    low: float | None = Field(ge=-1.0, le=1.0)
+    high: float | None = Field(ge=-1.0, le=1.0)
+    applies_to: str | None = Field(max_length=OTHER_LABEL_MAX)
+
+    @model_validator(mode="after")
+    def _shape(self) -> IccValue:
+        if self.kind == "exact":
+            if self.value is None or self.low is not None or self.high is not None:
+                raise ValueError("an exact ICC needs value and no low/high")
+        else:
+            if self.value is not None or self.low is None or self.high is None:
+                raise ValueError("an ICC range needs low and high and no value")
+            if self.low >= self.high:
+                raise ValueError(f"ICC range low {self.low} must be below high {self.high}")
+        return self
+
+
+class Icc(_Strict):
+    status: Literal["reported", "not_reported", "unclear"]
+    values: list[IccValue]
+
+    @model_validator(mode="after")
+    def _values_iff_reported(self) -> Icc:
+        if (self.status == "reported") != bool(self.values):
+            raise ValueError("ICC values must be non-empty exactly when status is 'reported'")
+        if len(self.values) > 1 and any(not v.applies_to for v in self.values):
+            raise ValueError("with several ICCs, each needs applies_to (its level or group)")
+        return self
+
+
+class StudyDesign(_Strict):
+    """Facts both judgments read. Recorded once, before either judgment."""
+
+    n_trt: int | Literal["not_reported", "unclear"]
+    # Innermost (the person measured) first, outermost last.
+    levels: list[Level] = Field(min_length=2, max_length=6)
+    unit_rand: str
+    ind_samp_unit: str
+    correlated_units: list[str] = Field(min_length=1)
+    restricted_randomization: RestrictedRandomization
+    icc: Icc
+    n_long: int | Literal["not_reported", "unclear"]
+    stepped_wedge: Literal["yes", "no", "unclear", "not_reported"]
+
+    @field_validator("n_trt")
+    @classmethod
+    def _arms(cls, value):
+        if isinstance(value, int) and value < 2:
+            raise ValueError(f"n_trt must be at least 2, got {value}")
+        return value
+
+    @field_validator("n_long")
+    @classmethod
+    def _occasions(cls, value):
+        if isinstance(value, int) and value < 1:
+            raise ValueError(f"n_long must be at least 1, got {value}")
+        return value
+
+    @field_validator("unit_rand", "ind_samp_unit")
+    @classmethod
+    def _one_unit(cls, value: str, info) -> str:
+        return open_choice(value, UNITS, info.field_name)
+
+    @field_validator("correlated_units")
+    @classmethod
+    def _correlated(cls, values: list[str]) -> list[str]:
+        return _unique([open_choice(v, UNITS, "correlated_units") for v in values],
+                       "correlated_units")
+
+    def units(self) -> list[str]:
+        return [level.unit for level in self.levels]
+
+    def cluster_units(self) -> list[str]:
+        """Every unit above the person measured."""
+        return self.units()[1:]
+
+    @model_validator(mode="after")
+    def _structure(self) -> StudyDesign:
+        units = _unique(self.units(), "levels")
+        for field in ("unit_rand", "ind_samp_unit"):
+            if getattr(self, field) not in units:
+                raise ValueError(
+                    f"{field} {getattr(self, field)!r} is not one of the levels {units}")
+        if units.index(self.ind_samp_unit) < units.index(self.unit_rand):
+            raise ValueError("ind_samp_unit must be unit_rand or a unit further out")
+        for unit in self.correlated_units:
+            if unit not in units[1:]:
+                raise ValueError(f"correlated unit {unit!r} is not a level above the person")
+            if unit in GROUPING_UNITS:
+                raise ValueError(
+                    f"{unit!r} is a restriction grouping, recorded under "
+                    f"restricted_randomization, not a correlated unit")
+        for position, level in enumerate(self.levels):
+            per = level.count.per
+            if per is not None and per not in units[position + 1:]:
+                raise ValueError(
+                    f"{level.unit} count is per {per!r}, which is not a level further out")
+        if (any(u in GROUPING_UNITS for u in units)
+                and self.restricted_randomization.status != "restricted"):
+            raise ValueError(
+                "a matched_pair/stratum level needs restricted_randomization 'restricted'")
+        return self
+
+    def n_levels(self) -> int:
+        """Q8 (Deb): levels of clustering above the individual = units - 1."""
+        return len(self.levels) - 1
+
+    def has_repeated_measures(self) -> bool | None:
+        return None if isinstance(self.n_long, str) else self.n_long > 1
+
+
+# ------------------------------------------------------------ power analysis
+
+
+class PowerDone(_Strict):
+    """What the power calculation accounted for. Not a method pick (plan Q4)."""
+
+    reported: Literal["yes", "no"]
+    clustering: Literal["all_levels", "some_levels", "ignored", "unclear"] | None
+    units_accounted: list[str]
+    restricted_rand: Literal["accounted", "ignored", "not_applicable", "unclear"] | None
+    # Q4: longitudinality has no `unclear`.
+    longitudinality: Literal["accounted", "ignored", "not_applicable"] | None
+    method: str | None
+    source_note: str | None = Field(max_length=SOURCE_NOTE_MAX_CHARS)
+    timing: Literal["before_trial", "post_hoc", "not_stated"] | None
+
+    @field_validator("units_accounted")
+    @classmethod
+    def _units(cls, values: list[str]) -> list[str]:
+        return _unique([open_choice(v, UNITS, "units_accounted") for v in values],
+                       "units_accounted")
+
+    @field_validator("method")
+    @classmethod
+    def _method(cls, value: str | None) -> str | None:
+        return None if value is None else open_choice(
+            value, POWER_METHODS + ("not_described",), "power method")
+
+    @model_validator(mode="after")
+    def _absent_means_null(self) -> PowerDone:
+        parts = (self.clustering, self.restricted_rand, self.longitudinality,
+                 self.method, self.timing)
+        if self.reported == "no":
+            if any(p is not None for p in parts) or self.units_accounted or self.source_note:
+                raise ValueError("with no power calculation reported, every other "
+                                 "power_done field is null and units_accounted is []")
+        elif any(p is None for p in parts):
+            raise ValueError("a reported power calculation needs clustering, "
+                             "restricted_rand, longitudinality, method and timing")
+        return self
+
+
+class PowerAnalysis(_Judgment):
+    done: PowerDone
+
+
+# ------------------------------------------------------------- data analysis
+
+
+class DataDone(_Strict):
+    """The one main primary-outcome analysis (plan decision 12)."""
+
+    method: str
+    planned_only: bool | None  # Q7: a planned-only analysis can still be correct
+    levels_modeled: list[str]
+    clustering: Literal["all_levels", "some_levels", "ignored", "unclear"] | None
+    restricted_rand: Literal["accounted", "ignored", "not_applicable", "unclear"] | None
+    longitudinality: Literal["accounted", "ignored", "not_applicable"] | None
+    small_sample_correction: Literal["yes", "no", "unclear"] | None
+
+    @field_validator("method")
+    @classmethod
+    def _method(cls, value: str) -> str:
+        return open_choice(value, DATA_METHODS + (NOT_REPORTED,), "data method")
+
+    @field_validator("levels_modeled")
+    @classmethod
+    def _levels(cls, values: list[str]) -> list[str]:
+        return _unique([open_choice(v, UNITS, "levels_modeled") for v in values],
+                       "levels_modeled")
+
+    @model_validator(mode="after")
+    def _absent_means_null(self) -> DataDone:
+        parts = (self.planned_only, self.clustering, self.restricted_rand,
+                 self.longitudinality, self.small_sample_correction)
+        if self.method == NOT_REPORTED:
+            if any(p is not None for p in parts) or self.levels_modeled:
+                raise ValueError("with no analysis method reported, every other "
+                                 "data_done field is null and levels_modeled is []")
+        elif any(p is None for p in parts):
+            raise ValueError("a reported analysis needs planned_only, clustering, "
+                             "restricted_rand, longitudinality and small_sample_correction")
+        return self
+
+
+class DataComment(_Strict):
+    tags: list[str]
+    note: str | None = Field(max_length=NOTE_MAX_CHARS)
+
+    @field_validator("tags")
+    @classmethod
+    def _tags(cls, values: list[str]) -> list[str]:
+        return _unique([open_choice(v, DATA_COMMENT_TAGS, "data_comment tag")
+                        for v in values], "tags")
+
+
+class DataAnalysis(_Judgment):
+    done: DataDone
+    comment: DataComment
+
+
+# --------------------------------------------------------- the whole answer
+
+
+def _accounting_problems(task: str, done, design: StudyDesign,
+                         units: list[str]) -> list[str]:
+    """Contradictions between one task's `done` record and the shared design."""
+    problems = []
+    stray = [u for u in units if u not in design.cluster_units()]
+    if stray:
+        problems.append(f"{task}: {stray} are not levels above the person")
+    needed = set(design.correlated_units)
+    if done.clustering == "all_levels" and not needed <= set(units):
+        problems.append(f"{task}: clustering 'all_levels' but "
+                        f"{sorted(needed - set(units))} of correlated_units not accounted for")
+    if done.clustering == "some_levels" and (not units or needed <= set(units)):
+        problems.append(f"{task}: clustering 'some_levels' needs some, not all, "
+                        f"correlated units accounted for")
+    if done.clustering == "ignored" and units:
+        problems.append(f"{task}: clustering 'ignored' but units listed {units}")
+
+    status = design.restricted_randomization.status
+    if status in ("none", NOT_REPORTED) and done.restricted_rand != "not_applicable":
+        problems.append(f"{task}: the design has no restriction, so restricted_rand "
+                        f"must be 'not_applicable'")
+    if status == "restricted" and done.restricted_rand == "not_applicable":
+        problems.append(f"{task}: the design is restricted, so restricted_rand "
+                        f"cannot be 'not_applicable'")
+
+    repeated = design.has_repeated_measures()
+    if repeated is False and done.longitudinality != "not_applicable":
+        problems.append(f"{task}: n_long is 1, so longitudinality must be 'not_applicable'")
+    if repeated is True and done.longitudinality == "not_applicable":
+        problems.append(f"{task}: n_long > 1, so longitudinality cannot be 'not_applicable'")
+    return problems
+
+
+def _verdict_problems(task: str, decision: str, done) -> list[str]:
+    """P3 / D-rules: a `yes` needs every level and any restriction handled.
+
+    Only the direction the rubric fixes is checked. A `no` with everything
+    handled is legal (P4, P5, P15, D2-D4 can still fail a paper).
+    """
+    if decision != "yes":
+        return []
+    if done.clustering != "all_levels":
+        return [f"{task}: 'yes' requires clustering 'all_levels', got {done.clustering!r}"]
+    if done.restricted_rand not in ("accounted", "not_applicable"):
+        return [f"{task}: 'yes' requires restriction accounted or not applicable, "
+                f"got {done.restricted_rand!r}"]
+    return []
+
+
+class FullAnalysis(_Strict):
+    """One post-gate call: design, then power, then data (DC54, plan step 3).
+
+    The two judgments stay independent: each is checked against the shared
+    design, never against the other judgment. A contradiction anywhere rejects
+    the whole answer, so no half is ever stored without its sibling.
+    """
+
+    design: StudyDesign
+    power_analysis: PowerAnalysis
+    data_analysis: DataAnalysis
+    # Wrapper-owned: echoed on the CLI route, absent from the API schema.
+    paper_id: str | None = None
+
+    @model_validator(mode="after")
+    def _consistent(self) -> FullAnalysis:
+        design, power, data = self.design, self.power_analysis, self.data_analysis
+        problems: list[str] = []
+
+        if power.done.reported == "no":
+            if power.decision == "yes":
+                problems.append("power_analysis: 'yes' with no power calculation reported (P6)")
+        else:
+            problems += _accounting_problems("power_analysis", power.done, design,
+                                             power.done.units_accounted)
+            problems += _verdict_problems("power_analysis", power.decision, power.done)
+
+        if data.done.method == NOT_REPORTED:
+            if data.decision == "yes":
+                problems.append("data_analysis: 'yes' with no analysis reported (D4)")
+        else:
+            problems += _accounting_problems("data_analysis", data.done, design,
+                                             data.done.levels_modeled)
+            problems += _verdict_problems("data_analysis", data.decision, data.done)
+            if data.decision == "yes" and data.done.method in ("individual_level",
+                                                               "cluster_fixed_effects"):
+                problems.append(f"data_analysis: 'yes' with method "
+                                f"{data.done.method!r} (D6/D7)")
+
+        tags = set(data.comment.tags)
+        if "restriction_ignored" in tags and data.done.restricted_rand != "ignored":
+            problems.append("data_comment: restriction_ignored but restricted_rand "
+                            "is not 'ignored'")
+        if "longitudinality_ignored" in tags and data.done.longitudinality != "ignored":
+            problems.append("data_comment: longitudinality_ignored but longitudinality "
+                            "is not 'ignored'")
+        if ("few_clusters_no_correction" in tags
+                and data.done.small_sample_correction != "no"):
+            problems.append("data_comment: few_clusters_no_correction but "
+                            "small_sample_correction is not 'no'")
+        if problems:
+            raise ValueError("; ".join(problems))
+        return self
+
+    def task_decisions(self) -> dict[str, Decision]:
+        """The two legacy per-task rows, for the existing judgments table."""
+        return {task: getattr(self, task).as_decision(task=task, paper_id=self.paper_id)
+                for task in ANALYSIS_TASKS}
+
+
+# ------------------------------------------------------------------ parsing
+
+
+def _load_object(raw: str, paper_id: str | None) -> tuple[dict, bool]:
+    text, was_fenced = _strip_fences(raw)
+    if not text:
+        raise ParseFailure("empty reply", raw=raw, paper_id=paper_id)
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ParseFailure(f"not valid JSON: {exc}", raw=raw, paper_id=paper_id) from exc
+    if not isinstance(payload, dict):
+        raise ParseFailure(f"expected a JSON object, got {type(payload).__name__}",
+                           raw=raw, paper_id=paper_id)
+    return payload, was_fenced
+
+
+def parse_exclusion_with_reason(raw: str, *, paper_id: str | None = None
+                                ) -> tuple[ExclusionWithReason, bool]:
+    """Parse a gate reply under the new contract. Raises ParseFailure."""
+    payload, was_fenced = _load_object(raw, paper_id)
+    payload.setdefault("paper_id", paper_id)
+    try:
+        return ExclusionWithReason.model_validate(payload), was_fenced
+    except Exception as exc:
+        raise ParseFailure(str(exc), raw=raw, paper_id=paper_id) from exc
+
+
+def parse_full_analysis(raw: str, *, paper_id: str | None = None
+                        ) -> tuple[FullAnalysis, bool]:
+    """Parse one post-gate reply. Any bad part rejects the whole answer."""
+    payload, was_fenced = _load_object(raw, paper_id)
+    payload.setdefault("paper_id", paper_id)
+    try:
+        return FullAnalysis.model_validate(payload), was_fenced
+    except Exception as exc:
+        raise ParseFailure(str(exc), raw=raw, paper_id=paper_id) from exc
+
+
+# ----------------------------------------------------- provider JSON Schema
+
+
+def _inline_refs(node, defs: dict):
+    """Inline `$ref`s so the schema needs no `$defs` support from a provider."""
+    if isinstance(node, dict):
+        if "$ref" in node:
+            return _inline_refs(deepcopy(defs[node["$ref"].rsplit("/", 1)[-1]]), defs)
+        return {key: _inline_refs(value, defs) for key, value in node.items()
+                if key not in ("$defs", "title", "default")
+                and not (key == "description" and isinstance(value, str))}
+    if isinstance(node, list):
+        return [_inline_refs(item, defs) for item in node]
+    return node
+
+
+def _close_objects(node):
+    """Every object: all keys required, no extra keys (the provider's half)."""
+    if isinstance(node, dict):
+        if node.get("type") == "object" and "properties" in node:
+            node["additionalProperties"] = False
+            node["required"] = list(node["properties"])
+        for value in node.values():
+            _close_objects(value)
+    elif isinstance(node, list):
+        for item in node:
+            _close_objects(item)
+    return node
+
+
+def _output_schema(model: type[BaseModel]) -> dict:
+    """Provider syntax constraint for one model. Never replaces local checks.
+
+    `paper_id` is dropped for the same reason as in :func:`tool_schema`: the
+    wrapper owns it, and asking for it invites a guessed identifier.
+    """
+    schema = model.model_json_schema()
+    inlined = _inline_refs(schema, schema.get("$defs", {}))
+    inlined["properties"].pop("paper_id", None)
+    return _close_objects(inlined)
+
+
+def exclusion_with_reason_output_schema() -> dict:
+    return _output_schema(ExclusionWithReason)
+
+
+def full_analysis_output_schema() -> dict:
+    return _output_schema(FullAnalysis)
