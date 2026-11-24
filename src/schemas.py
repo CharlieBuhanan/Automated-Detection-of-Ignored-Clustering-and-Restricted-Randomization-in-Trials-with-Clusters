@@ -375,9 +375,12 @@ DATA_METHODS = ("mixed_effects", "gee", "cluster_level", "cluster_robust_se",
                 "permutation", "bayesian_hierarchical", "cluster_fixed_effects",
                 "individual_level")
 POWER_METHODS = ("formula", "simulation")
+# No few-clusters tag: its 40-cluster threshold and whether it decides
+# data_correct are still open with Deb (Deb.md 3a-3c), so the contract records
+# only the fact (`small_sample_correction`) and makes no threshold call.
 DATA_COMMENT_TAGS = ("unclear_reporting", "missing_method", "wrong_level",
                      "restriction_ignored", "longitudinality_ignored",
-                     "label_inconsistency", "few_clusters_no_correction")
+                     "label_inconsistency")
 
 # DC45: the promptbook's E-numbers are the exclusion taxonomy. E12 (protocol)
 # and E17 (random duplicate drop) are retired cross-paper rules and E18 is the
@@ -389,11 +392,6 @@ EXCLUSION_REASONS = {
     "E10": "not_group_randomized", "E11": "qualitative_study", "E13": "pilot_study",
     "E14": "cohort_study", "E15": "review_article", "E16": "comment_or_letter",
 }
-
-# Q1 (Deb, 2026-11-09): a GEE with 40 or fewer randomized clusters, counted in
-# total until told otherwise (Deb.md 3a), needs a small-sample correction.
-# Recorded as a data_comment tag; whether it decides data_correct is Deb.md 3b.
-FEW_CLUSTERS_MAX = 40
 
 NOTE_MAX_CHARS = 200
 VARIABLES_MAX_CHARS = 120
@@ -680,6 +678,28 @@ class StudyDesign(_Strict):
         return None if isinstance(self.n_long, str) else self.n_long > 1
 
 
+# ------------------------------------------------- what a correct one needs
+
+
+class Should(_Strict):
+    """What a correct analysis of this design must account for (the `*_should` columns).
+
+    Asked of the model *and* derived by code from the design, so the two can be
+    compared (user, 2026-11-24). Never checked against `done` or the verdict:
+    it is a second opinion to compare, not a constraint to enforce.
+    """
+
+    units: list[str]
+    restricted_rand: bool
+    longitudinality: bool
+
+    @field_validator("units")
+    @classmethod
+    def _units(cls, values: list[str]) -> list[str]:
+        return _unique([open_choice(v, UNITS, "should.units") for v in values],
+                       "should.units")
+
+
 # ------------------------------------------------------------ power analysis
 
 
@@ -723,6 +743,7 @@ class PowerDone(_Strict):
 
 
 class PowerAnalysis(_Judgment):
+    should: Should
     done: PowerDone
 
 
@@ -777,6 +798,7 @@ class DataComment(_Strict):
 
 
 class DataAnalysis(_Judgment):
+    should: Should
     done: DataDone
     comment: DataComment
 
@@ -879,10 +901,16 @@ class FullAnalysis(_Strict):
         if "longitudinality_ignored" in tags and data.done.longitudinality != "ignored":
             problems.append("data_comment: longitudinality_ignored but longitudinality "
                             "is not 'ignored'")
-        if ("few_clusters_no_correction" in tags
-                and data.done.small_sample_correction != "no"):
-            problems.append("data_comment: few_clusters_no_correction but "
-                            "small_sample_correction is not 'no'")
+
+        # `should` is structural only: real levels, never a restriction grouping.
+        for task, judgment in (("power_analysis", power), ("data_analysis", data)):
+            stray = [u for u in judgment.should.units if u not in design.cluster_units()]
+            if stray:
+                problems.append(f"{task}.should: {stray} are not levels above the person")
+            grouping = [u for u in judgment.should.units if u in GROUPING_UNITS]
+            if grouping:
+                problems.append(f"{task}.should: {grouping} is a restriction grouping; "
+                                f"use restricted_rand")
         if problems:
             raise ValueError("; ".join(problems))
         return self
@@ -930,6 +958,34 @@ def parse_full_analysis(raw: str, *, paper_id: str | None = None
         return FullAnalysis.model_validate(payload), was_fenced
     except Exception as exc:
         raise ParseFailure(str(exc), raw=raw, paper_id=paper_id) from exc
+
+
+# Free-text fields: an "other: ..." inside one is prose, not a vocabulary miss.
+_FREE_TEXT_FIELDS = frozenset({"reasoning", "promptbook_evidence", "note",
+                               "variables", "source_note", "applies_to", "paper_id"})
+
+
+def other_labels(answer: BaseModel) -> list[tuple[str, str]]:
+    """Every `other: <label>` in a validated answer, as (field path, label).
+
+    Decision 18: a recurring label is promoted into its list in a later
+    promptbook version, so each one is logged. Paths look like
+    `design.levels[2].unit`, so a reader can find it in the stored JSON.
+    """
+    found: list[tuple[str, str]] = []
+
+    def walk(node, path: str, key: str = "") -> None:
+        if isinstance(node, dict):
+            for name, value in node.items():
+                walk(value, f"{path}.{name}" if path else name, name)
+        elif isinstance(node, list):
+            for i, value in enumerate(node):
+                walk(value, f"{path}[{i}]", key)
+        elif isinstance(node, str) and key not in _FREE_TEXT_FIELDS and is_other(node):
+            found.append((path, other_label(node)))
+
+    walk(answer.model_dump(), "")
+    return found
 
 
 # ----------------------------------------------------- provider JSON Schema

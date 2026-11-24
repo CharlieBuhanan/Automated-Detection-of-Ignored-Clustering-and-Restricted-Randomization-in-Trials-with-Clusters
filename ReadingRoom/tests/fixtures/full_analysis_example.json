@@ -24,6 +24,7 @@
     "reasoning": "Design effect for clinic only; physician level and the pair matching are not in the calculation.",
     "promptbook_evidence": "P9",
     "confidence": 0.8,
+    "should": {"units": ["physician", "clinic"], "restricted_rand": true, "longitudinality": true},
     "done": {
       "reported": "yes",
       "clustering": "some_levels",
@@ -40,6 +41,7 @@
     "reasoning": "Mixed model with clinic and physician random effects and a pair fixed effect.",
     "promptbook_evidence": "D5, D10",
     "confidence": 0.75,
+    "should": {"units": ["physician", "clinic"], "restricted_rand": true, "longitudinality": true},
     "done": {
       "method": "mixed_effects",
       "planned_only": false,

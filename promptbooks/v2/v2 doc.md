@@ -40,10 +40,14 @@ un-run draft). Plan: `research design/GROUND_TRUTH_OUTPUT_PLAN.md`; columns:
 | `exclusion.md` also returns `exclusion_reason` (an E-number that must be cited) | Plan decision 4; 43-column export | Same E1-E18 criteria; no decision-rule change |
 | New `combined_analysis.md`: Part A study design, then Part B power (P1-P18), then Part C data (D1-D15), each with a structured `done` record | Plan step 3; one call fills the 20 model columns | P and D criteria copied verbatim from `power_analysis.md` / `data_analysis.md`, except the row below |
 | D4 adds: a planned analysis this manuscript describes is judged like a performed one | Deb Q7 (2026-11-09): a planned-only analysis can be `data_correct` yes | Criterion clarification, human-ruled |
-| `few_clusters_no_correction` tag recorded, but D13 unchanged (not decisive) | Deb Q2 said it makes data incorrect; confirmation pending (Deb.md 3b), and `Y7PRFE3Z` is labelled correct | Flip D13 in place if Deb confirms before the first run |
+| No few-clusters tag; D13 unchanged | User, 2026-11-24: work without the unconfirmed 40-cluster threshold (Deb.md 3a-3c). `small_sample_correction` still records the fact | If Deb confirms, add a rule to D13 in place before the first run |
+| Each judgment also returns `should` (units, restricted_rand, longitudinality) | User, 2026-11-24: ask the model too, so its answer can be compared with the value code derives from Part A | Not a decision rule; never checked against `done` or the verdict |
 
-`power_analysis.md` and `data_analysis.md` are unchanged and are not used by the
-combined route once step 4 switches it to `combined_analysis.md`.
+v2's standalone `power_analysis.md` and `data_analysis.md` were deleted on
+2026-11-24 (user decision; recoverable from git at `397a09f`), so the P and D
+rules live only in `combined_analysis.md`. Their text was copied verbatim from
+those files except D4. On v2 the runner refuses `--task power_analysis` and
+`--task data_analysis`; the combined route is the only post-gate route.
 
 The E3, E5, E17, P2/P17, and D3/D14 decisions are inherited from v1. Their
 rationale and the earlier un-run version consolidation are recorded in

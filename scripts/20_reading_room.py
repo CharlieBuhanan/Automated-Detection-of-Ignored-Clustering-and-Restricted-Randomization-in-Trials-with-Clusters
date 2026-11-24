@@ -175,15 +175,11 @@ def main() -> int:
     # ---------------------------------------------------------------- resolve
     # Everything that can refuse, refuses here -- before a process exists.
     combined = args.task == rr.COMBINED_ANALYSIS_ROUTE
-    if combined:
-        version, book_paths, promptbooks = rr.resolve_combined_analysis_promptbooks(
-            root=ROOT)
-        promptbook_record = rr.combined_analysis_promptbook(
-            power_analysis=promptbooks["power_analysis"],
-            data_analysis=promptbooks["data_analysis"])
-    else:
-        version, book_path, promptbook = rr.resolve_promptbook(args.task, root=ROOT)
-        promptbook_record = promptbook
+    # One resolver for every route: CURRENT's version fixes which books are read
+    # and which answer shape is asked for (rr.response_contract), and refuses a
+    # single-task power/data run on a ground-truth (v2+) version.
+    book = rr.resolve_route_book(args.task, root=ROOT)
+    version, promptbook_record = book.version, book.promptbook
     # Version is part of raw-artifact identity. A retry stays in this directory;
     # a later promptbook version cannot overwrite or mingle its evidence.
     raw_dir = RAW_ROOT / f"{args.task}_{version}_r{args.round}"
@@ -221,12 +217,9 @@ def main() -> int:
                              cache_dir=text_cache)
 
     print(f"{bar}\nREADING ROOM -- {args.task} round {args.round}\n{bar}")
-    if combined:
-        print(f"  promptbooks  : {version}")
-        for task in rr.schemas.ANALYSIS_TASKS:
-            print(f"    {task:<14}: {book_paths[task].relative_to(ROOT)}")
-    else:
-        print(f"  promptbook   : {version}  ({book_path.relative_to(ROOT)})")
+    print(f"  promptbook   : {version}  ({book.contract} answer shape)")
+    for path in book.paths:
+        print(f"    {path.relative_to(ROOT)}")
     print(f"  model        : {args.model}")
     print(f"  text         : {text_cache.relative_to(ROOT)}")
     print(f"  papers       : {plan.n}"
@@ -362,14 +355,7 @@ def main() -> int:
     def one_paper(item):
         paper, body = item
         token = rr.new_token(body.text)
-        if combined:
-            prompt = rr.build_combined_analysis_prompt(
-                power_promptbook=promptbooks["power_analysis"],
-                data_promptbook=promptbooks["data_analysis"],
-                token=token, text=body.text)
-        else:
-            prompt = rr.build_prompt(promptbook=promptbook, token=token,
-                                     text=body.text, task=args.task)
+        prompt = rr.build_route_prompt(book, token=token, text=body.text)
         attempt = rr.run_paper(prompt, room=room, token=token,
                                paper_id=paper.paper_id,
                                attempt=attempt_by_paper.get(paper.paper_id, 1),

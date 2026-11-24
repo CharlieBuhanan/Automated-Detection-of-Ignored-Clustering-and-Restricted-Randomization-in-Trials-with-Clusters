@@ -35,7 +35,8 @@ FIELDS = ["position", "column", "filled_by", "task", "type", "vocab",
 
 # filled_by:  code    = copied from the paper's ground-truth/corpus record
 #             model   = from the model's structured answer (code formats it)
-#             derived = computed from other model fields, never asked directly
+#             derived = computed from other model fields. power_should and
+#                       data_should are also asked of the model, to compare
 #             blank   = always empty (plan decision 10)
 # task:       exclusion | full_analysis | none
 # Post-gate columns are null when the full-analysis call was not made (decision 5).
@@ -175,9 +176,10 @@ ROWS = [
          type="structured", model_field="design.correlated_units; "
          "design.restricted_randomization.status; design.n_long",
          export_rule="'Account for clustering at <correlated_units>[, restricted rand.]"
-                     "[, longitudinality]'",
+                     "[, longitudinality]'; the model's own data_analysis.should goes to "
+                     "the comparison file beside it (user, 2026-11-24)",
          scoring_rule="every human-required factor present; correct extras not "
-                      "penalized (decision 14)"),
+                      "penalized (decision 14); model vs derived agreement reported"),
     dict(column="data_comment", filled_by="model", task="full_analysis", type="tags+note",
          vocab="DATA_COMMENT_TAGS", allowed_values=vocab("DATA_COMMENT_TAGS"),
          model_field="data_analysis.comment", export_rule="'tag, tag: note'",
@@ -192,9 +194,10 @@ ROWS = [
     dict(column="power_should", filled_by="derived", task="full_analysis",
          type="structured", model_field="design.correlated_units; "
          "design.restricted_randomization.status; design.n_long",
-         export_rule="same as data_should",
+         export_rule="same as data_should; the model's own power_analysis.should "
+                     "goes to the comparison file",
          scoring_rule="every human-required factor present; correct extras not "
-                      "penalized (decision 14)"),
+                      "penalized (decision 14); model vs derived agreement reported"),
     dict(column="restricted_rand", filled_by="derived", task="full_analysis", type="enum",
          allowed_values="yes; no; unclear",
          model_field="design.restricted_randomization.status",

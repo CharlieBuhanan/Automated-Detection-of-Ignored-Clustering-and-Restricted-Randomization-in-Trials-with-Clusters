@@ -130,7 +130,25 @@ CREATE TABLE IF NOT EXISTS classification_responses (
     UNIQUE (run_id, paper_id, attempt)
 );
 
+-- The whole ground-truth-shaped answer behind one accepted response: the gate's
+-- `exclusion_reason`, or the combined call's design + power + data records.
+-- Stored as validated JSON beside (never instead of) the per-task judgment
+-- rows, in the same transaction, so the 43-column export reads exactly what
+-- was accepted. One answer per response; legacy (v0/v1) responses have none.
+CREATE TABLE IF NOT EXISTS structured_answers (
+    response_id         TEXT PRIMARY KEY REFERENCES classification_responses(response_id),
+    run_id              TEXT NOT NULL REFERENCES classification_runs(run_id),
+    paper_id            TEXT NOT NULL,
+    route               TEXT NOT NULL,
+    schema_name         TEXT NOT NULL,
+    promptbook_version  TEXT NOT NULL,
+    answer_json         TEXT NOT NULL,
+    answer_sha256       TEXT NOT NULL,
+    created_at          TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_judgments_paper_task ON judgments (paper_id, task);
+CREATE INDEX IF NOT EXISTS idx_structured_answers_paper ON structured_answers (paper_id);
 CREATE INDEX IF NOT EXISTS idx_judgments_promptbook ON judgments (promptbook_version);
 CREATE INDEX IF NOT EXISTS idx_classification_runs_config
     ON classification_runs (config_fingerprint);
@@ -678,21 +696,66 @@ def insert_judgment(conn: sqlite3.Connection, *, paper_id: str, task: str, pass_
     return index
 
 
+def insert_structured_answer(conn: sqlite3.Connection, *, response_id: str, run_id: str,
+                             paper_id: str, route: str, schema_name: str,
+                             promptbook_version: str, answer: Mapping[str, Any],
+                             commit: bool = True) -> None:
+    """Store one validated ground-truth answer beside its judgment rows.
+
+    The response must already be registered under the same run and paper, the
+    same provenance rule `insert_judgment` enforces. A second answer for one
+    response fails on the primary key rather than replacing the first.
+    """
+    response = conn.execute(
+        "SELECT run_id, paper_id FROM classification_responses WHERE response_id = ?",
+        (response_id,),
+    ).fetchone()
+    if response is None:
+        raise ProvenanceError(
+            f"response_id {response_id!r} is not registered before its answer")
+    if response["run_id"] != run_id or response["paper_id"] != paper_id:
+        raise ProvenanceError(
+            f"response_id {response_id!r} belongs to run {response['run_id']!r} / "
+            f"paper {response['paper_id']!r}, not {run_id!r} / {paper_id!r}")
+    text = _canonical_json(answer)
+    conn.execute(
+        """INSERT INTO structured_answers
+           (response_id, run_id, paper_id, route, schema_name, promptbook_version,
+            answer_json, answer_sha256, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (response_id, run_id, paper_id, route, schema_name, promptbook_version,
+         text, _sha256_json(answer), _now()),
+    )
+    if commit:
+        conn.commit()
+
+
+def structured_answer_exists(conn: sqlite3.Connection, response_id: str) -> bool:
+    return conn.execute("SELECT 1 FROM structured_answers WHERE response_id = ?",
+                        (response_id,)).fetchone() is not None
+
+
 def insert_judgments_atomically(conn: sqlite3.Connection,
-                                judgments: list[Mapping[str, Any]]) -> list[int]:
+                                judgments: list[Mapping[str, Any]],
+                                answers: list[Mapping[str, Any]] = ()) -> list[int]:
     """Insert an all-or-nothing set of task judgments from one response.
 
     This is the persistence boundary for the combined power/data route: a bad
     second half rolls back the first half, yielding zero judgments rather than
     an invalid partially-combined scientific record.  A savepoint works both
     as a stand-alone operation and inside a caller's larger transaction.
+
+    `answers` are `insert_structured_answer` keyword sets, written inside the
+    same savepoint, so a judgment is never stored without its full answer.
     """
-    if not judgments:
+    if not judgments and not answers:
         return []
     conn.execute("SAVEPOINT combined_judgment_insert")
     try:
         indices = [insert_judgment(conn, commit=False, **dict(record))
                    for record in judgments]
+        for answer in answers:
+            insert_structured_answer(conn, commit=False, **dict(answer))
     except Exception:
         conn.execute("ROLLBACK TO SAVEPOINT combined_judgment_insert")
         conn.execute("RELEASE SAVEPOINT combined_judgment_insert")

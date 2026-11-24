@@ -63,8 +63,26 @@ def test_other_label_is_accepted(answer):
     answer["design"]["correlated_units"] = ["physician", "other: food pantry"]
     answer["data_analysis"]["done"]["levels_modeled"] = ["physician", "other: food pantry"]
     answer["power_analysis"]["done"]["units_accounted"] = ["other: food pantry"]
+    for task in ("power_analysis", "data_analysis"):
+        answer[task]["should"]["units"] = ["physician", "other: food pantry"]
     full, _ = schemas.parse_full_analysis(json.dumps(answer))
     assert schemas.other_label(full.design.unit_rand) == "food pantry"
+    assert schemas.other_labels(full) == [
+        ("design.levels[2].unit", "food pantry"),
+        ("design.unit_rand", "food pantry"),
+        ("design.correlated_units[1]", "food pantry"),
+        ("power_analysis.should.units[1]", "food pantry"),
+        ("power_analysis.done.units_accounted[0]", "food pantry"),
+        ("data_analysis.should.units[1]", "food pantry"),
+        ("data_analysis.done.levels_modeled[1]", "food pantry"),
+    ]
+
+
+def test_other_labels_ignore_free_text(answer):
+    answer["data_analysis"]["comment"]["note"] = "other: this is prose"
+    answer["power_analysis"]["done"]["source_note"] = "other: also prose"
+    full, _ = schemas.parse_full_analysis(json.dumps(answer))
+    assert schemas.other_labels(full) == []
 
 
 def test_no_power_calculation_is_all_null(answer):
@@ -214,8 +232,39 @@ def test_unrestricted_design_needs_not_applicable(answer):
 
 
 def test_a_comment_tag_must_agree_with_done(answer):
+    answer["data_analysis"]["comment"]["tags"] = ["restriction_ignored"]
+    reject(answer, "restriction_ignored")
+
+
+def test_there_is_no_few_clusters_tag(answer):
+    """Its threshold is still open with Deb, so the contract makes no such call."""
     answer["data_analysis"]["comment"]["tags"] = ["few_clusters_no_correction"]
-    reject(answer, "small_sample_correction")
+    reject(answer, "data_comment tag")
+
+
+def test_should_is_asked_of_both_judgments(answer):
+    del answer["power_analysis"]["should"]
+    reject(answer, "should")
+
+
+def test_should_may_disagree_with_done_and_the_design(answer):
+    """A second opinion to compare with the derived value, not a constraint."""
+    answer["data_analysis"]["should"] = {"units": ["clinic"], "restricted_rand": False,
+                                         "longitudinality": False}
+    schemas.parse_full_analysis(json.dumps(answer))
+
+
+@pytest.mark.parametrize("units, message", [(["ward"], "not levels above the person"),
+                                            (["patient"], "not levels above the person"),
+                                            (["matched_pair"], "restriction grouping")])
+def test_should_units_are_real_cluster_levels(answer, units, message):
+    answer["power_analysis"]["should"]["units"] = units
+    reject(answer, message)
+
+
+def test_should_flags_are_strict_booleans(answer):
+    answer["data_analysis"]["should"]["longitudinality"] = "true"
+    reject(answer, "bool")
 
 
 def test_no_analysis_cannot_be_correct(answer):
@@ -321,30 +370,17 @@ def test_field_dictionary_is_current_and_in_ground_truth_order():
 # ------------------------------------------------------- promptbook
 
 
-def _rule_lines(text: str, prefix: str) -> dict[str, str]:
-    """`P7` -> its full rule text, joined across wrapped lines."""
-    rules, current = {}, None
-    for line in text.splitlines():
-        match = re.match(rf"\s*\d+\.\s+\*\*({prefix}\d+)\.", line)
-        if match:
-            current = match.group(1)
-            rules[current] = line.strip()
-        elif current and line.startswith("    ") and line.strip():
-            rules[current] += " " + line.strip()
-        else:
-            current = None
-    return rules
+@pytest.mark.parametrize("prefix, last", [("P", 18), ("D", 15)])
+def test_combined_book_defines_every_rule_once(prefix, last):
+    """The standalone v2 books were folded in (v2 doc.md); this is the only copy."""
+    text = (V2 / "combined_analysis.md").read_text(encoding="utf-8")
+    defined = re.findall(rf"^\s*\d+\.\s+\*\*({prefix}\d+)\.", text, flags=re.MULTILINE)
+    assert defined == [f"{prefix}{n}" for n in range(1, last + 1)]
 
 
-@pytest.mark.parametrize("prefix, book", [("P", "power_analysis.md"),
-                                          ("D", "data_analysis.md")])
-def test_combined_rules_match_the_standalone_books(prefix, book):
-    combined = _rule_lines((V2 / "combined_analysis.md").read_text(encoding="utf-8"), prefix)
-    standalone = _rule_lines((V2 / book).read_text(encoding="utf-8"), prefix)
-    assert set(combined) == set(standalone)
-    changed = sorted(rule for rule in combined if combined[rule] != standalone[rule])
-    # D4 gained Deb's Q7 sentence (v2 doc.md); nothing else may drift.
-    assert changed == (["D4"] if prefix == "D" else [])
+def test_v2_has_no_standalone_analysis_books():
+    assert not (V2 / "power_analysis.md").exists()
+    assert not (V2 / "data_analysis.md").exists()
 
 
 def test_combined_book_lists_every_vocabulary_value():

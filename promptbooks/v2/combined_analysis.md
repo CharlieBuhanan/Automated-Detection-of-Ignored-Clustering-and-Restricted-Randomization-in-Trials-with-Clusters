@@ -70,7 +70,15 @@ Record the design of the primary-outcome comparison.
 ## Part B — Power analysis
 
 You decide whether the power analysis correctly accounted for clustering, and for restricted
-randomization if present. First record what it did (`done`), then judge it.
+randomization if present. First record what a correct one needs (`should`), then what it did
+(`done`), then judge it.
+
+**`should`** — what a correct sample-size calculation for this design must account for, from
+Part A alone, before you look at what the paper did:
+
+- `units`: every level whose correlation it must account for (from `levels`); `[]` if none
+- `restricted_rand`: `true` if the restricted randomization must be accounted for, else `false`
+- `longitudinality`: `true` if the repeated measurements must be accounted for, else `false`
 
 **`done`** — what the sample-size calculation accounted for. If there is no power or sample-size
 calculation, `reported` is `no` and every other field is `null` (`units_accounted` is `[]`).
@@ -148,7 +156,12 @@ first one that matches decides; cite the deciding number in `promptbook_evidence
 ## Part C — Data analysis
 
 You decide whether the data analysis correctly accounted for clustering, and for restricted
-randomization if present. First record what it did (`done`, `comment`), then judge it.
+randomization if present. First record what a correct one needs (`should`), then what it did
+(`done`, `comment`), then judge it.
+
+**`should`** — what a correct primary analysis for this design must account for, from Part A
+alone, before you look at what the paper did. Same three fields as Part B: `units`,
+`restricted_rand`, `longitudinality`.
 
 **`done`** — the **one** main analysis of the primary outcome. If the paper describes no analysis
 method, `method` is `not_reported` and every other field is `null` (`levels_modeled` is `[]`).
@@ -173,8 +186,6 @@ method, `method` is `not_reported` and every other field is `null` (`levels_mode
 - `restriction_ignored` — restricted randomization not reflected in the analysis
 - `longitudinality_ignored` — repeated measures not reflected in the analysis
 - `label_inconsistency` — the paper describes the design or analysis inconsistently
-- `few_clusters_no_correction` — a GEE with 40 or fewer randomized clusters in total and no
-  small-sample correction. Record it; it does not by itself decide the judgment (D13).
 
 **Criteria.** Test the numbered criteria below in order. `yes` = correct, `no` = incorrect. The
 first one that matches decides; cite the deciding number in `promptbook_evidence`.
@@ -250,11 +261,13 @@ extra or missing key is rejected.
   },
   "power_analysis": {
     "decision": "yes | no | undecidable", "reasoning": "...", "promptbook_evidence": "P..", "confidence": 0.0,
+    "should": {"units": ["..."], "restricted_rand": false, "longitudinality": false},
     "done": {"reported": "...", "clustering": "...", "units_accounted": [], "restricted_rand": "...",
              "longitudinality": "...", "method": "...", "source_note": null, "timing": "..."}
   },
   "data_analysis": {
     "decision": "yes | no | undecidable", "reasoning": "...", "promptbook_evidence": "D..", "confidence": 0.0,
+    "should": {"units": ["..."], "restricted_rand": false, "longitudinality": false},
     "done": {"method": "...", "planned_only": false, "levels_modeled": [], "clustering": "...",
              "restricted_rand": "...", "longitudinality": "...", "small_sample_correction": "..."},
     "comment": {"tags": [], "note": null}

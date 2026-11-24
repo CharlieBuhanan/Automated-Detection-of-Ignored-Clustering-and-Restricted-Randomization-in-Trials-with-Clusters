@@ -65,7 +65,10 @@ def test_main_resume_and_force_select_the_right_attempts(monkeypatch, tmp_path, 
     monkeypatch.setattr(run, "ROOT", tmp_path)
     monkeypatch.setattr(run.rr, "CACHE_DIR", tmp_path / "cache")
     monkeypatch.setattr(run, "read_csv", lambda path: [prior] if path.name == "index.csv" else [])
-    monkeypatch.setattr(run.rr, "resolve_promptbook", lambda *a, **k: ("v2", tmp_path / "book.md", "E1"))
+    monkeypatch.setattr(run.rr, "resolve_route_book", lambda *a, **k: rr.RouteBook(
+        route="exclusion", version="v2", contract=rr.CONTRACT_GROUND_TRUTH,
+        paths=(tmp_path / "book.md",), promptbook="E1",
+        known_rules={"exclusion": {"E1"}}, texts={}))
     monkeypatch.setattr(run.rr, "load_labels", lambda conn: [])
     monkeypatch.setattr(run.rr, "load_verdicts", lambda: {})
     monkeypatch.setattr(run.rr, "load_round", lambda *a, **k: plan)
@@ -104,7 +107,10 @@ def test_main_serial_breach_stops_before_the_next_paper(monkeypatch, tmp_path):
     monkeypatch.setattr(run, "read_csv", lambda path: [])
     monkeypatch.setattr(run, "write_csv", lambda *a: writes.append(a))
     monkeypatch.setattr(run, "now", lambda: "2026-08-28T00:00:00+00:00")
-    monkeypatch.setattr(run.rr, "resolve_promptbook", lambda *a, **k: ("v2", tmp_path / "book.md", "E1"))
+    monkeypatch.setattr(run.rr, "resolve_route_book", lambda *a, **k: rr.RouteBook(
+        route="exclusion", version="v2", contract=rr.CONTRACT_GROUND_TRUTH,
+        paths=(tmp_path / "book.md",), promptbook="E1",
+        known_rules={"exclusion": {"E1"}}, texts={}))
     monkeypatch.setattr(run.rr, "load_labels", lambda conn: [])
     monkeypatch.setattr(run.rr, "load_verdicts", lambda: {})
     monkeypatch.setattr(run.rr, "load_round", lambda *a, **k: plan)
@@ -115,7 +121,7 @@ def test_main_serial_breach_stops_before_the_next_paper(monkeypatch, tmp_path):
     monkeypatch.setattr(run.rr, "find_claude", lambda path: "claude")
     monkeypatch.setattr(run.rr, "prepare_room", lambda **k: room)
     monkeypatch.setattr(run.rr, "preflight", lambda *a, **k: probe)
-    monkeypatch.setattr(run.rr, "build_prompt", lambda **k: "prompt")
+    monkeypatch.setattr(run.rr, "build_route_prompt", lambda *a, **k: "prompt")
     monkeypatch.setattr(run.rr, "new_token", lambda text: "token")
     monkeypatch.setattr(run.rr, "write_raw", lambda attempt, raw: tmp_path / "raw" / "first.jsonl")
     monkeypatch.setattr(run.rr, "assert_no_tools_offered", lambda *a, **k: None)

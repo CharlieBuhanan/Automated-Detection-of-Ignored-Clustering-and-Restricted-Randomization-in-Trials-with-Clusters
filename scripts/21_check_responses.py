@@ -31,6 +31,13 @@ RESULTS = ROOT / "results" / "04_classification"
 RAW_ROOT = RESULTS / "raw"
 LEDGER = RESULTS / "retry_ledger.csv"
 
+# Decision 18: every `other: <label>` in an accepted answer, append-only, so a
+# label that recurs across papers can be promoted into its list in a later
+# promptbook version. Written only on --write, with the judgments.
+OTHER_LABELS = RESULTS / "other_labels.csv"
+OTHER_LABEL_COLUMNS = ["timestamp", "route", "round", "promptbook_version",
+                       "paper_id", "attempt", "field", "label", "raw_path"]
+
 CHECKED_COLUMNS = [
     "paper_id", "token", "task", "round", "status", "decision",
     "confidence", "reasoning", "promptbook_evidence", "cited_rules",
@@ -40,6 +47,7 @@ CHECKED_COLUMNS = [
     "power_reasoning", "power_promptbook_evidence", "power_cited_rules",
     "data_decision", "data_confidence", "data_reasoning",
     "data_promptbook_evidence", "data_cited_rules",
+    "exclusion_reason", "other_labels",
 ]
 
 WRITE_RECEIPTS = "checker_write_receipts.json"
@@ -68,43 +76,21 @@ def latest_attempt_per_paper(index: list[dict]) -> tuple[list[dict], list[dict]]
     return kept, superseded
 
 
-def promptbook_context(task: str) -> tuple[str, str, dict[str, set[str]]]:
-    """Resolve the exact promptbook text and rule IDs for one route."""
-    if task == rr.COMBINED_ANALYSIS_ROUTE:
-        version, _, books = rr.resolve_combined_analysis_promptbooks(root=ROOT)
-        promptbook = rr.combined_analysis_promptbook(
-            power_analysis=books["power_analysis"],
-            data_analysis=books["data_analysis"])
-        rules = {name: rr.promptbook_rule_ids(books[name], name)
-                 for name in schemas.ANALYSIS_TASKS}
-        return version, promptbook, rules
+def route_book_for_version(task: str, version: str) -> rr.RouteBook:
+    """Load the exact frozen book named by a run environment, not CURRENT.
 
-    version, _, promptbook = rr.resolve_promptbook(task, root=ROOT)
-    return version, promptbook, {task: rr.promptbook_rule_ids(promptbook, task)}
+    The version also fixes the answer shape (rr.response_contract), so a v1
+    reply is always re-checked as a v1 reply.
+    """
+    if not version:
+        raise rr.Refuse("the run environment names no promptbook version")
+    return rr.resolve_route_book(task, root=ROOT, version=version)
 
 
 def promptbook_context_for_version(task: str, version: str) -> tuple[str, str, dict[str, set[str]]]:
-    """Load the exact frozen book named by a run environment, not CURRENT."""
-    if not version or Path(version).name != version:
-        raise rr.Refuse(f"invalid promptbook version in run environment: {version!r}")
-    books = ROOT / "promptbooks" / version
-    if not books.is_dir():
-        raise rr.Refuse(f"run environment names missing promptbook directory {books}")
-    if task == rr.COMBINED_ANALYSIS_ROUTE:
-        texts = {}
-        rules = {}
-        for name in rr.schemas.ANALYSIS_TASKS:
-            path = books / f"{name}.md"
-            if not path.is_file():
-                raise rr.Refuse(f"{path} is missing")
-            texts[name] = path.read_text(encoding="utf-8")
-            rules[name] = rr.promptbook_rule_ids(texts[name], name)
-        return version, rr.combined_analysis_promptbook(**texts), rules
-    path = books / f"{task}.md"
-    if not path.is_file():
-        raise rr.Refuse(f"{path} is missing")
-    promptbook = path.read_text(encoding="utf-8")
-    return version, promptbook, {task: rr.promptbook_rule_ids(promptbook, task)}
+    """(version, hashed promptbook text, known rule IDs) for one recorded run."""
+    book = route_book_for_version(task, version)
+    return book.version, book.promptbook, book.known_rules
 
 
 def locate_raw_dir(task: str, round_no: int, version: str | None) -> Path:
@@ -237,6 +223,58 @@ def add_combined_decision_fields(record: dict,
         })
 
 
+def add_answer_fields(record: dict, answer) -> None:
+    """Report the ground-truth extras; nothing for a legacy (v0/v1) reply."""
+    if answer is None:
+        return
+    if isinstance(answer, schemas.ExclusionWithReason):
+        record["exclusion_reason"] = answer.exclusion_reason or ""
+    record["other_labels"] = "; ".join(
+        f"{field}={label}" for field, label in schemas.other_labels(answer))
+
+
+def answer_row(record: dict, *, response_id: str, run_id: str, route: str,
+               version: str) -> dict | None:
+    """The `structured_answers` row for one passed record, if it has an answer."""
+    answer = record.get("_answer")
+    if answer is None:
+        return None
+    payload = answer.model_dump(exclude={"paper_id"})
+    return {"response_id": response_id, "run_id": run_id,
+            "paper_id": record["paper_id"], "route": route,
+            "schema_name": type(answer).__name__, "promptbook_version": version,
+            "answer": payload}
+
+
+def other_label_rows(passed: list[dict], *, route: str, round_no: int,
+                     version: str, skip: set[tuple[str, int]]) -> list[dict]:
+    """One log row per `other: <label>` in the answers just written."""
+    stamp = now()
+    rows = []
+    for record in passed:
+        answer = record.get("_answer")
+        if answer is None or (record["paper_id"], record["attempt"]) in skip:
+            continue
+        for field, label in schemas.other_labels(answer):
+            rows.append({"timestamp": stamp, "route": route, "round": round_no,
+                         "promptbook_version": version, "paper_id": record["paper_id"],
+                         "attempt": record["attempt"], "field": field, "label": label,
+                         "raw_path": record["raw_path"]})
+    return rows
+
+
+def append_other_labels(path: Path, rows: list[dict]) -> None:
+    if not rows:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    new = not path.is_file()
+    with path.open("a", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=OTHER_LABEL_COLUMNS)
+        if new:
+            writer.writeheader()
+        writer.writerows(rows)
+
+
 def persist_passed(*, passed: list[dict], environment: dict,
                    environment_path: Path, route: str, version: str,
                    pass_name: str) -> tuple[int, set[tuple[str, int]]]:
@@ -254,6 +292,7 @@ def persist_passed(*, passed: list[dict], environment: dict,
             conn, environment, source_path=environment_path,
             transport="reading_room", route=route)
         inserts: list[dict] = []
+        answers: list[dict] = []
         for record in passed:
             metadata = dict(record.get("_provenance") or {})
             response_id = db.response_id_for_attempt(
@@ -273,8 +312,17 @@ def persist_passed(*, passed: list[dict], environment: dict,
                     raise rr.Refuse(
                         f"response {response_id} already has different persisted task judgment(s) "
                         f"{list(existing)}")
+                if (record.get("_answer") is not None
+                        and not db.structured_answer_exists(conn, response_id)):
+                    raise rr.Refuse(
+                        f"response {response_id} has judgments but no stored full "
+                        "answer; refusing to guess how it was half-written")
                 already_written.add((record["paper_id"], record["attempt"]))
                 continue
+            row = answer_row(record, response_id=response_id, run_id=run_id,
+                             route=route, version=version)
+            if row is not None:
+                answers.append(row)
             for task, decision in task_decisions(record).items():
                 inserts.append({
                     "paper_id": record["paper_id"], "task": task,
@@ -287,7 +335,7 @@ def persist_passed(*, passed: list[dict], environment: dict,
                     "promptbook_version": version,
                     "run_id": run_id, "response_id": response_id,
                 })
-        db.insert_judgments_atomically(conn, inserts)
+        db.insert_judgments_atomically(conn, inserts, answers)
         return len(inserts), already_written
     finally:
         conn.close()
@@ -319,6 +367,13 @@ def print_summary(*, route: str, passed: list[dict], failures: list[dict],
               "-- for human review, not rejected")
         for record in flagged[:show]:
             print(f"      {record['paper_id']}: {record['flagged_other_papers']}")
+
+    labelled = [record for record in passed if record.get("other_labels")]
+    if labelled:
+        print(f"  other-label: {len(labelled)} reply/replies used 'other: <label>' "
+              "-- logged on --write; promote a label only when it recurs")
+        for record in labelled[:show]:
+            print(f"      {record['paper_id']}: {record['other_labels']}")
 
     for task, values in confidences.items():
         if route == rr.COMBINED_ANALYSIS_ROUTE:
@@ -365,8 +420,9 @@ def main() -> int:
     index, superseded = latest_attempt_per_paper(index)
     environment_path = raw_dir / "run_environment.json"
     environment = rr.load_run_environment(environment_path)
-    version, promptbook, known_rules = promptbook_context_for_version(
+    book = route_book_for_version(
         args.task, str(environment.get("promptbook_version") or ""))
+    version, promptbook, known_rules = book.version, book.promptbook, book.known_rules
     if environment.get("promptbook_sha256") != rr.sha256_text(promptbook):
         raise rr.Refuse(
             f"the promptbook text for {args.task} changed since this round ran "
@@ -376,7 +432,7 @@ def main() -> int:
     real_ids = set(rr.load_verdicts())
     rule_count = sum(len(rules) for rules in known_rules.values())
     print(f"{bar}\nCHECK RESPONSES -- {args.task} round {args.round}\n{bar}")
-    print(f"  promptbook : {version} ({rule_count} rules)")
+    print(f"  promptbook : {version} ({rule_count} rules, {book.contract} answer shape)")
     print(f"  responses  : {len(index)}")
     if superseded:
         print(f"  superseded : {len(superseded)} earlier attempt(s) ignored "
@@ -448,20 +504,13 @@ def main() -> int:
             continue
 
         try:
+            checked_reply = rr.parse_and_check_reply(reply, book=book, token=token)
+            decisions, was_fenced = checked_reply.decisions, checked_reply.was_fenced
             if args.task == rr.COMBINED_ANALYSIS_ROUTE:
-                combined, was_fenced = schemas.parse_combined_analysis(reply, paper_id=None)
-                rr.check_combined_analysis_decision(
-                    combined, token=token, known_rules=known_rules)
-                decisions = combined.task_decisions()
                 add_combined_decision_fields(record, decisions)
             else:
-                decision, was_fenced = schemas.parse_decision(
-                    reply, task=args.task, paper_id=None)
-                rr.check_token_echo(decision, token)
-                rr.check_decision(decision, task=args.task, token=token,
-                                  known_rules=known_rules[args.task])
-                decisions = {args.task: decision}
-                add_legacy_decision_fields(record, decision)
+                add_legacy_decision_fields(record, decisions[args.task])
+            add_answer_fields(record, checked_reply.answer)
         except schemas.ParseFailure as exc:
             checked.append(failure_record(record, row, kind=rr.FAILURE_PARSE,
                                           detail=str(exc), case="D"))
@@ -480,6 +529,7 @@ def main() -> int:
             "was_fenced": was_fenced,
             "flagged_other_papers": ";".join(rr.flag_other_papers(reply)),
             "_task_decisions": decisions,
+            "_answer": checked_reply.answer,
             "_provenance": rr.paper_provenance(stream_text),
         })
         checked.append(record)
@@ -548,6 +598,12 @@ def main() -> int:
                    if (row["paper_id"], rr.attempt_number(row)) not in already_written]
     if ledger_rows:
         rr.append_ledger(LEDGER, ledger_rows)
+    label_rows = other_label_rows(passed, route=args.task, round_no=args.round,
+                                  version=version, skip=already_written)
+    append_other_labels(OTHER_LABELS, label_rows)
+    if label_rows:
+        print(f"  logged {len(label_rows)} other-label(s) -> "
+              f"{OTHER_LABELS.relative_to(ROOT)}")
     write_receipt(receipt_path, receipts, snapshot=snapshot,
                   pass_name=args.pass_name, judgments=inserted,
                   ledger_rows=len(ledger_rows))

@@ -101,6 +101,24 @@ EFFORT = "medium"
 COMBINED_ANALYSIS_ROUTE = "combined_analysis"
 READING_ROOM_ROUTES = db.TASKS + (COMBINED_ANALYSIS_ROUTE,)
 
+# Which answer shape a promptbook version speaks, decided by an explicit table
+# rather than by which files exist, so a missing file can never fall back to the
+# old shape silently. v0/v1 replies are paid round-1 evidence: their prompts and
+# parsers stay byte-for-byte as they ran. Every later version speaks the
+# ground-truth shape (research design/GROUND_TRUTH_OUTPUT_PLAN.md): exclusion
+# adds `exclusion_reason`, and the combined route reads one book and returns
+# design + power + data. Single-task power/data routes do not exist there.
+CONTRACT_LEGACY = "legacy"
+CONTRACT_GROUND_TRUTH = "ground_truth"
+LEGACY_CONTRACT_VERSIONS = frozenset({"v0", "v1"})
+FULL_ANALYSIS_BOOK = "combined_analysis.md"
+
+
+def response_contract(version: str) -> str:
+    """The answer shape a promptbook version's replies are parsed as."""
+    return (CONTRACT_LEGACY if version in LEGACY_CONTRACT_VERSIONS
+            else CONTRACT_GROUND_TRUTH)
+
 # A15. The pinned minimal system prompt, passed verbatim as `--system-prompt`.
 #
 # Not a nicety. The 2026-08-27 probe found every call was carrying ~12,200
@@ -945,14 +963,7 @@ def resolve_promptbook(task: str, *, root: Path = ROOT) -> tuple[str, Path, str]
     if task not in db.TASKS:
         raise Refuse(f"unknown task {task!r}; expected one of {db.TASKS}")
 
-    current = Path(root) / "promptbooks" / "CURRENT"
-    if not current.is_file():
-        raise Refuse(f"{current} does not exist: nothing names the promptbook "
-                     f"in force (B9)")
-    version = current.read_text(encoding="utf-8").strip()
-    if not version:
-        raise Refuse(f"{current} is empty (B9)")
-
+    version = _current_version(root)
     directory = Path(root) / "promptbooks" / version
     if not directory.is_dir():
         raise Refuse(f"promptbooks/CURRENT names {version!r}, which does not "
@@ -979,6 +990,87 @@ def resolve_combined_analysis_promptbooks(*, root: Path = ROOT
     paths = {task: resolved[task][1] for task in schemas.ANALYSIS_TASKS}
     texts = {task: resolved[task][2] for task in schemas.ANALYSIS_TASKS}
     return version, paths, texts
+
+
+@dataclass(frozen=True)
+class RouteBook:
+    """Everything a route needs from one promptbook version, resolved once.
+
+    `promptbook` is exactly the text hashed into run_environment.json, so the
+    runner and the checker hash the same bytes. `texts` holds the per-task books
+    only for the legacy combined prompt, which delimits two books.
+    """
+    route: str
+    version: str
+    contract: str
+    paths: tuple[Path, ...]
+    promptbook: str
+    known_rules: dict
+    texts: dict
+
+
+def _read_book(path: Path) -> str:
+    if not path.is_file():
+        raise Refuse(f"{path} does not exist (B9)")
+    return path.read_text(encoding="utf-8")
+
+
+def resolve_route_book(route: str, *, root: Path = ROOT,
+                       version: str | None = None) -> RouteBook:
+    """Resolve a route's promptbook(s) under CURRENT, or under a named version.
+
+    The checker passes the version a run recorded, never CURRENT, so a raw
+    reply is always re-checked against the book it was answered under.
+    """
+    if route not in READING_ROOM_ROUTES:
+        raise Refuse(f"unknown route {route!r}; expected one of {READING_ROOM_ROUTES}")
+    if version is None:
+        version = _current_version(root)
+    if not version or Path(version).name != version:
+        raise Refuse(f"invalid promptbook version {version!r}")
+    directory = Path(root) / "promptbooks" / version
+    if not directory.is_dir():
+        raise Refuse(f"promptbook directory {directory} does not exist (B9)")
+
+    contract = response_contract(version)
+    if contract == CONTRACT_GROUND_TRUTH and route in schemas.ANALYSIS_TASKS:
+        raise Refuse(
+            f"{version} uses the ground-truth answer shape: power and data are "
+            f"judged together, with the study design, through --task "
+            f"{COMBINED_ANALYSIS_ROUTE}, never alone")
+
+    if route == COMBINED_ANALYSIS_ROUTE and contract == CONTRACT_LEGACY:
+        paths = tuple(directory / f"{task}.md" for task in schemas.ANALYSIS_TASKS)
+        texts = {task: _read_book(path)
+                 for task, path in zip(schemas.ANALYSIS_TASKS, paths)}
+        return RouteBook(route=route, version=version, contract=contract, paths=paths,
+                         promptbook=combined_analysis_promptbook(**texts),
+                         known_rules={task: promptbook_rule_ids(texts[task], task)
+                                      for task in schemas.ANALYSIS_TASKS},
+                         texts=texts)
+
+    if route == COMBINED_ANALYSIS_ROUTE:
+        path = directory / FULL_ANALYSIS_BOOK
+        text = _read_book(path)
+        rules = {task: promptbook_rule_ids(text, task) for task in schemas.ANALYSIS_TASKS}
+    else:
+        path = directory / f"{route}.md"
+        text = _read_book(path)
+        rules = {route: promptbook_rule_ids(text, route)}
+    return RouteBook(route=route, version=version, contract=contract, paths=(path,),
+                     promptbook=text, known_rules=rules, texts={})
+
+
+def _current_version(root: Path) -> str:
+    """B9: the version `promptbooks/CURRENT` names."""
+    current = Path(root) / "promptbooks" / "CURRENT"
+    if not current.is_file():
+        raise Refuse(f"{current} does not exist: nothing names the promptbook "
+                     f"in force (B9)")
+    version = current.read_text(encoding="utf-8").strip()
+    if not version:
+        raise Refuse(f"{current} is empty (B9)")
+    return version
 
 
 def load_rounds_csv(path: Path = ROUNDS_CSV) -> list[dict]:
@@ -1451,6 +1543,123 @@ def build_combined_analysis_prompt(*, power_promptbook: str,
         token=token, reasoning_max=schemas.REASONING_MAX_CHARS)
     return PROMPT_TEMPLATE.format(promptbook=promptbook, token=token, text=text,
                                   instructions=instructions)
+
+
+# The ground-truth contract (v2 onward). The promptbook carries the answer
+# format; these instructions add the one wrapper-owned key, `paper_id`, which
+# the API route never asks for (the wrapper there already knows the paper).
+EXCLUSION_WITH_REASON_INSTRUCTIONS = """Now record your exclusion judgment for paper {token}.
+
+Reply with ONE JSON object and nothing else. No prose before it, no prose after
+it, no ``` fence.
+
+{{
+  "decision": "yes" | "no" | "undecidable" | "wrong_text",
+  "exclusion_reason": "E5" or null,
+  "reasoning": "why, in your own words, {reasoning_max} characters or fewer",
+  "promptbook_evidence": "the criterion number that decided it, e.g. E5",
+  "confidence": a number from 0.0 to 1.0,
+  "paper_id": "{token}"
+}}
+
+Rules for the reply, all of them checked:
+- Exactly these six keys: the five fields of the answer format above, plus
+  "paper_id". A missing or extra key is rejected.
+- "decision" must be one of "yes", "no", "undecidable", "wrong_text". Nothing
+  else, including "maybe".
+- "exclusion_reason": when "decision" is "yes", the number of the criterion that
+  decided it, one of {reasons}, and it must also appear in
+  "promptbook_evidence". For any other decision it is null.
+- "reasoning" is required and is capped at {reasoning_max} characters.
+- "promptbook_evidence" is required and must name at least one criterion that
+  actually exists in the promptbook above. Prose with no criterion number is
+  rejected. If your decision is "wrong_text", write exactly "{wrong_text}"
+  there instead.
+- "confidence" is your real confidence in THIS paper. It is compared across the
+  whole round; the same number on every paper is treated as a template, not a
+  judgment, and fails the round.
+- "paper_id" must be exactly {token}, copied from above.
+- Judge only the paper above. Do not name, cite, or compare against any other
+  paper, and do not refer to any identifier you were not given here.
+- Use "undecidable" only when the paper genuinely does not contain enough to
+  decide. It is an abstention, not a category, and a round full of them is a
+  failed round."""
+
+FULL_ANALYSIS_INSTRUCTIONS = """Now record the study design and the two independent judgments for paper {token}.
+
+Reply with ONE JSON object and nothing else. No prose before it, no prose after
+it, no ``` fence.
+
+Use the answer format above exactly, with one more top-level key, "paper_id",
+placed first:
+
+{{
+  "paper_id": "{token}",
+  "design": {{ ...as the answer format above... }},
+  "power_analysis": {{ ...as the answer format above... }},
+  "data_analysis": {{ ...as the answer format above... }}
+}}
+
+Rules for the reply, all of them checked:
+- Exactly these four top-level keys, and exactly the keys the answer format
+  above lists inside each. A missing or extra key is rejected.
+- "paper_id" must be exactly {token}, copied from above.
+- A listed value is spelled exactly as the promptbook shows it. Anything that
+  fits no listed value is written "other: <short label>".
+- power_analysis cites only P criteria and data_analysis only D criteria. Each
+  promptbook_evidence names a criterion that exists above. Prose with no
+  criterion number is rejected.
+- Decide the two judgments independently. Neither reasoning nor evidence may
+  refer to the other judgment's conclusion.
+- Each reasoning is required and capped at {reasoning_max} characters.
+- Each confidence is your real confidence in that judgment for THIS paper.
+- An answer that contradicts itself is rejected whole.
+- Judge only the paper above. Do not name, cite, or compare another paper.
+- Use "undecidable" only when the paper genuinely lacks readable information
+  for that judgment. It is an abstention, not a category."""
+
+
+def _exclusion_reason_range() -> str:
+    """'E1-E11, E13-E16' from EXCLUSION_REASONS, so the prompt cannot drift."""
+    numbers = sorted(int(rule[1:]) for rule in schemas.EXCLUSION_REASONS)
+    runs, start = [], numbers[0]
+    for previous, current in zip(numbers, numbers[1:] + [None]):
+        if current != previous + 1:
+            runs.append(f"E{start}" if start == previous else f"E{start}-E{previous}")
+            start = current
+    return ", ".join(runs)
+
+
+def build_exclusion_with_reason_prompt(*, promptbook: str, token: str, text: str) -> str:
+    instructions = EXCLUSION_WITH_REASON_INSTRUCTIONS.format(
+        token=token, reasoning_max=schemas.REASONING_MAX_CHARS,
+        reasons=_exclusion_reason_range(), wrong_text=EVIDENCE_WRONG_TEXT)
+    return PROMPT_TEMPLATE.format(promptbook=promptbook.strip(), token=token,
+                                  text=text, instructions=instructions)
+
+
+def build_full_analysis_prompt(*, promptbook: str, token: str, text: str) -> str:
+    """One paper, one book (design, then P, then D), one answer (DC54)."""
+    instructions = FULL_ANALYSIS_INSTRUCTIONS.format(
+        token=token, reasoning_max=schemas.REASONING_MAX_CHARS)
+    return PROMPT_TEMPLATE.format(promptbook=promptbook.strip(), token=token,
+                                  text=text, instructions=instructions)
+
+
+def build_route_prompt(book: RouteBook, *, token: str, text: str) -> str:
+    """The prompt for one paper under the book's own contract."""
+    if book.contract == CONTRACT_LEGACY:
+        if book.route == COMBINED_ANALYSIS_ROUTE:
+            return build_combined_analysis_prompt(
+                power_promptbook=book.texts["power_analysis"],
+                data_promptbook=book.texts["data_analysis"], token=token, text=text)
+        return build_prompt(promptbook=book.promptbook, token=token, text=text,
+                            task=book.route)
+    if book.route == COMBINED_ANALYSIS_ROUTE:
+        return build_full_analysis_prompt(promptbook=book.promptbook, token=token,
+                                          text=text)
+    return build_exclusion_with_reason_prompt(promptbook=book.promptbook, token=token,
+                                              text=text)
 
 
 # ----------------------------------------------------- F: spawning and retries
@@ -2321,7 +2530,14 @@ def check_combined_analysis_decision(
     any explicit dependency on the other task's *conclusion*.  No caller may
     persist a successful half when its sibling fails.
     """
-    for task, decision in combined.task_decisions().items():
+    check_analysis_pair(combined.task_decisions(), token=token,
+                        known_rules=known_rules)
+
+
+def check_analysis_pair(decisions: dict[str, schemas.Decision], *, token: str,
+                        known_rules: dict[str, set[str]]) -> None:
+    """The per-task checks plus the independence check, for both contracts."""
+    for task, decision in decisions.items():
         check_token_echo(decision, token)
         check_decision(decision, task=task, token=token,
                        known_rules=known_rules[task])
@@ -2332,6 +2548,50 @@ def check_combined_analysis_decision(
                 f"{task} refers to the other task's conclusion via "
                 f"{cross_reference.group(0)!r}; the two decisions must be "
                 f"independent (DC54)", case="DC54")
+
+
+@dataclass(frozen=True)
+class CheckedReply:
+    """A reply that parsed and passed every per-paper check.
+
+    `decisions` are the legacy per-task rows the judgments table stores.
+    `answer` is the whole ground-truth answer (design, `done`, reason...) to
+    store beside them; None on the legacy contract, which has nothing more.
+    """
+    decisions: dict
+    answer: object | None
+    was_fenced: bool
+
+
+def parse_and_check_reply(reply: str, *, book: RouteBook, token: str) -> CheckedReply:
+    """Parse one reply under its book's contract and run the per-paper checks.
+
+    Raises schemas.ParseFailure, SemanticFailure, or RoundDiscarded exactly as
+    the separate legacy calls did, so the checker's failure handling is shared.
+    """
+    route, rules = book.route, book.known_rules
+    if book.contract == CONTRACT_LEGACY:
+        if route == COMBINED_ANALYSIS_ROUTE:
+            combined, fenced = schemas.parse_combined_analysis(reply, paper_id=None)
+            check_combined_analysis_decision(combined, token=token, known_rules=rules)
+            return CheckedReply(combined.task_decisions(), None, fenced)
+        decision, fenced = schemas.parse_decision(reply, task=route, paper_id=None)
+        check_token_echo(decision, token)
+        check_decision(decision, task=route, token=token, known_rules=rules[route])
+        return CheckedReply({route: decision}, None, fenced)
+
+    if route == COMBINED_ANALYSIS_ROUTE:
+        full, fenced = schemas.parse_full_analysis(reply, paper_id=None)
+        decisions = full.task_decisions()
+        check_analysis_pair(decisions, token=token, known_rules=rules)
+        return CheckedReply(decisions, full, fenced)
+    if route != "exclusion":
+        raise Refuse(f"{book.version} has no single-task {route} route")
+    gate, fenced = schemas.parse_exclusion_with_reason(reply, paper_id=None)
+    decision = gate.as_decision()
+    check_token_echo(decision, token)
+    check_decision(decision, task="exclusion", token=token, known_rules=rules["exclusion"])
+    return CheckedReply({"exclusion": decision}, gate, fenced)
 
 
 def check_token_echo(decision: schemas.Decision, token: str) -> None:

@@ -1,6 +1,6 @@
 # Plan: model output in ground-truth format
 
-**Status:** Steps 1-3 built 2026-11-24 (field dictionary, schemas, v2 promptbooks); steps 4-7 not started.
+**Status:** Steps 1-4 built 2026-11-24 (field dictionary, schemas, v2 promptbooks, pipeline + storage); steps 5-7 not started.
 **Artifact:** https://claude.ai/artifact/QWtopzdiZFmfwPqZMNba4K
 **Schema page (for Deb):** https://claude.ai/artifact/VBmQr3SP4Zjzn8EnerxzYT
 
@@ -110,7 +110,7 @@ model, which includes holdout papers. That breaks "holdout touched once, at the 
 |---|---:|---|
 | Our code (corpus facts) | 13 | `paper_id`, `paper_id_note`, `source_institute`, `source_file`, `source_row`, `citation_raw`, `cite_key`, `matched_by`, `match_score`, `source_note`, `source_doi`, `source_pmid`, `reason_source` |
 | Model | 20 | `excluded`, `exclusion_reason`, `power_correct`, `data_correct`, `n_trt`, `n_levels`, `comment_levels`, `n_outer`, `n_2nd`, `n_3rd`, `n_4th`, `unit_rand`, `ind_samp_unit`, `restricted_rand_raw`, `icc`, `n_long`, `stepped_wedge_raw`, `data_done`, `data_comment`, `power_done` |
-| Worked out from model answers | 8 | `labeled`; `restricted_rand` and `stepped_wedge` (yes/no/unclear); `exclusion_reason_raw`, `power_correct_raw`, `data_correct_raw` (the model's text before standardizing); `data_should`, `power_should` (from `correlated_units`, restriction status, and `n_long`; changed 2026-11-24 so the model never states the same fact three times) |
+| Worked out from model answers | 8 | `labeled`; `restricted_rand` and `stepped_wedge` (yes/no/unclear); `exclusion_reason_raw`, `power_correct_raw`, `data_correct_raw` (the model's text before standardizing); `data_should`, `power_should` (from `correlated_units`, restriction status, and `n_long`; the model is also asked for its own `should`, exported beside the derived value for comparison, user 2026-11-24) |
 | Left blank | 2 | `review_category`, `review_category_raw` |
 
 Reasoning, cited rule, and confidence are kept alongside, outside the CSV. Output goes in
@@ -133,7 +133,7 @@ Reasoning, cited rule, and confidence are kept alongside, outside the CSV. Outpu
 | `power_done` | **reported**: yes / no. **clustering**: all_levels / some_levels (+ which units) / ignored / unclear. **restricted_rand**: accounted / ignored / not_applicable / unclear. **longitudinality**: accounted / ignored / not_applicable (no `unclear`, Q4). **method**: formula / simulation / `other: <label>` / not_described (+ optional source note, e.g. Donner & Klar). **timing**: before_trial / post_hoc / not_stated. Exported like `Simulation accounting for clustering at clinic, not restricted rand.` |
 | `data_should`, `power_should` | the required factors and levels (structured, not prose) |
 | `power_correct`, `data_correct` | yes, no, undecidable, each with reasoning, cited rule, and confidence |
-| `data_comment` | tags: unclear_reporting, missing_method, wrong_level, restriction_ignored, longitudinality_ignored, label_inconsistency, few_clusters_no_correction, `other: <label>`. Plus a short note |
+| `data_comment` | tags: unclear_reporting, missing_method, wrong_level, restriction_ignored, longitudinality_ignored, label_inconsistency, `other: <label>` (few_clusters_no_correction removed 2026-11-24 until Deb.md 3a-3c are answered). Plus a short note |
 
 ## Checklist
 
@@ -145,7 +145,7 @@ Reasoning, cited rule, and confidence are kept alongside, outside the CSV. Outpu
 - [x] Field dictionary file (step 1): `data/field_dictionary.csv`, built by `scripts/24_build_field_dictionary.py`
 - [x] Schemas in `src/schemas.py`, incl. `other: <label>` handling (step 2): `ExclusionWithReason`, `FullAnalysis`; tests in `ReadingRoom/tests/test_o_full_analysis_schema.py`
 - [x] Promptbook: `combined_analysis.md` + exclusion reason, lists framed as starting points (step 3): in place in un-run `v2` (see `v2 doc.md`)
-- [ ] Pipeline + new-label log (step 4)
+- [x] Pipeline + new-label log (step 4): version table `rr.response_contract` (v0/v1 old shape, v2+ new); `rr.resolve_route_book` / `build_route_prompt` / `parse_and_check_reply`; full answer stored in `structured_answers` with the two judgment rows; `other: <label>` values to `results/04_classification/other_labels.csv` on `--write`; `api_contract.output_schema_for(..., contract=)`. Tests: `ReadingRoom/tests/test_p_ground_truth_route.py`
 - [ ] 43-column export and per-column scoring (step 5)
 - [ ] Offline tests → 2-paper paid test (user runs) → calibration → frozen cost estimate (step 6)
 - [ ] Docs (step 7)

@@ -25,7 +25,31 @@ ANTHROPIC_SDK_VERSION = "1.0.0"
 STRUCTURED_OUTPUT_TYPE = "json_schema"
 
 
-def output_config_for(route: str, *, effort: str = rr.EFFORT) -> dict:
+def output_schema_for(route: str, *, contract: str = rr.CONTRACT_LEGACY) -> dict:
+    """The provider JSON Schema for one route under one answer contract.
+
+    Pass ``contract=rr.response_contract(version)`` so the API asks for the
+    same shape the Reading Room asks for under that promptbook version.
+    """
+    known = (*db.TASKS, rr.COMBINED_ANALYSIS_ROUTE)
+    if route not in known:
+        raise ValueError(f"unknown API route {route!r}; expected one of {known!r}")
+    if contract == rr.CONTRACT_LEGACY:
+        if route == rr.COMBINED_ANALYSIS_ROUTE:
+            return schemas.combined_analysis_tool_schema()["input_schema"]
+        return schemas.tool_schema(route)["input_schema"]
+    if contract != rr.CONTRACT_GROUND_TRUTH:
+        raise ValueError(f"unknown answer contract {contract!r}")
+    if route == rr.COMBINED_ANALYSIS_ROUTE:
+        return schemas.full_analysis_output_schema()
+    if route == "exclusion":
+        return schemas.exclusion_with_reason_output_schema()
+    raise ValueError(f"the ground-truth contract has no single-task {route} route; "
+                     f"use {rr.COMBINED_ANALYSIS_ROUTE}")
+
+
+def output_config_for(route: str, *, effort: str = rr.EFFORT,
+                      contract: str = rr.CONTRACT_LEGACY) -> dict:
     """Return the exact native structured-output block for one API request.
 
     ``route`` is one ordinary database task or the opt-in combined-analysis
@@ -36,14 +60,7 @@ def output_config_for(route: str, *, effort: str = rr.EFFORT) -> dict:
         raise ValueError(
             f"API effort must remain pinned to {rr.EFFORT!r}, not {effort!r}")
 
-    if route == rr.COMBINED_ANALYSIS_ROUTE:
-        schema = schemas.combined_analysis_tool_schema()["input_schema"]
-    elif route in db.TASKS:
-        schema = schemas.tool_schema(route)["input_schema"]
-    else:
-        raise ValueError(
-            f"unknown API route {route!r}; expected one of "
-            f"{(*db.TASKS, rr.COMBINED_ANALYSIS_ROUTE)!r}")
+    schema = output_schema_for(route, contract=contract)
 
     # deepcopy makes each request independently immutable to its caller.  A
     # planner that annotates one schema must not silently alter a later request.
