@@ -349,3 +349,16 @@ def test_the_api_keeps_the_legacy_shape_by_default():
 def test_the_api_has_no_single_task_analysis_under_ground_truth(task):
     with pytest.raises(ValueError, match="no single-task"):
         api_contract.output_schema_for(task, contract=rr.CONTRACT_GROUND_TRUTH)
+
+
+def test_the_summary_survives_a_round_where_every_reply_failed(capsys):
+    # First v2 smoke test (2026-11-24): both combined replies failed to parse and
+    # the summary divided by zero, so the failures never reached the ledger.
+    checker = load_checker()
+    failure = {"paper_id": "P1", "failure_kind": "parse", "failure_case": "D",
+               "detail": "bad unit"}
+    checker.print_summary(route=rr.COMBINED_ANALYSIS_ROUTE, passed=[],
+                          failures=[failure],
+                          confidences={task: [] for task in schemas.ANALYSIS_TASKS},
+                          show=5)
+    assert "0/0 (n/a)" in capsys.readouterr().out

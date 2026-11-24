@@ -385,8 +385,8 @@ def print_summary(*, route: str, passed: list[dict], failures: list[dict],
             decisions = Counter(record["decision"] for record in passed)
             undecidable = sum(1 for record in passed if record["decision"] == "undecidable")
             print(f"\n  decisions  : {dict(decisions)}")
-        print(f"  {task} undecidable: {undecidable}/{len(passed)} "
-              f"({undecidable / len(passed):.1%})")
+        share = f"{undecidable / len(passed):.1%}" if passed else "n/a"
+        print(f"  {task} undecidable: {undecidable}/{len(passed)} ({share})")
         distinct = sorted(set(values))
         if distinct:
             print(f"  {task} confidence : {len(distinct)} distinct value(s), "
@@ -428,6 +428,15 @@ def main() -> int:
             f"the promptbook text for {args.task} changed since this round ran "
             "(sha256 differs from run_environment.json). Restore the frozen "
             "version or re-run the round (DC53/G11)")
+    # The system layout puts code-owned answer rules in the prompt too, so the
+    # rebuilt system prompt must hash to what the round actually sent.
+    system_text = rr.build_route_system_prompt(book)
+    if (system_text is not None
+            and environment.get("system_prompt_sha256") != rr.sha256_text(system_text)):
+        raise rr.Refuse(
+            f"the system prompt for {args.task} {version} changed since this round "
+            "ran (sha256 differs from run_environment.json): the answer rules in "
+            "src/reading_room.py moved. Restore them or re-run the round (G11)")
 
     real_ids = set(rr.load_verdicts())
     rule_count = sum(len(rules) for rules in known_rules.values())

@@ -180,6 +180,9 @@ def main() -> int:
     # single-task power/data run on a ground-truth (v2+) version.
     book = rr.resolve_route_book(args.task, root=ROOT)
     version, promptbook_record = book.version, book.promptbook
+    # v3 onward: the book and the answer rules go in the system prompt, once,
+    # so papers 2..n read them from the cache. None for a v0-v2 sandwich.
+    system_text = rr.build_route_system_prompt(book)
     # Version is part of raw-artifact identity. A retry stays in this directory;
     # a later promptbook version cannot overwrite or mingle its evidence.
     raw_dir = RAW_ROOT / f"{args.task}_{version}_r{args.round}"
@@ -220,6 +223,11 @@ def main() -> int:
     print(f"  promptbook   : {version}  ({book.contract} answer shape)")
     for path in book.paths:
         print(f"    {path.relative_to(ROOT)}")
+    if system_text is None:
+        print(f"  layout       : {book.layout}  (book before and after each paper)")
+    else:
+        print(f"  layout       : {book.layout}  (book in the system prompt, "
+              f"{len(system_text):,} chars, cached after the first call)")
     print(f"  model        : {args.model}")
     print(f"  text         : {text_cache.relative_to(ROOT)}")
     print(f"  papers       : {plan.n}"
@@ -314,22 +322,48 @@ def main() -> int:
         print(f"  references: {cut:,} chars already removed "
               f"(~{cut // 3:,} tokens not being sent); {len(whole)} paper(s) "
               f"went out whole")
+        if system_text is not None:
+            print(f"  system prompt: {len(system_text):,} chars, sent once per "
+                  f"paper and cached after the first call (cache reads show "
+                  f"as cache_read_input_tokens)")
         return 0
 
     # ----------------------------------------------------------------- the run
     room = rr.prepare_room(repo_root=ROOT)
     print(f"  room         : {room.root}")
+    system_file = None
+    system_record = raw_dir / "system_prompt.txt"
+    if system_text is not None:
+        system_file = rr.write_system_prompt_file(room, system_text)
+        # The argv records only a temp path, so the exact bytes are kept with
+        # the raw replies. A resume must find the same bytes it ran under.
+        if system_record.exists():
+            if system_record.read_text(encoding="utf-8") != system_text:
+                raise rr.Refuse(
+                    f"{system_record.relative_to(ROOT)} differs from the system "
+                    "prompt built now: the book or the answer rules changed "
+                    "since this round ran (G11)")
+        elif not preserve_environment:
+            system_record.parent.mkdir(parents=True, exist_ok=True)
+            system_record.write_text(system_text, encoding="utf-8", newline="")
 
     # One throwaway spawn before the round. Every failure it catches breaks every
     # paper identically, so finding one on paper 1 of 50 wastes 49 papers' quota
     # and finding it on a two-word prompt wastes nothing.
     probe = rr.preflight(room, model=args.model, claude=args.claude,
-                         repo_root=ROOT, effort=run_effort)
+                         repo_root=ROOT, effort=run_effort,
+                         system_prompt_file=system_file)
     print(f"  preflight    : logged in, {len(probe.tools)} tools offered "
           f"(the room is empty)")
-    print(f"  system prompt: {probe.input_tokens:,} billed input tokens on a "
-          f"two-word probe (A17 ceiling {rr.PREFLIGHT_TOKEN_CEILING:,}; the CLI "
-          f"default measured 12,198)")
+    if system_file is None:
+        print(f"  system prompt: {probe.input_tokens:,} billed input tokens on a "
+              f"two-word probe (A17 ceiling {rr.PREFLIGHT_TOKEN_CEILING:,}; the CLI "
+              f"default measured 12,198)")
+    else:
+        low, high = rr.system_file_token_band(system_file.text)
+        print(f"  system prompt: {probe.input_tokens:,} billed input tokens on a "
+              f"two-word probe (A17 band {low:,}-{high:,} for this file; the CLI "
+              f"default measured 12,198)")
     if probe.claude_code_version:
         print(f"  CLI version  : {probe.claude_code_version}")
     print(f"  effort       : {run_effort}  (pinned; the Batch API run passes the "
@@ -361,7 +395,8 @@ def main() -> int:
                                attempt=attempt_by_paper.get(paper.paper_id, 1),
                                model=args.model,
                                claude=args.claude, timeout=args.timeout,
-                               repo_root=ROOT, effort=run_effort)
+                               repo_root=ROOT, effort=run_effort,
+                               system_prompt_file=system_file)
         attempt.raw_path = rr.write_raw(attempt, raw_dir)
         return paper, body, attempt
 
@@ -491,7 +526,10 @@ def main() -> int:
     environment = rr.build_run_environment(
         task=args.task, round_no=args.round,
         argv=rr.build_argv(model=args.model, settings_path=room.settings_path,
-                           claude=rr.find_claude(args.claude), effort=run_effort),
+                           claude=rr.find_claude(args.claude), effort=run_effort,
+                           system_prompt_file=system_file.path if system_file else None),
+        system_prompt_text=system_text,
+        system_prompt_record=system_record if system_text is not None else None,
         promptbook_version=version, promptbook_text=promptbook_record,
         settings_path=room.settings_path, tools_offered=probe.tools,
         claude_code_version=probe.claude_code_version, model=args.model,
