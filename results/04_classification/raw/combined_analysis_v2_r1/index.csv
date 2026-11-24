@@ -1,0 +1,5 @@
+paper_id,token,task,round,promptbook_version,model,attempt,exit_code,duration_seconds,raw_path,started_at
+WCA66X4I,916c96ec590409da,combined_analysis,1,v2,claude-sonnet-5,1,0,27.74,results\04_classification\raw\combined_analysis_v2_r1\916c96ec590409da.attempt1.jsonl,2026-11-24T18:37:59+00:00
+6XFGQN39,898081abd94fdee7,combined_analysis,1,v2,claude-sonnet-5,1,0,34.83,results\04_classification\raw\combined_analysis_v2_r1\898081abd94fdee7.attempt1.jsonl,2026-11-24T18:38:34+00:00
+WCA66X4I,c102d27036d15efc,combined_analysis,1,v2,claude-sonnet-5,2,0,43.83,results\04_classification\raw\combined_analysis_v2_r1\c102d27036d15efc.attempt2.jsonl,2026-11-24T19:27:53+00:00
+6XFGQN39,1ce4de6ab8b27859,combined_analysis,1,v2,claude-sonnet-5,2,0,37.86,results\04_classification\raw\combined_analysis_v2_r1\1ce4de6ab8b27859.attempt2.jsonl,2026-11-24T19:28:31+00:00

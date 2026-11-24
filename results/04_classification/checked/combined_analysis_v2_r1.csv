@@ -1,0 +1,11 @@
+paper_id,token,task,round,status,decision,confidence,reasoning,promptbook_evidence,cited_rules,was_fenced,failure_kind,failure_case,detail,flagged_other_papers,raw_path,attempt,retry_eligible,terminal_status,power_decision,power_confidence,power_reasoning,power_promptbook_evidence,power_cited_rules,data_decision,data_confidence,data_reasoning,data_promptbook_evidence,data_cited_rules,exclusion_reason,other_labels
+WCA66X4I,c102d27036d15efc,combined_analysis,1,failed,,,,,,False,parse,D,"2 validation errors for FullAnalysis
+design
+  Value error, ind_samp_unit 'stratum' is not one of the levels ['patient', 'physician', 'clinic'] [type=value_error, input_value={'n_trt': 3, 'levels': [{..., 'stepped_wedge': 'no'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/value_error
+data_analysis.done.small_sample_correction
+  Input should be 'yes', 'no' o",,results\04_classification\raw\combined_analysis_v2_r1\c102d27036d15efc.attempt2.jsonl,2,yes,,,,,,,,,,,,,
+6XFGQN39,1ce4de6ab8b27859,combined_analysis,1,failed,,,,,,False,parse,D,"1 validation error for FullAnalysis
+design
+  Value error, ind_samp_unit 'stratum' is not one of the levels ['patient', 'physician', 'practice'] [type=value_error, input_value={'n_trt': 2, 'levels': [{..., 'stepped_wedge': 'no'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/value_error",,results\04_classification\raw\combined_analysis_v2_r1\1ce4de6ab8b27859.attempt2.jsonl,2,yes,,,,,,,,,,,,,

@@ -21,7 +21,7 @@ The first one that matches decides and goes in `promptbook_evidence`. No hit →
 | field | value |
 |---|---|
 | `decision` | `yes` = exclude this paper · `no` = keep it · `undecidable` = text missing, truncated, or unreadable · `wrong_text` = the text is not a study report at all |
-| `exclusion_reason` | when `decision` is `yes`: the number of the criterion that decided it, e.g. `E5` (E1-E11 or E13-E16; it must also appear in `promptbook_evidence`). Under E19, write `other: <short label>` instead and cite `E19`. Otherwise `null`. |
+| `exclusion_reason` | when `decision` is `yes`: the number of the criterion that decided it, e.g. `E5` (E1-E11 or E13-E16; it must also appear in `promptbook_evidence`). Under E19, write `other: <short reason>` instead and cite `E19`. Otherwise `null`. |
 | `reasoning` | why, in your own words. **200 characters maximum.** |
 | `promptbook_evidence` | the criterion number that decided it, e.g. `E5`; `WRONG_TEXT` if that decision |
 | `confidence` | 0.0-1.0 |
@@ -66,9 +66,11 @@ but it isn't the paper.
 14. **E15. Review article.**
 15. **E16. Comment, letter, or editorial.**
 16. **E19. Other clear ineligibility** — the paper plainly cannot be reviewed as a
-    cluster-randomized trial's treatment effect, for a reason none of E1-E16 names. Write the
-    reason as `other: <short label>` (60 characters maximum) and cite `E19`. Use it rarely: a
-    wrong exclusion is never recovered, so if you are not sure, the answer is `no`.
+    cluster-randomized trial's treatment effect, for a reason none of E1-E16 names. Write
+    `other: <short reason>` (60 characters maximum), where the reason says what about this paper
+    makes it ineligible, not just a category name. In `reasoning`, say why the paper is
+    ineligible and why none of E1-E16 fits. Cite `E19`. Use it rarely: a wrong exclusion is
+    never recovered, so if you are not sure, the answer is `no`.
 
 ## Not a criterion
 

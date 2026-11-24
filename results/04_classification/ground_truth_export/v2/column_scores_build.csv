@@ -1,0 +1,24 @@
+column,compared,match,mismatch,abstain,not_scored,agreement,note
+excluded,2,2,0,0,0,1.000,
+exclusion_reason,1,0,1,0,0,0.000,
+power_correct,0,0,0,0,0,,
+data_correct,0,0,0,0,0,,
+n_trt,0,0,0,0,0,,
+n_levels,0,0,0,0,0,,
+comment_levels,0,0,0,0,0,,
+n_outer,0,0,0,0,0,,
+n_2nd,0,0,0,0,0,,
+n_3rd,0,0,0,0,0,,
+n_4th,0,0,0,0,0,,
+unit_rand,0,0,0,0,0,,
+ind_samp_unit,0,0,0,0,0,,
+restricted_rand,0,0,0,0,0,,
+icc,0,0,0,0,0,,
+n_long,0,0,0,0,0,,
+stepped_wedge,0,0,0,0,0,,
+data_should,0,0,0,0,0,,
+power_should,0,0,0,0,0,,
+n_long (follow-up only),0,0,0,0,0,,
+data_done,0,0,0,0,0,,pending person-coded human values (plan checklist)
+power_done,0,0,0,0,0,,pending person-coded human values (plan checklist)
+data_comment,0,0,0,0,0,,person spot-check only (decision 16)

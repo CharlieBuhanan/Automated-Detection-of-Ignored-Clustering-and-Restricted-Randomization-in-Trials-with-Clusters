@@ -1,0 +1,478 @@
+paper_id,paper_id_note,source_institute,source_file,source_row,citation_raw,cite_key,matched_by,match_score,labeled,excluded,exclusion_reason,exclusion_reason_raw,power_correct,power_correct_raw,data_correct,data_correct_raw,review_category,review_category_raw,n_trt,n_levels,comment_levels,n_outer,n_2nd,n_3rd,n_4th,unit_rand,ind_samp_unit,restricted_rand_raw,icc,n_long,stepped_wedge_raw,data_done,data_should,data_comment,power_done,power_should,restricted_rand,stepped_wedge,source_note,source_doi,source_pmid,reason_source
+4X4LV7H7,,NCI,GroundTruthDataNCI01.xlsx,2,"2. (Ansa et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+RE9NAY8K,,NCI,GroundTruthDataNCI01.xlsx,1,"1. (Ailawadhi et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+767M69JK,,NCI,GroundTruthDataNCI01.xlsx,24,"24. (Buro et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+X2MP4F7R,,NCI,GroundTruthDataNCI01.xlsx,232,"232. (Zullig et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+UMV6NC2L,,NCI,GroundTruthDataNCI01.xlsx,231,"231. (Zubkoff et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+NCY67FZ9,remapped from FUSDUXRL (NCI/NHLBI duplicate merge),NHLBI,NHLBI_exclusions_178.csv,162,"Zlatar, Zvinka Z (2019)",Zlatar2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jagp.2019.04.011,31138456,"Ignore03_NHLBI exclusion document, category headings"
+7MXH2IXG,,NCI,GroundTruthDataNCI01.xlsx,229,"229. (Zhang et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+H2GLBZE4,,NCI,GroundTruthDataNCI01.xlsx,228,"228. (Zabor et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BR4Y6FSS,,NCI,GroundTruthDataNCI01.xlsx,227,"227. (Yunusa et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+R7T6WKEW,,NCI,GroundTruthDataNCI01.xlsx,226,"226. (Yilmaz et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+36I94AIH,,NCI,GroundTruthDataNCI01.xlsx,225,"225. (Wu et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BKND5GCR,,NCI,GroundTruthDataNCI01.xlsx,224,"224. (Watabayashi et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+JW9782P3,,NCI,GroundTruthDataNCI01.xlsx,223,"223. (Washington et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+EBWFU9KS,,NCI,GroundTruthDataNCI01.xlsx,222,"222. (Walsh et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+CMD8N46A,,NCI,GroundTruthDataNCI01.xlsx,221,"221. (Vitale et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+KJSH6EBW,,NCI,GroundTruthDataNCI01.xlsx,220,"220. (J. I. Vidrine et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+IB825UX2,,NCI,GroundTruthDataNCI01.xlsx,218,"218. (D. J. Vidrine et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+2RDD8DGI,,NCI,GroundTruthDataNCI01.xlsx,219,"219. (D. J. Vidrine et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FRK7DQLC,,NCI,GroundTruthDataNCI01.xlsx,217,"217. (Tsoh et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ZKY8XW5M,,NCI,GroundTruthDataNCI01.xlsx,216,"216. (Tsao-Wu et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+W75ICDYI,,NCI,GroundTruthDataNCI01.xlsx,215,"215. (Trevino et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+CKCARQYN,,NCI,GroundTruthDataNCI01.xlsx,214,"214. (Tokita et al., 2025)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+C69UAKKB,,NCI,GroundTruthDataNCI01.xlsx,213,"213. (Tilley et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+677HVIFJ,,NCI,GroundTruthDataNCI01.xlsx,212,"212. (Tilburt et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+WY9D5UIK,,NCI,GroundTruthDataNCI01.xlsx,211,"211. (Thankappan et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+PDP273K4,,NCI,GroundTruthDataNCI01.xlsx,210,"210. (Takvorian et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+9LTSBSEE,,NCI,GroundTruthDataNCI01.xlsx,209,"209. (Szilagyi et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+WZJBF75Y,,NCI,GroundTruthDataNCI01.xlsx,208,"208. (Swindle et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+2NRLZW3M,,NCI,GroundTruthDataNCI01.xlsx,206,"206. (Sutfin et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+IUEMQRU4,,NCI,GroundTruthDataNCI01.xlsx,205,"205. (Stern et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+54ZXRGZ7,,NCI,GroundTruthDataNCI01.xlsx,204,"204. (Sperl-Hillen et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+J4BU3EEE,,NCI,GroundTruthDataNCI01.xlsx,203,"203. (Soto et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+9DKJKFAS,,NCI,GroundTruthDataNCI01.xlsx,202,"202. (Snavely et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+4RJRGIRQ,,NCI,GroundTruthDataNCI01.xlsx,200,"200. (Smalls et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+46MFLID4,,NCI,GroundTruthDataNCI01.xlsx,199,"199. (Singhal et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SJVU6KJ3,,NCI,GroundTruthDataNCI01.xlsx,198,"198. (Sigler et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+PWWEDNNK,,NCI,GroundTruthDataNCI01.xlsx,197,"197. (Siegel et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+M7JCMFJ7,,NCI,GroundTruthDataNCI01.xlsx,196,"196. (Shu et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ZETJJPRR,,NCI,GroundTruthDataNCI01.xlsx,195,"195. (D. Shelley et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+R8DWVW84,,NCI,GroundTruthDataNCI01.xlsx,194,"194. (D. R. Shelley et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+62TBCTHX,remapped from 6ZR6F8KG (NCI/NHLBI duplicate merge),NHLBI,NHLBI_exclusions_178.csv,147,"Semere, Wagahta (2023)",Semere2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jpainsymman.2022.11.025,36503155,"Ignore03_NHLBI exclusion document, category headings"
+G4WN7HVX,,NCI,GroundTruthDataNCI01.xlsx,193,"193. (Semere et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+PWPJMUUS,,NCI,GroundTruthDataNCI01.xlsx,190,"190. (Seguin-Fowler et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+VWDH6W8E,,NCI,GroundTruthDataNCI01.xlsx,191,"191. (Seguin-Fowler et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+EEIQW8EX,,NCI,GroundTruthDataNCI01.xlsx,189,"189. (Schonberg et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+IWSKLNSK,,NCI,GroundTruthDataNCI01.xlsx,188,"188. (Schnoll et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+HJICVPT7,,NCI,GroundTruthDataNCI01.xlsx,187,"187. (Schink et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+HPIL7WVW,remapped from D8CQJP9V (NCI/NHLBI duplicate merge),NHLBI,crt_review_table_112.tex,133,Schenker et al.,schenkerEffectOncologyNurseLed2021,cite_key_author_year,82,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ASUUZY3Z,,NCI,GroundTruthDataNCI01.xlsx,185,"185. (Scarinci et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ILWWS7LD,,NCI,GroundTruthDataNCI01.xlsx,184,"184. (Sarfan et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+8NX9CDB5,,NCI,GroundTruthDataNCI01.xlsx,183,"183. (Salz et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+9U8SD7BK,,NCI,GroundTruthDataNCI01.xlsx,182,"182. (Salloum et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+CKEF67C5,,NCI,GroundTruthDataNCI01.xlsx,181,"181. (Saini et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Y5J6YZK2,,NCI,GroundTruthDataNCI01.xlsx,180,"180. (Rodriguez Espinosa et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+JM9T8XDZ,,NCI,GroundTruthDataNCI01.xlsx,178,"178. (Reblin et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+KMRQTRP3,,NCI,GroundTruthDataNCI01.xlsx,177,"177. (Rand et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BWZDZGKD,,NCI,GroundTruthDataNCI01.xlsx,176,"176. (Ramsey et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+S7VJ7LXE,,NCI,GroundTruthDataNCI01.xlsx,175,"175. (Ramsdale et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+GVSXRYPK,,NCI,GroundTruthDataNCI01.xlsx,174,"174. (Ramsdale et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+I6GH9T7T,,NCI,GroundTruthDataNCI01.xlsx,173,"173. (Presley et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+5KIH2CZ8,,NCI,GroundTruthDataNCI01.xlsx,172,"172. (Powell et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+CN8B23MZ,,NCI,GroundTruthDataNCI01.xlsx,171,"171. (Perez et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+I6DQCI97,,NCI,GroundTruthDataNCI01.xlsx,170,"170. (Pereira et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+9THPD86J,,NCI,GroundTruthDataNCI01.xlsx,165,"165. (Patten et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+AQVRGUP7,,NCI,GroundTruthDataNCI01.xlsx,161,"161. (Partridge et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+LPIT2KM5,,NCI,GroundTruthDataNCI01.xlsx,160,"160. (Parker et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+CJ2GF4QD,,NCI,GroundTruthDataNCI01.xlsx,159,"159. (Parker et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+3I2K6X84,,NCI,GroundTruthDataNCI01.xlsx,158,"158. (Paolino et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+DM2HM3XH,,NCI,GroundTruthDataNCI01.xlsx,157,"157. (Palmer et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FCXQJYSP,,NCI,GroundTruthDataNCI01.xlsx,155,"155. (Pacyna et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BAABE7JM,,NCI,GroundTruthDataNCI01.xlsx,156,"156. (Pacyna et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+IPP52WKG,,NCI,GroundTruthDataNCI01.xlsx,154,"154. (Olwanda et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+KI6F3YXL,,NCI,GroundTruthDataNCI01.xlsx,153,"153. (Oliver et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+YQC5A963,,NCI,GroundTruthDataNCI01.xlsx,152,"152. (Olakunde et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+3YMCRN5A,,NCI,GroundTruthDataNCI01.xlsx,151,"151. (Oketch et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BYJKEDQI,,NCI,GroundTruthDataNCI01.xlsx,150,"150. (Odes et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+I4N8RJX7,,NCI,GroundTruthDataNCI01.xlsx,148,"148. (Ockene et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SUANA8ET,,NCI,GroundTruthDataNCI01.xlsx,147,"147. (O’Connor et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+DGEX5HE7,,NCI,GroundTruthDataNCI01.xlsx,146,"146. (Noar et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+93TLFX62,,NCI,GroundTruthDataNCI01.xlsx,145,"145. (Nguyen et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BZHD4F63,,NCI,GroundTruthDataNCI01.xlsx,144,"144. (Naughton et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+XSWEUIXG,,NCI,GroundTruthDataNCI01.xlsx,143,"143. (Nabi-Burza et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+LWBKGLCW,,NCI,GroundTruthDataNCI01.xlsx,142,"142. (Moreno et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+LNWR884A,,NCI,GroundTruthDataNCI01.xlsx,141,"141. (Moreland-Russell et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+4HG9V6HL,,NCI,GroundTruthDataNCI01.xlsx,140,"140. (Molina et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+25SMNHQG,,NCI,GroundTruthDataNCI01.xlsx,139,"139. (Molefe-Baikai et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+D7FNGV5H,,NCI,GroundTruthDataNCI01.xlsx,138,"138. (Mohile et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+GQ47R7MS,,NCI,GroundTruthDataNCI01.xlsx,137,"137. (Mitchell et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SU8TVFGH,,NCI,GroundTruthDataNCI01.xlsx,136,"136. (Michaud et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+X9X3VGJK,,NCI,GroundTruthDataNCI01.xlsx,135,"135. (Meenan et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+C9P63S2B,,NCI,GroundTruthDataNCI01.xlsx,134,"134. (McGuier et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+JJF6XXQG,,NCI,GroundTruthDataNCI01.xlsx,130,"130. (Ma et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+AAZLFUJE,,NCI,GroundTruthDataNCI01.xlsx,133,"133. (Martínez et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+99MJ924A,,NCI,GroundTruthDataNCI01.xlsx,132,"132. (Malhotra et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+GVQJHIGK,,NCI,GroundTruthDataNCI01.xlsx,129,"129. (Luecking et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+GX655FV4,,NCI,GroundTruthDataNCI01.xlsx,128,"128. (Lowenstein et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+B6VJ22FA,remapped from GIHWCXEH (NCI/NHLBI duplicate merge),NHLBI,NHLBI_exclusions_178.csv,114,"Loučka, Martin (2024)",Loucka2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1177/02692163231214422,38087831,"Ignore03_NHLBI exclusion document, category headings"
+IXGWRWKV,,NCI,GroundTruthDataNCI01.xlsx,126,"126. (Long et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ALFCPWRB,,NCI,GroundTruthDataNCI01.xlsx,123,"123. (Loh et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+HA9IHJB6,,NCI,GroundTruthDataNCI01.xlsx,125,"125. (Loh, Xu, et al., 2020)",,author_position,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+HI3CPFP8,,NCI,GroundTruthDataNCI01.xlsx,122,"122. (Loh, Duberstein, et al., 2020)",,author_position,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+7BJRB6LP,,NCI,GroundTruthDataNCI01.xlsx,124,"124. (Loh et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+RHQWSFTR,,NCI,GroundTruthDataNCI01.xlsx,121,"121. (Liu et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+4T9MTMMP,,NCI,GroundTruthDataNCI01.xlsx,120,"120. (Little et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+IR9N2LY8,,NCI,GroundTruthDataNCI01.xlsx,119,"119. (Lin et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ULPYQHXX,,NCI,GroundTruthDataNCI01.xlsx,118,"118. (Ligibel et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+DKMFB69S,,NCI,GroundTruthDataNCI01.xlsx,116,"116. (Leone et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+NMNK2UJG,,NCI,GroundTruthDataNCI01.xlsx,114,"114. (R. M. Lee et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ABV8X64G,,NCI,GroundTruthDataNCI01.xlsx,115,"115. (R. M. Lee et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+B9YG8GYQ,,NCI,GroundTruthDataNCI01.xlsx,113,"113. (R. E. Lee et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+2LUUC2WH,,NCI,GroundTruthDataNCI01.xlsx,112,"112. (Leavens et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+VIYWFDG9,,NCI,GroundTruthDataNCI01.xlsx,111,"111. (Latella et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BYZJM332,,NCI,GroundTruthDataNCI01.xlsx,110,"110. (Kukafka et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+6XFGQN39,,NCI,GroundTruthDataNCI01.xlsx,109,"109. (Krist et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+JCPBMIPX,,NCI,GroundTruthDataNCI01.xlsx,108,"108. (Knott et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+VPCPTPZL,,NCI,GroundTruthDataNCI01.xlsx,107,"107. (Kleckner et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+X2MXMQA7,,NCI,GroundTruthDataNCI01.xlsx,106,"106. (King et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ZXHI8G3B,,NCI,GroundTruthDataNCI01.xlsx,103,"103. (Ke et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+EYSSMC5T,,NCI,GroundTruthDataNCI01.xlsx,104,"104. (Kelder et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+RM444G67,,NCI,GroundTruthDataNCI01.xlsx,102,"102. (Katz et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+3NJJIQJQ,,NCI,GroundTruthDataNCI01.xlsx,101,"101. (Jones et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SH5J2R2J,remapped from W5Z7K27W (NCI/NHLBI duplicate merge),NHLBI,crt_review_table_112.tex,72,Johnson et al.,johnsonEvaluationWalkingSchool2024,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+XA8RYYSR,,NCI,GroundTruthDataNCI01.xlsx,99,"99. (Jih et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SMQ7NINF,,NCI,GroundTruthDataNCI01.xlsx,98,"98. (Jiang et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+F4KF42R4,,NCI,GroundTruthDataNCI01.xlsx,97,"97. (Jenssen et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BLWKH6C8,,NCI,GroundTruthDataNCI01.xlsx,96,"96. (Jenssen et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+PV2Z7J77,,NCI,GroundTruthDataNCI01.xlsx,95,"95. (Jensen-Battaglia et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+69KLSK53,,NCI,GroundTruthDataNCI01.xlsx,94,"94. (Jensen-Battaglia, Lei, Xu, Loh, et al., 2022)",,author_position,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+J7CUNUHF,,NCI,GroundTruthDataNCI01.xlsx,93,"93. (Jensen-Battaglia, Lei, Xu, Kehoe, et al., 2022)",,author_position,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+VKY7UK64,remapped from UAZFWMQ5 (NCI/NHLBI duplicate merge),NHLBI,NHLBI_exclusions_178.csv,36,"Jamshidi-Naeini, Yasaman (2022)",JamshidiNaeini2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1002/oby.23373,35195364,"Ignore03_NHLBI exclusion document, category headings"
+PSCSKNSV,,NCI,GroundTruthDataNCI01.xlsx,91,"91. (Hwang et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+72N55PAH,,NCI,GroundTruthDataNCI01.xlsx,90,"90. (Hunt et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+F4QDRKEG,,NCI,GroundTruthDataNCI01.xlsx,89,"89. (Huei-Yu Wang et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+E6B5T4RY,,NCI,GroundTruthDataNCI01.xlsx,88,"88. (Huchko et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+HRZIZRJP,,NCI,GroundTruthDataNCI01.xlsx,87,"87. (Huchko et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FMXPAUEI,,NCI,GroundTruthDataNCI01.xlsx,86,"86. (Holt et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+A9KIMSNR,,NCI,GroundTruthDataNCI01.xlsx,85,"85. (Hingle et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+TIP639KQ,,NCI,GroundTruthDataNCI01.xlsx,83,"83. (Hershman, Bansal, Barlow, et al., 2023)",,author_position,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+NZYS3BX2,,NCI,GroundTruthDataNCI01.xlsx,84,"84. (Hershman, Bansal, Sullivan, et al., 2023)",,author_position,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+LJW4HEIA,,NCI,GroundTruthDataNCI01.xlsx,82,"82. (Herman et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+XVG5NIVQ,,NCI,GroundTruthDataNCI01.xlsx,79,"79. (Harry, Asche, et al., 2022)",,author_position,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+XPS9DCVL,,NCI,GroundTruthDataNCI01.xlsx,80,"80. (Harry, Chrenka, et al., 2022)",,author_position,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+YCYESWU8,,NCI,GroundTruthDataNCI01.xlsx,81,"81. (Harry et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+DXI976EC,,NCI,GroundTruthDataNCI01.xlsx,78,"78. (Harris et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+U4A6LS8G,,NCI,GroundTruthDataNCI01.xlsx,77,"77. (Hallemeier et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+R3FT4BF3,,NCI,GroundTruthDataNCI01.xlsx,76,"76. (Haas et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+TFGQKUCF,,NCI,GroundTruthDataNCI01.xlsx,75,"75. (Green, Vollmer, et al., 2019)",,author_position,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BWAGKCVT,,NCI,GroundTruthDataNCI01.xlsx,74,"74. (Green, Coronado, et al., 2019)",,author_position,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+G75A8PEN,,NCI,GroundTruthDataNCI01.xlsx,73,"73. (Greaney et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ZEQRVXQG,,NCI,GroundTruthDataNCI01.xlsx,72,"72. (Grabert et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+UJB4QA99,,NCI,GroundTruthDataNCI01.xlsx,71,"71. (Gilmore et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+4FJHYJ4R,,NCI,GroundTruthDataNCI01.xlsx,70,"70. (Gilkey et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SGCHKJTH,,NCI,GroundTruthDataNCI01.xlsx,67,"67. (Gans et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+D6FQ47HW,,NCI,GroundTruthDataNCI01.xlsx,66,"66. (Friesner et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+EAJAKXKC,,NCI,GroundTruthDataNCI01.xlsx,65,"65. (Freytag et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+JSRXWSXE,,NCI,GroundTruthDataNCI01.xlsx,64,"64. (Foraker et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+49C5LL2B,,NCI,GroundTruthDataNCI01.xlsx,63,"63. (Foley et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+WKMKUPTU,,NCI,GroundTruthDataNCI01.xlsx,61,"61. (Flitter et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Z6DJN9CQ,,NCI,GroundTruthDataNCI01.xlsx,60,"60. (Flannery et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+WD74R75C,,NCI,GroundTruthDataNCI01.xlsx,59,"59. (Fiks et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+F2BPPKMI,,NCI,GroundTruthDataNCI01.xlsx,58,"58. (Fernandez et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+EJY33FGY,,NCI,GroundTruthDataNCI01.xlsx,57,"57. (Fang et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+IASMJG49,,NCI,GroundTruthDataNCI01.xlsx,56,"56. (Fadem et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+CG56AVM4,,NCI,GroundTruthDataNCI01.xlsx,55,"55. (Escoffery et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+WCA66X4I,,NCI,GroundTruthDataNCI01.xlsx,54,"54. (Elliott et al., 2021)",,author_year,100,1,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+E3JZCW7P,,NCI,GroundTruthDataNCI01.xlsx,53,"53. (Ehdaie et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+26LDPI8G,,NCI,GroundTruthDataNCI01.xlsx,52,"52. (Eastment et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+7EFQI5V4,,NCI,GroundTruthDataNCI01.xlsx,49,"49. (Eastment, Long, et al., 2022)",,author_position,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+CVNVFN8Y,,NCI,GroundTruthDataNCI01.xlsx,51,"51. (Eastment, Wanje, et al., 2022)",,author_position,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+32LERLVS,,NCI,GroundTruthDataNCI01.xlsx,50,"50. (Eastment et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+7HMIXSV8,,NCI,GroundTruthDataNCI01.xlsx,48,"48. (Dupuis et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+M7MJVIPL,,NCI,GroundTruthDataNCI01.xlsx,46,"46. (Drehmer et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ECH2D7BJ,,NCI,GroundTruthDataNCI01.xlsx,47,"47. (Drehmer et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+MDUWF9YP,,NCI,GroundTruthDataNCI01.xlsx,45,"45. (DeSalvo et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+II5PE99X,,NCI,GroundTruthDataNCI01.xlsx,44,"44. (Derose et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+73BP3R5F,,NCI,GroundTruthDataNCI01.xlsx,43,"43. (de Kermadec et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FGGJHPQ8,,NCI,GroundTruthDataNCI01.xlsx,42,"42. (Culakova et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+CR7JWN8H,,NCI,GroundTruthDataNCI01.xlsx,41,"41. (Cuaresma et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+PIZAETCG,,NCI,GroundTruthDataNCI01.xlsx,40,"40. (Crew et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ERY25CXT,,NCI,GroundTruthDataNCI01.xlsx,39,"39. (Cramer et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+7MHFEUZL,,NCI,GroundTruthDataNCI01.xlsx,38,"38. (Coury et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+TBFRUAMD,,NCI,GroundTruthDataNCI01.xlsx,36,"36. (Coronado et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+KJQKEW8Y,,NCI,GroundTruthDataNCI01.xlsx,37,"37. (Coronado et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Y65DB7TT,remapped from JNJYCIH8 (NCI/NHLBI duplicate merge),NHLBI,NHLBI_exclusions_178.csv,94,"Cohen, Michael G (2023)",Cohen2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.6004/jnccn.2023.7002,37015338,"Ignore03_NHLBI exclusion document, category headings"
+XYJLRGVC,remapped from Y3Z3PR9V (NCI/NHLBI duplicate merge),NHLBI,NHLBI_exclusions_178.csv,2,"Coats, Heather (2018)",Coats2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jpainsymman.2018.07.005,30025937,"Ignore03_NHLBI exclusion document, category headings"
+WTLH8PPX,,NCI,GroundTruthDataNCI01.xlsx,33,"33. (Chu et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+TYUTRABV,,NCI,GroundTruthDataNCI01.xlsx,31,"31. (Choi et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+6Y7FJ56I,,NCI,GroundTruthDataNCI01.xlsx,32,"32. (Choi et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+TGIBPA3M,,NCI,GroundTruthDataNCI01.xlsx,30,"30. (Chen et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+U7PLGE75,,NCI,GroundTruthDataNCI01.xlsx,29,"29. (Chalela et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+6UFMVCDF,,NCI,GroundTruthDataNCI01.xlsx,28,"28. (Castañeda et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+VD74N4DN,,NCI,GroundTruthDataNCI01.xlsx,27,"27. (Carroll et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+F9X8Z6SZ,,NCI,GroundTruthDataNCI01.xlsx,26,"26. (Calo et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+NFIAY6NV,,NCI,GroundTruthDataNCI01.xlsx,25,"25. (Cadet et al., 2021)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+LNE655AM,,NCI,GroundTruthDataNCI01.xlsx,23,"23. (Bui et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ZH47UTGY,,NCI,GroundTruthDataNCI01.xlsx,22,"22. (Brown et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+9PGIWTZJ,,NCI,GroundTruthDataNCI01.xlsx,21,"21. (Brooks et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FHVQQIX3,,NCI,GroundTruthDataNCI01.xlsx,20,"20. (Brewer et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+MCKQDWYQ,,NCI,GroundTruthDataNCI01.xlsx,19,"19. (Booker et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+I6KDJ44E,,NCI,GroundTruthDataNCI01.xlsx,18,"18. (Blinder et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FPX2G3LA,,NCI,GroundTruthDataNCI01.xlsx,17,"17. (Berg et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+6M6JS3W5,,NCI,GroundTruthDataNCI01.xlsx,16,"16. (Beresford et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+8X3V8X64,,NCI,GroundTruthDataNCI01.xlsx,15,"15. (Bell-Brown et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+T46GFUVP,,NCI,GroundTruthDataNCI01.xlsx,13,"13. (Bauer et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+3H4J4BGD,,NCI,GroundTruthDataNCI01.xlsx,12,"12. (Basch et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BCPZNXV7,remapped from I842F22F (NCI/NHLBI duplicate merge),NHLBI,NHLBI_exclusions_178.csv,81,"Barrington, Wendy E (2019)",Barrington2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.3390/nu11102320,31581416,"Ignore03_NHLBI exclusion document, category headings"
+4T3I54L2,,NCI,GroundTruthDataNCI01.xlsx,9,"9. (Auvinen et al., 2024)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+PJ3LJPS4,,NCI,GroundTruthDataNCI01.xlsx,8,"8. (Atlas et al., 2023)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+DDKM5E29,,NCI,GroundTruthDataNCI01.xlsx,7,"7. (Asfar et al., 2018)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+B3KTU9TU,,NCI,GroundTruthDataNCI01.xlsx,5,"5. (Arrossi et al., 2019)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+DFJE8ALD,,NCI,GroundTruthDataNCI01.xlsx,4,"4. (Arredondo et al., 2022)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+HBD3Y6S2,,NCI,GroundTruthDataNCI01.xlsx,3,"3. (Arastu et al., 2020)",,author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+44SJ3WXZ,,NHLBI,crt_review_table_112.tex,158,Youssouf et al.,youssoufDesigningImplementationScience2024,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+3INBZHKN,,NHLBI,crt_review_table_112.tex,150,Vorderstrasse et al.,vorderstrasseRecruitmentEnrollmentParticipants2021,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SFJI363E,,NHLBI,crt_review_table_112.tex,147,VanEvery et al.,vaneveryImpactAvocadoIntake2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+3UETLCGR,,NHLBI,crt_review_table_112.tex,134,Schlenz et al.,schlenzSuccessfulImplementationStroke2025,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+B34VFBK3,,NHLBI,crt_review_table_112.tex,132,Sanuade et al.,sanuadeFixeddoseCombinationTherapybased2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+VFJZH9TR,,NHLBI,crt_review_table_112.tex,131,Safford et al.,saffordDesignRationaleMulticenter2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+VXZHWRTC,,NHLBI,crt_review_table_112.tex,129,Rosenberg et al.,rosenbergSittingTimeReduction2024,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ZN4GPW43,,NHLBI,crt_review_table_112.tex,128,Rosales et al.,rosalesMetaSaludDiabetes2021,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BJM4IT6J,,NHLBI,crt_review_table_112.tex,126,Robinson et al.,robinsonCommunitybasedMultilevelMultisetting2021,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+AT7Y2KKR,,NHLBI,crt_review_table_112.tex,125,Robbins et al.,robbinsInterventionEffectsGirls2019,cite_key_title_tiebreak,92,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+WGQGTBTE,,NHLBI,crt_review_table_112.tex,123,Philis-Tsimikas et al.,philis-tsimikasDulceDigitalMeProtocol2022,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+2HLT4Y2J,,NHLBI,crt_review_table_112.tex,124,Piyasiri et al.,piyasiriEffectivenessLonglastingInsecticideImpregnated2025,cite_key_author_year,96,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+LGEECHQM,,NHLBI,crt_review_table_112.tex,122,Pfammatter et al.,pfammatterMHealthInterventionPreserve2020,cite_key_author_year,97,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FTYU2BLT,,NHLBI,crt_review_table_112.tex,121,Perry et al.,perryResultsAsthmaEducation2018,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ZPEDLYBK,,NHLBI,crt_review_table_112.tex,120,Pbert et al.,pbertPediatricPrimaryCare2024,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+YR23V33N,,NHLBI,crt_review_table_112.tex,119,Patterson et al.,pattersonEmergencyMedicalServices2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+6FZNPBXP,,NHLBI,crt_review_table_112.tex,118,Patel et al.,patelEffectivenessSchoolDrinking2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ZQ2U7SAI,,NHLBI,crt_review_table_112.tex,117,Pannu et al.,pannuOptimizationInspiredOxygen2025,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+QJRBBVLY,,NHLBI,crt_review_table_112.tex,116,Panniyammakal et al.,panniyammakalFamilyBasedInterventionsPromote2025,cite_key_author_year,94,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+H7N83IW2,,NHLBI,crt_review_table_112.tex,115,Paniagua-Avila et al.,paniagua-avilaEvaluatingMulticomponentProgram2020,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+GYRIVJLS,,NHLBI,crt_review_table_112.tex,114,Paez et al.,paezRoboticElectromagneticBronchoscopy2024,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+UPVYYFVQ,,NHLBI,crt_review_table_112.tex,113,Pacheco et al.,pachecoEffectsDifferentAllotments2021,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Y7PRFE3Z,,NHLBI,crt_review_table_112.tex,112,Olson et al.,olsonWeightLossMaintenance2025,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+4TRC3UDD,,NHLBI,crt_review_table_112.tex,111,Olomu et al.,olomuImprovingDiabeticPatients2022,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+XFPCQLGP,,NHLBI,crt_review_table_112.tex,110,Ogedegbe et al.,ogedegbeHealthInsuranceCoverage2018,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ME2XJGEW,,NHLBI,crt_review_table_112.tex,108,Nicolau et al.,nicolauDoesPriorCoronary2019,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+2BDG7GVP,,NHLBI,crt_review_table_112.tex,107,Nanney et al.,nanneyGroupRandomizedIntervention2019,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+NT3UR2AB,,NHLBI,crt_review_table_112.tex,104,Morshed et al.,morshedImpactHealthyWeight2019,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+GMFGJ3S5,,NHLBI,crt_review_table_112.tex,102,Miranda et al.,mirandaEffectPriestLedIntervention2020,cite_key_author_year,89,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+9LX3EYI2,,NHLBI,crt_review_table_112.tex,100,Miller et al.,millerMasteryorientedMotorCompetence2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+7KTF6M73,,NHLBI,crt_review_table_112.tex,101,Mills et al.,millsImplementationMultifacetedPatientCentered2020,cite_key_author_year,95,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+W95M9S6N,,NHLBI,crt_review_table_112.tex,99,Mercer et al.,mercerStrengtheningReferralNetworks2019,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+PQVNQR33,,NHLBI,crt_review_table_112.tex,98,McQuaid et al.,mcquaidAddressingPediatricAsthma2025,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+28SJBT73,,NHLBI,crt_review_table_112.tex,97,McLoughlin et al.,mcloughlinUsingImplementationMapping2025,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+T3W2WZCX,,NHLBI,crt_review_table_112.tex,95,Mansour-Assi et al.,mansour-assiSocialMobileApproaches2022,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+6PNE2R2W,,NHLBI,crt_review_table_112.tex,96,Martinez et al.,martinezImpactCAPTUREChronic2025,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+DCYTWR4N,,NHLBI,crt_review_table_112.tex,94,Mann et al.,mannImpactClinicalDecision2020,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+GKVUXT8J,,NHLBI,crt_review_table_112.tex,93,Ludden et al.,luddenImplementationCoachMcLungsSM2022,cite_key_author_year,93,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+S47B3QEJ,,NHLBI,crt_review_table_112.tex,92,Longenecker et al.,longeneckerImplementationStrategiesIntegrate2025,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+52L6RCJY,,NHLBI,crt_review_table_112.tex,91,Liyanage-Don et al.,liyanage-donImplementingRemotePatient2025,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FDVX9XTR,,NHLBI,crt_review_table_112.tex,90,Linton et al.,lintonSystemLevelInformatics2021,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ER2TALDD,,NHLBI,crt_review_table_112.tex,89,Lincoln et al.,lincolnProtocolRandomisedTrial2020,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+KDH4XJIC,,NHLBI,crt_review_table_112.tex,88,Levan et al.,levanFinancialIncentivesStandard2020,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Y9EY4XQ8,,NHLBI,crt_review_table_112.tex,87,Lauffenburger et al.,lauffenburgerReducingEthnicRacial2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ZS5WVT7S,,NHLBI,crt_review_table_112.tex,86,Lanspa et al.,lanspaProspectiveAssessmentFeasibility2019,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+MWYKAIL4,,NHLBI,crt_review_table_112.tex,85,Landry et al.,landryImpactSchoolBasedGardening2021,cite_key_author_year,88,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+4NGYJQ62,,NHLBI,crt_review_table_112.tex,84,Lampman et al.,lampmanOptimizingHuddleEngagement2021,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+EZW26HK2,,NHLBI,crt_review_table_112.tex,83,Kronish et al.,kronishMultifacetedImplementationStrategy2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+NQ4Y7FIA,,NHLBI,crt_review_table_112.tex,82,Kossek et al.,kossekCaringElderlyWork2019,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+XEIAGV9H,,NHLBI,crt_review_table_112.tex,81,Kinnamon et al.,kinnamonEffectivenessFamilyHeart2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+8QKAXQVW,,NHLBI,crt_review_table_112.tex,79,Kharbanda et al.,kharbandaEvaluationElectronicClinical2018,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+3XPH2HI6,,NHLBI,crt_review_table_112.tex,78,Kerr et al.,kerrClusterRandomizedControlled2018,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+25GIEATL,,NHLBI,crt_review_table_112.tex,77,Kennelty et al.,kenneltyDisseminationTelehealthCardiovascular2021,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+L8CPLJYW,,NHLBI,crt_review_table_112.tex,76,Kavishe et al.,kavisheStudyProtocolEngage2025,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+KSSYVX7X,,NHLBI,crt_review_table_112.tex,75,Kakande et al.,kakandeCommunitybasedDynamicChoice2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+YJDJH8TY,,NHLBI,crt_review_table_112.tex,74,Joshi et al.,joshiCardiovascularRiskFactor2019,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+VMHXT33Z,,NHLBI,crt_review_table_112.tex,73,Jones et al.,jonesRandomizedEvaluationDecision2022,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+LIJH82T5,,NHLBI,crt_review_table_112.tex,70,Jack et al.,jackClusterRandomisedTrial2021,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+M8CXW6PU,,NHLBI,crt_review_table_112.tex,71,Jacobs et al.,jacobsClinicalEconomicEffectiveness2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+65U9AYL7,,NHLBI,crt_review_table_112.tex,69,ICU-RESUS et al.,icu-resusandeunicekennedyshrivernationalinstituteofchildhealthEffectPhysiologicPointofCare2022,title_only_corporate_author,93,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+D29P9RKT,,NHLBI,crt_review_table_112.tex,68,Huffman et al.,huffmanEffectQualityImprovement2018,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+XEKC6EFN,,NHLBI,crt_review_table_112.tex,67,Howden et al.,howdenReversingCardiacEffects2018,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+DZSYHDZB,,NHLBI,crt_review_table_112.tex,66,Hieda et al.,hiedaImpact2Years2019,cite_key_author_year,73,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+NVVGHG2W,,NHLBI,crt_review_table_112.tex,65,Hernández-Galdamez et al.,hernandez-galdamezMonitoringStudyParticipants2021,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+R2P2KPRE,,NHLBI,crt_review_table_112.tex,63,Haug et al.,haugBestCaseWorst2022,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+MPJA6L2H,,NHLBI,crt_review_table_112.tex,64,Hearst et al.,hearstBreakfastBrainFood2019,cite_key_author_year,89,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+WUNIU4CC,,NHLBI,crt_review_table_112.tex,61,Hanrahan et al.,hanrahanHouseholdIncentiveBasedContact2023,cite_key_author_year,80,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BW2B5H9P,,NHLBI,crt_review_table_112.tex,62,Hardy et al.,hardyDesignEquityPrevention2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+7M6ST2JQ,,NHLBI,crt_review_table_112.tex,60,Halterman et al.,haltermanEffectSchoolBasedAsthma2022,cite_key_author_year,83,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+9J2SL67D,,NHLBI,crt_review_table_112.tex,58,Ha et al.,haConqueringHypertensionVietnamsolutions2020,cite_key_author_year,95,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BBQSQ5GY,,NHLBI,crt_review_table_112.tex,59,Hahn et al.,hahnUsingVirtualAgents2020,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+QUEFXEQY,,NHLBI,crt_review_table_112.tex,57,Grissom et al.,grissomImplementationCoordinatedSpontaneous2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+GK558E5R,,NHLBI,crt_review_table_112.tex,56,Grembi et al.,grembiInfluenceHydrometeorologicalRisk2024,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+5VWZPNEQ,,NHLBI,crt_review_table_112.tex,55,Green et al.,greenPuttingPatientsCenter2018,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+L2VHUDMD,,NHLBI,crt_review_table_112.tex,54,Grant et al.,grantVisitPlanningUsing2019,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+3B8K39D8,,NHLBI,crt_review_table_112.tex,52,Gold et al.,goldEffectClinicalDecision2022,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+LU33978L,,NHLBI,crt_review_table_112.tex,53,Goldstein et al.,goldsteinImprovingCommunicationHeart2019,cite_key_author_year,93,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+4QHFZPVG,,NHLBI,crt_review_table_112.tex,51,Gimbel et al.,gimbelSystemsAnalysisImprovement2020,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+KMKSIU5U,,NHLBI,crt_review_table_112.tex,50,Gerald et al.,geraldSchoolsupervisedUseOncedaily2019,cite_key_author_year,89,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+QURVUDB5,,NHLBI,crt_review_table_112.tex,49,Gans et al.,gansMulticomponentTailoredIntervention2022,cite_key_title_tiebreak,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+EI9D54I4,,NHLBI,crt_review_table_112.tex,48,Fuller et al.,fullerAwarenessParalysisSymptoms2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Z6WDVTKT,,NHLBI,crt_review_table_112.tex,46,Frank et al.,frankAssessmentImplementationMethods2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+IDKFPWGH,,NHLBI,crt_review_table_112.tex,47,Frerichs et al.,frerichsClusterRandomizedTrial2020,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+6ZV568P4,,NHLBI,crt_review_table_112.tex,45,Foti et al.,fotiEvidenceBasedPolicyMaking2020,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+W2VQEXEG,,NHLBI,crt_review_table_112.tex,44,Fortmann et al.,fortmannMedicalAssistantHealth2021,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+4B9BMDV7,,NHLBI,crt_review_table_112.tex,43,Fitzsimmons-Craft et al.,fitzsimmons-craftEffectivenessDigitalCognitive2020,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+3ETDUWRH,,NHLBI,crt_review_table_112.tex,40,Edwards et al.,edwardsSimultaneouslyImplementingPathways2024,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+IRIMYPZ3,,NHLBI,crt_review_table_112.tex,42,Fiscella et al.,fiscellaTeambasedHomeBlood2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+AUCUKPB9,,NHLBI,crt_review_table_112.tex,39,Ebinger et al.,ebingerBarbershopManagementHypertension2020,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+ZR3LJXGK,,NHLBI,crt_review_table_112.tex,37,Desai et al.,desaiImplementingPrediabetesClinical2022,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+D25VKDJV,,NHLBI,crt_review_table_112.tex,36,Davis et al.,davisSchoolbasedGardeningCooking2021,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+74ARW7SL,,NHLBI,crt_review_table_112.tex,34,Curley et al.,curleyMethodsDesignImplementation2018,cite_key_title_tiebreak,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+CKWBYHEN,,NHLBI,crt_review_table_112.tex,32,Crist et al.,cristChangeGPSassessedWalking2021,cite_key_author_year,92,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SAT93UFL,,NHLBI,crt_review_table_112.tex,33,Crist et al.,cristHealthEffectsCosteffectiveness2022,cite_key_author_year,90,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+TEXLFQSL,,NHLBI,crt_review_table_112.tex,30,Cox et al.,coxMobileApplicationBasedCommunication2024,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+84YU8UCD,,NHLBI,crt_review_table_112.tex,28,Cooper et al.,cooperEquitableCareHypertension2024,cite_key_author_year,88,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+DJYB2MPK,,NHLBI,crt_review_table_112.tex,27,Commodore-Mensah et al.,commodore-mensahDesignRationaleCardiometabolic2024,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+5PV3ES8S,,NHLBI,crt_review_table_112.tex,26,Collins et al.,collinsEfficacyCommunityBasedExercise2019,cite_key_author_year,93,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+AKJ8USST,,NHLBI,crt_review_table_112.tex,24,Chang et al.,changNovelCommunityHealth2021,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FEHWGZSQ,,NHLBI,crt_review_table_112.tex,22,Catley et al.,catleyEvaluationAdaptedVersion2022,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+UHEKLJLC,,NHLBI,crt_review_table_112.tex,21,Caspi et al.,caspiClusterRandomizedEvaluationSuperShelf2024,cite_key_author_year,86,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+4IBT3NAD,,NHLBI,crt_review_table_112.tex,20,Carter et al.,carterClusterRandomizedTrialEvaluate2018,cite_key_author_year,93,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+K4DMDMSQ,,NHLBI,crt_review_table_112.tex,19,Buis et al.,buisEffectMHealthSelfMonitoring2024,cite_key_author_year,85,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+IPR6QU8P,,NHLBI,crt_review_table_112.tex,18,Bryant-Stephens et al.,bryant-stephensCommunityHealthWorkers2024,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Z2W7K5DA,,NHLBI,crt_review_table_112.tex,17,Boxer et al.,boxerRandomizedControlledTrial2022,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+E5W8I8AR,,NHLBI,crt_review_table_112.tex,16,Boone et al.,booneCanPrivateSector2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+GJGVIKMM,,NHLBI,crt_review_table_112.tex,15,Birk et al.,birkInterveningFearAcute2020,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+8RFFGGMQ,,NHLBI,crt_review_table_112.tex,13,Berkman et al.,berkmanEmployeeCardiometabolicRisk2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,EXCLUDED but data preserved,,,
+55D8SN85,,NHLBI,crt_review_table_112.tex,10,Barankay et al.,barankayEffectPatientFinancial2020,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+TGSIADX6,,NHLBI,crt_review_table_112.tex,9,Ashburner et al.,ashburnerDesignRationalePragmatic2019,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+VAKS8AI7,,NHLBI,crt_review_table_112.tex,8,Anderegg et al.,andereggPharmacistInterventionBlood2018,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+MQF2Y5AM,,NHLBI,crt_review_table_112.tex,7,Altinger et al.,altingerBehaviouralNudgingInterventions2024,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+GN4JGZR9,,NHLBI,crt_review_table_112.tex,5,Aifah et al.,aifahIntegrationTaskStrengthening2021,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+4GUDDLNQ,,NHLBI,crt_review_table_112.tex,4,Adams et al.,adamsClusterRandomizedFactorial2025,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+D24FD6G2,,NHLBI,crt_review_table_112.tex,3,Adams et al.,adamsAutomatedSymptomTreatment2019,cite_key_title_tiebreak,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+VG2ZZL79,,NHLBI,crt_review_table_112.tex,1,Abdullahi et al.,abdullahiHydroxyureaPrimaryStroke2022,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+MTLFVN94,,NHLBI,crt_review_table_112.tex,2,Abrahams-Gessel et al.,abrahams-gesselManagingHighCardiovascular2023,cite_key_author_year,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+QEHREYLH,,NHLBI,NHLBI_exclusions_178.csv,89,"Cashen, Katherine (2022)",Cashen2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1097/PCC.0000000000003045,35880872,"Ignore03_NHLBI exclusion document, category headings"
+98PU32ET,,NHLBI,NHLBI_exclusions_178.csv,55,"Zhu, Angela Y (2024)",Zhu2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1002/bimj.202200135,37035941,"Ignore03_NHLBI exclusion document, category headings"
+8UI7B8NY,,NHLBI,NHLBI_exclusions_178.csv,161,"Weerahandi, Himali (2022)",Weerahandi2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jamda.2021.08.002,34478693,"Ignore03_NHLBI exclusion document, category headings"
+SZ3FBTVJ,,NHLBI,NHLBI_exclusions_178.csv,160,"Watson, R Scott (2018)",Watson2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1164/rccm.201708-1768OC,29313710,"Ignore03_NHLBI exclusion document, category headings"
+8NC76BQP,,NHLBI,NHLBI_exclusions_178.csv,159,"Wanigatunga, Amal A (2019)",Wanigatunga2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1111/jgs.15631,30452084,"Ignore03_NHLBI exclusion document, category headings"
+34PR6YXH,,NHLBI,NHLBI_exclusions_178.csv,54,"Wang, Wei (2024)",Wang2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1002/sim.9939,37985966,"Ignore03_NHLBI exclusion document, category headings"
+K5PURRCS,,NHLBI,NHLBI_exclusions_178.csv,53,"Wang, Wei (2021)",Wang2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s13063-021-05900-7,34961539,"Ignore03_NHLBI exclusion document, category headings"
+GJ9ZU4N5,,NHLBI,NHLBI_exclusions_178.csv,158,"Voskuil, Vicki R (2019)",Voskuil2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1002/nur.21968,31241204,"Ignore03_NHLBI exclusion document, category headings"
+E2MNEMB8,,NHLBI,NHLBI_exclusions_178.csv,157,"Victor, Ronald G (2019)",Victor2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1161/CIRCULATIONAHA.118.038165,30592662,"Ignore03_NHLBI exclusion document, category headings"
+V4KK3YW4,,NHLBI,NHLBI_exclusions_178.csv,28,"Vaughn, Amber E (2019)",Vaughn2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1093/tbm/iby082,30107586,"Ignore03_NHLBI exclusion document, category headings"
+UVKTJIEB,,NHLBI,NHLBI_exclusions_178.csv,156,"Vandyousefi, Sarvenaz (2023)",Vandyousefi2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jand.2023.03.015,36996935,"Ignore03_NHLBI exclusion document, category headings"
+6QNQDH2P,,NHLBI,NHLBI_exclusions_178.csv,155,"Ursache, Alexandra (2020)",Ursache2020,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1111/cdev.13432,32865229,"Ignore03_NHLBI exclusion document, category headings"
+9MM6Z5CZ,,NHLBI,NHLBI_exclusions_178.csv,63,"Trivedi, Michelle (2025)",Trivedi2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jaip.2025.07.022,40848030,"Ignore03_NHLBI exclusion document, category headings"
+8MGIPU3P,,NHLBI,NHLBI_exclusions_178.csv,27,"Trivedi, Michelle (2021)",Trivedi2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.cct.2021.106510,34280575,"Ignore03_NHLBI exclusion document, category headings"
+VGZFSIYN,,NHLBI,NHLBI_exclusions_178.csv,154,"Trivedi, Michelle (2022)",Trivedi2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1111/ijpo.12959,35876325,"Ignore03_NHLBI exclusion document, category headings"
+LRDYLR4Y,,NHLBI,NHLBI_exclusions_178.csv,26,"Tovar, Alison (2019)",Tovar2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1017/S1368980018002665,30378521,"Ignore03_NHLBI exclusion document, category headings"
+BDSYFVYJ,,NHLBI,NHLBI_exclusions_178.csv,12,"Tovar, Alison (2018)",Tovar2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jand.2018.08.154,30497638,"Ignore03_NHLBI exclusion document, category headings"
+6UICIGP2,,NHLBI,NHLBI_exclusions_178.csv,52,"Tong, Jiaqi (2023)",Tong2023a,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s12874-023-01887-8,37024809,"Ignore03_NHLBI exclusion document, category headings"
+C9R7RUUN,,NHLBI,NHLBI_exclusions_178.csv,51,"Tong, Guangyu (2024)",Tong2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1177/17407745231222018,38197388,"Ignore03_NHLBI exclusion document, category headings"
+PVIMTUBL,,NHLBI,NHLBI_exclusions_178.csv,50,"Tong, Guangyu (2023)",Tong2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1093/aje/kwad038,36799630,"Ignore03_NHLBI exclusion document, category headings"
+ZFMGD92P,,NHLBI,NHLBI_exclusions_178.csv,25,"Tian, Maoyi (2018)",Tian2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s12992-018-0342-0,29490675,"Ignore03_NHLBI exclusion document, category headings"
+D7BLIJDT,,NHLBI,NHLBI_exclusions_178.csv,153,"Thompson, Ryan R (2023)",Thompson2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/S2214-109X(22)00509-5,36669808,"Ignore03_NHLBI exclusion document, category headings"
+YAIMEWET,,NHLBI,NHLBI_exclusions_178.csv,11,"Thakkar, Aarti (2022)",Thakkar2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s12913-022-07699-8,35255913,"Ignore03_NHLBI exclusion document, category headings"
+K8TKE6RJ,,NHLBI,NHLBI_exclusions_178.csv,152,"Tan, Marissa (2019)",Tan2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.18865/ed.29.2.297,31057315,"Ignore03_NHLBI exclusion document, category headings"
+KNXWXYX2,,NHLBI,NHLBI_exclusions_178.csv,151,"Svarstad, Bonnie L (2022)",Svarstad2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.japh.2022.01.002,35120864,"Ignore03_NHLBI exclusion document, category headings"
+5CPW9STM,,NHLBI,NHLBI_exclusions_178.csv,150,"Sutton, Kent F (2021)",Sutton2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.3122/jabfm.2021.05.210140,34535524,"Ignore03_NHLBI exclusion document, category headings"
+6IYYT6CC,,NHLBI,NHLBI_exclusions_178.csv,149,"Strugnell, Claudia (2023)",Strugnell2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1089/chi.2022.0076,35930254,"Ignore03_NHLBI exclusion document, category headings"
+YFHGVNZN,,NHLBI,NHLBI_exclusions_178.csv,24,"Singh, Kavita (2019)",Singh2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s13012-019-0857-7,30728053,"Ignore03_NHLBI exclusion document, category headings"
+WK6HCXYF,,NHLBI,NHLBI_exclusions_178.csv,148,"Shah, Sachin J (2025)",Shah2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1161/CIRCOUTCOMES.124.011482,40519003,"Ignore03_NHLBI exclusion document, category headings"
+KESZW83P,,NHLBI,NHLBI_exclusions_178.csv,18,"Semler, Matthew W (2018)",Semler2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1056/NEJMc1804294,29768150,"Ignore03_NHLBI exclusion document, category headings"
+U9LEIXXF,,NHLBI,NHLBI_exclusions_178.csv,146,"Self, Wesley H (2020)",Self2020,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1001/jamanetworkopen.2020.24596,33196806,"Ignore03_NHLBI exclusion document, category headings"
+Q6PZ52E8,,NHLBI,NHLBI_exclusions_178.csv,145,"Rudolph, Michelle W (2022)",Rudolph2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1097/CCM.0000000000005426,35029869,"Ignore03_NHLBI exclusion document, category headings"
+GLTX296E,,NHLBI,NHLBI_exclusions_178.csv,144,"Rossi, Kristen (2025)",Rossi2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.3389/fpubh.2025.1613200,40904930,"Ignore03_NHLBI exclusion document, category headings"
+LD7CNGD5,,NHLBI,NHLBI_exclusions_178.csv,141,"Robbins, Lorraine B (2019)",Robbins2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1097/NNR.0000000000000359,30882562,"Ignore03_NHLBI exclusion document, category headings"
+KG4JI677,,NHLBI,NHLBI_exclusions_178.csv,142,"Robbins, Lorraine B (2020)",Robbins2020,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1038/s41390-020-0818-5,32120378,"Ignore03_NHLBI exclusion document, category headings"
+EKAEST6G,,NHLBI,NHLBI_exclusions_178.csv,143,"Robbins, Lorraine B (2020)",Robbins2020a,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1177/0890117120915679,32237995,"Ignore03_NHLBI exclusion document, category headings"
+FI4T6J44,,NHLBI,NHLBI_exclusions_178.csv,140,"Rhodes, Elizabeth C (2018)",Rhodes2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.diabres.2018.09.016,30273708,"Ignore03_NHLBI exclusion document, category headings"
+Q5KYTZM8,,NHLBI,NHLBI_exclusions_178.csv,139,"Rethorst, Chad D (2024)",Rethorst2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.3390/nu16244353,39770974,"Ignore03_NHLBI exclusion document, category headings"
+S6JAD5PD,,NHLBI,NHLBI_exclusions_178.csv,138,"Rees, Chris A (2024)",Rees2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1371/journal.pmed.1004467,39288196,"Ignore03_NHLBI exclusion document, category headings"
+XVICZIA8,,NHLBI,NHLBI_exclusions_178.csv,137,"Raghavan, Ramesh (2024)",Raghavan2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s13012-024-01388-2,39075590,"Ignore03_NHLBI exclusion document, category headings"
+EIE8ET3D,,NHLBI,NHLBI_exclusions_178.csv,136,"Quader, Zerleen S (2024)",Quader2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1177/08901171241257309,38850049,"Ignore03_NHLBI exclusion document, category headings"
+8R8U6VMX,,NHLBI,NHLBI_exclusions_178.csv,135,"Poggio, Rosana (2019)",Poggio2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.amepre.2019.05.011,31473065,"Ignore03_NHLBI exclusion document, category headings"
+S42UTYP4,,NHLBI,NHLBI_exclusions_178.csv,23,"Pillsbury, Mc Kinsey M (2021)",Pillsbury2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s12913-021-06930-2,34479556,"Ignore03_NHLBI exclusion document, category headings"
+C37DMGX6,,NHLBI,NHLBI_exclusions_178.csv,134,"Pfeiffer, Karin A (2019)",Pfeiffer2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1111/ijpo.12559,31267695,"Ignore03_NHLBI exclusion document, category headings"
+MMJBXYNB,,NHLBI,NHLBI_exclusions_178.csv,133,"Pedroza-Tobias, Andrea (2025)",PedrozaTobias2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jand.2024.10.022,39515643,"Ignore03_NHLBI exclusion document, category headings"
+5B6YAKGZ,,NHLBI,NHLBI_exclusions_178.csv,132,"Pacheco, Lorena S (2022)",Pacheco2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.3390/nu14132744,35807924,"Ignore03_NHLBI exclusion document, category headings"
+PT2PSKAP,,NHLBI,NHLBI_exclusions_178.csv,48,"Owen, Melody A (2025)",Owen2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1002/sim.70015,39930740,"Ignore03_NHLBI exclusion document, category headings"
+DEN3TJZ5,,NHLBI,NHLBI_exclusions_178.csv,62,"Ogungbe, Oluwabunmi (2025)",Ogungbe2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1001/jamanetworkopen.2024.62559,40036036,"Ignore03_NHLBI exclusion document, category headings"
+W8PNS3ZQ,,NHLBI,NHLBI_exclusions_178.csv,131,"O'Halloran, Amanda J (2024)",OHalloran2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s13054-024-05018-7,39010134,"Ignore03_NHLBI exclusion document, category headings"
+Q2S96SJ9,,NHLBI,NHLBI_exclusions_178.csv,61,"O'Donoghue, Julia (2022)",ODonoghue2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.cct.2022.106884,35995130,"Ignore03_NHLBI exclusion document, category headings"
+PKIN6R35,,NHLBI,NHLBI_exclusions_178.csv,130,"Natale, JoAnne E (2021)",Natale2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1513/AnnalsATS.201912-872OC,32776853,"Ignore03_NHLBI exclusion document, category headings"
+TZ8BIHD2,,NHLBI,NHLBI_exclusions_178.csv,129,"Nassal, Michelle M J (2024)",Nassal2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1001/jamanetworkopen.2024.19274,38967927,"Ignore03_NHLBI exclusion document, category headings"
+KCV63L9X,,NHLBI,NHLBI_exclusions_178.csv,128,"Mukhopadhyay, Amrita (2024)",Mukhopadhyay2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jchf.2023.11.002,38043045,"Ignore03_NHLBI exclusion document, category headings"
+ZBPWT8RC,,NHLBI,NHLBI_exclusions_178.csv,127,"Morgan, Ryan W (2022)",Morgan2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1097/PCC.0000000000003073,36053072,"Ignore03_NHLBI exclusion document, category headings"
+VZQD5RZ8,,NHLBI,NHLBI_exclusions_178.csv,126,"Moin, Emily E (2025)",Moin2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1111/jgs.19509,40331620,"Ignore03_NHLBI exclusion document, category headings"
+6CEJB5CI,,NHLBI,NHLBI_exclusions_178.csv,125,"Mohanan, Padinhare P (2019)",Mohanan2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1001/jamanetworkopen.2019.3831,31099866,"Ignore03_NHLBI exclusion document, category headings"
+UBM2R4MP,,NHLBI,NHLBI_exclusions_178.csv,123,"Modes, Matthew E (2020)",Modes2020,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jpainsymman.2020.04.026,32389606,"Ignore03_NHLBI exclusion document, category headings"
+MZ3T9PWI,,NHLBI,NHLBI_exclusions_178.csv,124,"Modes, Matthew E (2022)",Modes2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jpainsymman.2022.06.004,35700932,"Ignore03_NHLBI exclusion document, category headings"
+TB7DEJ83,,NHLBI,NHLBI_exclusions_178.csv,122,"Modes, Matthew E (2019)",Modes2019a,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jpainsymman.2019.06.011,31228534,"Ignore03_NHLBI exclusion document, category headings"
+UIB8ZYW3,,NHLBI,NHLBI_exclusions_178.csv,121,"Modes, Matthew E (2019)",Modes2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jpainsymman.2018.10.507,30391656,"Ignore03_NHLBI exclusion document, category headings"
+5Y4N2K9P,,NHLBI,NHLBI_exclusions_178.csv,47,"Matsouaka, Roland A (2018)",Matsouaka2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1177/0962280216680524,27920364,"Ignore03_NHLBI exclusion document, category headings"
+88XZGAZQ,,NHLBI,NHLBI_exclusions_178.csv,120,"Matlock, Daniel D (2020)",Matlock2020,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1177/0272989X20915227,32428430,"Ignore03_NHLBI exclusion document, category headings"
+85UJCVKA,,NHLBI,NHLBI_exclusions_178.csv,119,"Masters, Grace A (2024)",Masters2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.contraception.2024.110447,38583583,"Ignore03_NHLBI exclusion document, category headings"
+WJWMFQRJ,,NHLBI,NHLBI_exclusions_178.csv,10,"Marks, Jennifer (2018)",Marks2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1093/tbm/iby026,30016518,"Ignore03_NHLBI exclusion document, category headings"
+XGSXVHMB,,NHLBI,NHLBI_exclusions_178.csv,166,"Maria, Joseph Linju (2021)",Maria2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/S2214-109X(20)30449-6,33242455,"Ignore03_NHLBI exclusion document, category headings"
+GBK9FE9L,,NHLBI,NHLBI_exclusions_178.csv,118,"Margolis, Karen L (2020)",Margolis2020,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1161/HYPERTENSIONAHA.120.15492,32862713,"Ignore03_NHLBI exclusion document, category headings"
+9HBYKQR8,,NHLBI,NHLBI_exclusions_178.csv,117,"Margolis, Karen L (2018)",Margolis2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1001/jamanetworkopen.2018.1617,30646139,"Ignore03_NHLBI exclusion document, category headings"
+EH85EJ36,,NHLBI,NHLBI_exclusions_178.csv,116,"Mamun, Abdullah (2020)",Mamun2020,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.numecd.2020.06.005,32605881,"Ignore03_NHLBI exclusion document, category headings"
+RUYVCGHY,,NHLBI,NHLBI_exclusions_178.csv,60,"Lyden, Kate (2021)",Lyden2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.2215/CJN.12300720,33888536,"Ignore03_NHLBI exclusion document, category headings"
+2UPNUCNS,,NHLBI,NHLBI_exclusions_178.csv,22,"Luecking, Courtney T (2021)",Luecking2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1093/tbm/ibab001,33538306,"Ignore03_NHLBI exclusion document, category headings"
+YCFJFHMC,,NHLBI,NHLBI_exclusions_178.csv,115,"Luecking, Courtney T (2020)",Luecking2020,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jand.2019.09.018,31831384,"Ignore03_NHLBI exclusion document, category headings"
+S7KB7TFR,,NHLBI,NHLBI_exclusions_178.csv,113,"Lombardo, Sarah (2022)",Lombardo2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1089/neu.2021.0465,35443809,"Ignore03_NHLBI exclusion document, category headings"
+NLT3RNI6,,NHLBI,NHLBI_exclusions_178.csv,46,"Lo, Yungtai (2025)",Lo2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s12874-025-02653-8,40859182,"Ignore03_NHLBI exclusion document, category headings"
+4ME98BI9,,NHLBI,NHLBI_exclusions_178.csv,17,"Li, Fan (2020)",Li2020,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1093/ije/dyaa037,32211886,"Ignore03_NHLBI exclusion document, category headings"
+3MBN8DIA,,NHLBI,NHLBI_exclusions_178.csv,16,"Leite, Jean Michel R S (2024)",Leite2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1080/24733938.2023.2190998,36914960,"Ignore03_NHLBI exclusion document, category headings"
+3SUSMNR7,,NHLBI,NHLBI_exclusions_178.csv,112,"Lee, Alison G (2019)",Lee2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1164/rccm.201804-0694OC,30256656,"Ignore03_NHLBI exclusion document, category headings"
+4Q7JQUVU,,NHLBI,NHLBI_exclusions_178.csv,111,"Landrigan, Christopher P (2020)",Landrigan2020,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1056/NEJMoa1900669,32579812,"Ignore03_NHLBI exclusion document, category headings"
+YNAD85P3,,NHLBI,NHLBI_exclusions_178.csv,45,"Krzyzanowski, Brittany (2019)",Krzyzanowski2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s13063-019-3284-9,30922358,"Ignore03_NHLBI exclusion document, category headings"
+3DSAACUW,,NHLBI,NHLBI_exclusions_178.csv,165,"Krutsinger, Dustin C (2021)",Krutsinger2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s13054-021-03804-1,34781998,"Ignore03_NHLBI exclusion document, category headings"
+UHLRHMGI,,NHLBI,NHLBI_exclusions_178.csv,44,"Kilbourne, Amy (2024)",Kilbourne2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1146/annurev-publhealth-060222-014438,37931183,"Ignore03_NHLBI exclusion document, category headings"
+JDABTKG9,,NHLBI,NHLBI_exclusions_178.csv,110,"Kiggundu, John Baptist (2025)",Kiggundu2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1002/jia2.26499,40622382,"Ignore03_NHLBI exclusion document, category headings"
+G6V5HPHL,,NHLBI,NHLBI_exclusions_178.csv,43,"Katzmarzyk, Peter T (2022)",Katzmarzyk2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1111/cob.12524,35412010,"Ignore03_NHLBI exclusion document, category headings"
+JPXXAFJZ,,NHLBI,NHLBI_exclusions_178.csv,40,"Kahan, Brennan C (2023)",Kahan2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1093/ije/dyac131,35834775,"Ignore03_NHLBI exclusion document, category headings"
+AHQ8IGXQ,,NHLBI,NHLBI_exclusions_178.csv,41,"Kahan, Brennan C (2023)",Kahan2023a,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1177/17407745231186094,37439089,"Ignore03_NHLBI exclusion document, category headings"
+PG83SQ3X,,NHLBI,NHLBI_exclusions_178.csv,42,"Kahan, Brennan C (2024)",Kahan2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1177/09622802241254197,38780480,"Ignore03_NHLBI exclusion document, category headings"
+9XSGVFTU,,NHLBI,NHLBI_exclusions_178.csv,66,"Kahan, Brennan C (2025)",Kahan2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1101/2025.07.03.25330799,40630601,"Ignore03_NHLBI exclusion document, category headings"
+EVS2FEUS,,NHLBI,NHLBI_exclusions_178.csv,109,"Jústiz, Amanda M (2025)",Justiz2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1111/ijpo.70018,40344380,"Ignore03_NHLBI exclusion document, category headings"
+PVP9PWD9,,NHLBI,NHLBI_exclusions_178.csv,39,"Joyce, Nina R (2023)",Joyce2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1177/17407745231185055,37493171,"Ignore03_NHLBI exclusion document, category headings"
+2LB9GQLG,,NHLBI,NHLBI_exclusions_178.csv,8,"Jiang, Qianxia (2021)",Jiang2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1155/2021/6697006,34659829,"Ignore03_NHLBI exclusion document, category headings"
+LD2EYF43,,NHLBI,NHLBI_exclusions_178.csv,9,"Jiang, Qianxia (2023)",Jiang2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.5888/pcd20.220325,37441753,"Ignore03_NHLBI exclusion document, category headings"
+P6QS3RSX,,NHLBI,NHLBI_exclusions_178.csv,108,"Jiang, Qianxia (2023)",Jiang2023a,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jneb.2023.03.005,37245146,"Ignore03_NHLBI exclusion document, category headings"
+S89CIJ46,,NHLBI,NHLBI_exclusions_178.csv,107,"Jia, Jenny (2024)",Jia2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.3390/nu16060805,38542716,"Ignore03_NHLBI exclusion document, category headings"
+TZW76NJB,,NHLBI,NHLBI_exclusions_178.csv,106,"Jennerich, Ann L (2022)",Jennerich2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jpainsymman.2022.05.006,35618247,"Ignore03_NHLBI exclusion document, category headings"
+CKHANCR8,,NHLBI,NHLBI_exclusions_178.csv,105,"Jeans, Matthew R (2023)",Jeans2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.tjnut.2023.04.013,37116658,"Ignore03_NHLBI exclusion document, category headings"
+CU6USZZG,,NHLBI,NHLBI_exclusions_178.csv,7,"Jeans, Matthew R (2022)",Jeans2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jand.2021.10.014,34634512,"Ignore03_NHLBI exclusion document, category headings"
+P3KQJM4H,,NHLBI,NHLBI_exclusions_178.csv,38,"Jamshidi-Naeini, Yasaman (2024)",JamshidiNaeini2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.2196/54090,38568721,"Ignore03_NHLBI exclusion document, category headings"
+JQH7C7QZ,,NHLBI,NHLBI_exclusions_178.csv,37,"Jamshidi-Naeini, Yasaman (2023)",JamshidiNaeini2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s12888-023-05180-2,37730572,"Ignore03_NHLBI exclusion document, category headings"
+QLJ7HTJU,,NHLBI,NHLBI_exclusions_178.csv,35,"Isenberg, Dane (2025)",Isenberg2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1177/09622802241309348,39885759,"Ignore03_NHLBI exclusion document, category headings"
+RKXS5GKB,,NHLBI,NHLBI_exclusions_178.csv,104,"Ibe, Chidinma A (2021)",Ibe2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.18865/ed.31.1.47,33519155,"Ignore03_NHLBI exclusion document, category headings"
+S26WZS8D,,NHLBI,NHLBI_exclusions_178.csv,15,"Hickey, Matthew D (2025)",Hickey2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1002/jia2.26500,40622370,"Ignore03_NHLBI exclusion document, category headings"
+IJE7MVNS,,NHLBI,NHLBI_exclusions_178.csv,103,"Haushalter, Keally (2024)",Haushalter2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.tjnut.2023.12.024,38110183,"Ignore03_NHLBI exclusion document, category headings"
+6XSR8DVR,,NHLBI,NHLBI_exclusions_178.csv,59,"Guyette, Frank X (2022)",Guyette2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1097/TA.0000000000003551,35081595,"Ignore03_NHLBI exclusion document, category headings"
+TUYKW32A,,NHLBI,NHLBI_exclusions_178.csv,102,"Graham, Andrea K (2023)",Graham2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1037/ccp0000786,36634022,"Ignore03_NHLBI exclusion document, category headings"
+WPF7MUCV,,NHLBI,NHLBI_exclusions_178.csv,33,"Golzarri-Arroyo, Lilian (2020)",GolzarriArroyo2020,doi,100,1,1,comment_or_letter,E16,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1089/chi.2019.0142,32078372,"Ignore03_NHLBI exclusion document, category headings"
+S64FLLB6,,NHLBI,NHLBI_exclusions_178.csv,34,"Golzarri-Arroyo, Lilian (2022)",GolzarriArroyo2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.cmpb.2022.106654,35093646,"Ignore03_NHLBI exclusion document, category headings"
+SRGFMEL6,,NHLBI,NHLBI_exclusions_178.csv,101,"Goldstein, Nicolas P N (2018)",Goldstein2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.acap.2017.08.015,28899842,"Ignore03_NHLBI exclusion document, category headings"
+M36AICFG,,NHLBI,NHLBI_exclusions_178.csv,6,"Gilbert, Amanda (2025)",Gilbert2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.3389/fpubh.2025.1498450,39975777,"Ignore03_NHLBI exclusion document, category headings"
+H2HJLXGH,,NHLBI,NHLBI_exclusions_178.csv,100,"Gerstenfeld, Leslie (2024)",Gerstenfeld2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1017/S1368980024002283,39575559,"Ignore03_NHLBI exclusion document, category headings"
+ZLU75I88,,NHLBI,NHLBI_exclusions_178.csv,99,"Gelfman, Laura P (2021)",Gelfman2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.cardfail.2021.03.005,34088381,"Ignore03_NHLBI exclusion document, category headings"
+WIYCPY8U,,NHLBI,NHLBI_exclusions_178.csv,32,"Gasparini, Alessandro (2025)",Gasparini2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1002/sim.10347,39963907,"Ignore03_NHLBI exclusion document, category headings"
+CRIGG2QL,,NHLBI,NHLBI_exclusions_178.csv,4,"Gans, Kim M (2019)",Gans2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1089/chi.2018.0083,30707598,"Ignore03_NHLBI exclusion document, category headings"
+WTQJUCGN,,NHLBI,NHLBI_exclusions_178.csv,5,"Gans, Kim M (2022)",Gans2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1089/chi.2021.0094,34851731,"Ignore03_NHLBI exclusion document, category headings"
+7NGXRYU7,,NHLBI,NHLBI_exclusions_178.csv,65,"Fung, Constance (2025)",Fung2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.21203/rs.3.rs-7330051/v1,41041560,"Ignore03_NHLBI exclusion document, category headings"
+HFCRYZ8E,,NHLBI,NHLBI_exclusions_178.csv,164,"Fitzsimmons-Craft, Ellen E (2021)",FitzsimmonsCraft2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1176/appi.ps.202000702,34189934,"Ignore03_NHLBI exclusion document, category headings"
+URUAWZAY,,NHLBI,NHLBI_exclusions_178.csv,98,"Federman, Myke (2024)",Federman2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1097/PCC.0000000000003368,37678381,"Ignore03_NHLBI exclusion document, category headings"
+F7UIGLIK,,NHLBI,NHLBI_exclusions_178.csv,31,"Fang, Xi (2025)",Fang2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1093/biostatistics/kxaf047,41443760,"Ignore03_NHLBI exclusion document, category headings"
+REZJUIXS,,NHLBI,NHLBI_exclusions_178.csv,96,"Davis, Jaimie N (2023)",Davis2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jand.2022.08.125,35998864,"Ignore03_NHLBI exclusion document, category headings"
+DSB4NKC5,,NHLBI,NHLBI_exclusions_178.csv,97,"Davis, Jaimie N (2023)",Davis2023a,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1001/jamanetworkopen.2022.50375,36626172,"Ignore03_NHLBI exclusion document, category headings"
+U4546RAU,,NHLBI,NHLBI_exclusions_178.csv,95,"Daouda, Misbath (2024)",Daouda2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1289/EHP13225,38506828,"Ignore03_NHLBI exclusion document, category headings"
+E8BGTQDI,,NHLBI,NHLBI_exclusions_178.csv,14,"Curley, Martha A Q (2018)",Curley2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.cct.2018.07.004,30017814,"Ignore03_NHLBI exclusion document, category headings"
+4EYIVLJR,,NHLBI,NHLBI_exclusions_178.csv,20,"Clark, Taylor L (2022)",Clark2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1093/tbm/ibab144,34791499,"Ignore03_NHLBI exclusion document, category headings"
+ZC3442HS,,NHLBI,NHLBI_exclusions_178.csv,58,"Clark, Jesse (2021)",Clark2021,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1007/s10461-020-03117-4,33385279,"Ignore03_NHLBI exclusion document, category headings"
+XVK2U8K6,,NHLBI,NHLBI_exclusions_178.csv,93,"Cheng, Jessica (2023)",Cheng2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1017/S0007114523001137,38713063,"Ignore03_NHLBI exclusion document, category headings"
+AZPPGG26,,NHLBI,NHLBI_exclusions_178.csv,92,"Chay, Junxing (2024)",Chay2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/S2214-109X(24)00188-8,39030063,"Ignore03_NHLBI exclusion document, category headings"
+YUL5IEIT,,NHLBI,NHLBI_exclusions_178.csv,64,"Chapnick, Melissa (2025)",Chapnick2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1101/2025.09.25.678652,41256558,"Ignore03_NHLBI exclusion document, category headings"
+Q5UBAJFB,,NHLBI,NHLBI_exclusions_178.csv,91,"Chaiyachati, Krisda H (2019)",Chaiyachati2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1001/jamainternmed.2019.0095,30985861,"Ignore03_NHLBI exclusion document, category headings"
+S59FZ9BB,,NHLBI,NHLBI_exclusions_178.csv,19,"Catley, Delwyn (2020)",Catley2020,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1093/tbm/ibz187,31909412,"Ignore03_NHLBI exclusion document, category headings"
+ZVIZFQCJ,,NHLBI,NHLBI_exclusions_178.csv,90,"Cashen, Katherine (2023)",Cashen2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.resuscitation.2023.109939,37625580,"Ignore03_NHLBI exclusion document, category headings"
+LSLZLVAS,,NHLBI,NHLBI_exclusions_178.csv,88,"Carrión, Daniel (2019)",Carrion2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.envint.2019.105150,31518936,"Ignore03_NHLBI exclusion document, category headings"
+YZ7GZ47B,,NHLBI,NHLBI_exclusions_178.csv,87,"Bray, Jeremy W (2018)",Bray2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1177/0890117117696244,28299947,"Ignore03_NHLBI exclusion document, category headings"
+UD8UUMUN,,NHLBI,NHLBI_exclusions_178.csv,86,"Boston, David (2023)",Boston2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.3122/jabfm.2022.220391R2,37704387,"Ignore03_NHLBI exclusion document, category headings"
+MFCQSDMF,,NHLBI,NHLBI_exclusions_178.csv,57,"Bonafide, Christopher P (2022)",Bonafide2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s13012-022-01246-z,36271399,"Ignore03_NHLBI exclusion document, category headings"
+I7VKXNIC,,NHLBI,NHLBI_exclusions_178.csv,85,"Blyler, Ciantel A (2019)",Blyler2019,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1097/HCO.0000000000000674,31425171,"Ignore03_NHLBI exclusion document, category headings"
+2KYMUP96,,NHLBI,NHLBI_exclusions_178.csv,30,"Blette, Bryan S (2024)",Blette2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1177/09622802241242323,38567439,"Ignore03_NHLBI exclusion document, category headings"
+NCULGT7Q,,NHLBI,NHLBI_exclusions_178.csv,56,"Beres, Laura K (2022)",Beres2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1371/journal.pone.0273228,36018846,"Ignore03_NHLBI exclusion document, category headings"
+XXY9RT8Q,,NHLBI,NHLBI_exclusions_178.csv,83,"Benjamin-Chung, Jade (2024)",BenjaminChung2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1038/s41591-024-03134-z,38965434,"Ignore03_NHLBI exclusion document, category headings"
+DG93HVAX,,NHLBI,NHLBI_exclusions_178.csv,29,"Bell, Melanie L (2020)",Bell2020,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s13063-020-4114-9,32033617,"Ignore03_NHLBI exclusion document, category headings"
+DHSYLQCG,,NHLBI,NHLBI_exclusions_178.csv,82,"Beets, Michael W (2018)",Beets2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.ypmed.2017.10.003,28987341,"Ignore03_NHLBI exclusion document, category headings"
+2EQE8HSV,,NHLBI,NHLBI_exclusions_178.csv,13,"Barbaro, Ryan P (2018)",Barbaro2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1164/rccm.201709-1893OC,29373797,"Ignore03_NHLBI exclusion document, category headings"
+9SZ8F7SB,,NHLBI,NHLBI_exclusions_178.csv,80,"Baik, Yeonsoo (2022)",Baik2022,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1093/cid/ciab601,34212181,"Ignore03_NHLBI exclusion document, category headings"
+FZB8IQSZ,,NHLBI,NHLBI_exclusions_178.csv,79,"Augustovski, Federico (2018)",Augustovski2018,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1016/j.jval.2018.06.003,30502778,"Ignore03_NHLBI exclusion document, category headings"
+F5VFFT7X,,NHLBI,NHLBI_exclusions_178.csv,78,"Atlas, Steven J (2023)",Atlas2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s12875-023-02087-5,37391738,"Ignore03_NHLBI exclusion document, category headings"
+D8BXQHHL,,NHLBI,NHLBI_exclusions_178.csv,77,"Asante, Kwaku Poku (2020)",Asante2020,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1186/s13063-020-04667-7,33008455,"Ignore03_NHLBI exclusion document, category headings"
+ZDP4YJ9U,,NHLBI,NHLBI_exclusions_178.csv,76,"Ante-Testard, Pearl Anne (2024)",AnteTestard2024,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1038/s41467-024-45624-1,38378704,"Ignore03_NHLBI exclusion document, category headings"
+AFKVRFM8,,NHLBI,NHLBI_exclusions_178.csv,163,"Abdullahi, Shehu U (2023)",Abdullahi2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1182/blood.2022016620,36322937,"Ignore03_NHLBI exclusion document, category headings"
+JZHSJF4P,,NHLBI,NHLBI_exclusions_178.csv,3,"Cummings, Doyle M (2023)",Cummings2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1007/s40615-022-01431-2,36271193,"Ignore03_NHLBI exclusion document, category headings"
+V6LBW3SS,,NHLBI,NHLBI_exclusions_178.csv,1,"Blum, Moritz (2025)",Blum2025,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1007/s11136-024-03823-9,39503943,"Ignore03_NHLBI exclusion document, category headings"
+CZKI8WKJ,,NHLBI,NHLBI_exclusions_178.csv,84,"Blue, Laura (2023)",Blue2023,doi,100,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1001/jama.2023.19597,37847273,"Ignore03_NHLBI exclusion document, category headings"

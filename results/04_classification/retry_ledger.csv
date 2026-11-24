@@ -447,3 +447,22 @@ reasoning
   Value error, reasoning is 211 chars, cap is 200 [type=value_error, input_value=""Randomization stratified...triction ignored (D11)."", input_type=str]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error",0,8.53,results\04_classification\raw\data_analysis_r1\43dd1fefcd39ce39.attempt2.jsonl,yes,
 2026-08-29T00:58:32+00:00,data_analysis,1,U7PLGE75,4af6f51db13d368a,2,ok,,,0,14.19,results\04_classification\raw\data_analysis_r1\4af6f51db13d368a.attempt2.jsonl,,
+2026-11-24T18:38:35+00:00,exclusion,1,WPF7MUCV,b385d7876bbc4200,1,ok,,,0,4.3,results\04_classification\raw\exclusion_v2_r1\b385d7876bbc4200.attempt1.jsonl,,
+2026-11-24T18:38:35+00:00,exclusion,1,WCA66X4I,1cff7352b523c1f3,1,ok,,,0,10.44,results\04_classification\raw\exclusion_v2_r1\1cff7352b523c1f3.attempt1.jsonl,,
+2026-11-24T19:15:32+00:00,combined_analysis,1,WCA66X4I,916c96ec590409da,1,failure,parse,"1 validation error for FullAnalysis
+design
+  Value error, ind_samp_unit 'stratum' is not one of the levels ['patient', 'physician', 'clinic'] [type=value_error, input_value={'n_trt': 3, 'levels': [{..., 'stepped_wedge': 'no'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/value_error",0,27.74,results\04_classification\raw\combined_analysis_v2_r1\916c96ec590409da.attempt1.jsonl,yes,
+2026-11-24T19:15:32+00:00,combined_analysis,1,6XFGQN39,898081abd94fdee7,1,failure,parse,"8 validation errors for FullAnalysis
+design.levels.1.unit
+  Value error, unit must be one of ('patient', 'participant', 'student', 'clinic', 'school', 'classroom', 'practice', 'hospital', 'ward', 'physician', 'nursing_home', 'village', 'community', 'household', 'family', 'worksite', 'site', 'matched_pair', 'stratum') or 'other: <label>', got 'clinician' [type=value_error, input_value='clinician', ",0,34.83,results\04_classification\raw\combined_analysis_v2_r1\898081abd94fdee7.attempt1.jsonl,yes,
+2026-11-24T19:28:33+00:00,combined_analysis,1,WCA66X4I,c102d27036d15efc,2,failure,parse,"2 validation errors for FullAnalysis
+design
+  Value error, ind_samp_unit 'stratum' is not one of the levels ['patient', 'physician', 'clinic'] [type=value_error, input_value={'n_trt': 3, 'levels': [{..., 'stepped_wedge': 'no'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/value_error
+data_analysis.done.small_sample_correction
+  Input should be 'yes', 'no' o",0,43.83,results\04_classification\raw\combined_analysis_v2_r1\c102d27036d15efc.attempt2.jsonl,yes,
+2026-11-24T19:28:33+00:00,combined_analysis,1,6XFGQN39,1ce4de6ab8b27859,2,failure,parse,"1 validation error for FullAnalysis
+design
+  Value error, ind_samp_unit 'stratum' is not one of the levels ['patient', 'physician', 'practice'] [type=value_error, input_value={'n_trt': 2, 'levels': [{..., 'stepped_wedge': 'no'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/value_error",0,37.86,results\04_classification\raw\combined_analysis_v2_r1\1ce4de6ab8b27859.attempt2.jsonl,yes,

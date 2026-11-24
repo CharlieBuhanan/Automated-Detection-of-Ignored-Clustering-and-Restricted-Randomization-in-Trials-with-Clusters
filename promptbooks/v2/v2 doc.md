@@ -14,7 +14,7 @@ and raw responses retain the corresponding provenance.
 | Git commit | captured in each run environment |
 | Model used to build it | none |
 | Route | Reading Room (`scripts/20_reading_room.py`) |
-| Status | **draft** — do not run until the expert adjudications are recorded |
+| Status | **run-frozen 2026-11-24** by the 2-paper smoke test (`exclusion_v2_r1`, `combined_analysis_v2_r1`). The user lifted the expert-adjudication gate the same day (the open expert-review papers are not scored). Do not edit; later rule changes (Deb.md) go in `v3` |
 
 ## Delta from v1
 
@@ -40,11 +40,11 @@ un-run draft). Plan: `research design/GROUND_TRUTH_OUTPUT_PLAN.md`; columns:
 | `exclusion.md` also returns `exclusion_reason` (an E-number that must be cited) | Plan decision 4; 43-column export | Same E1-E18 criteria; no decision-rule change |
 | New `combined_analysis.md`: Part A study design, then Part B power (P1-P18), then Part C data (D1-D15), each with a structured `done` record | Plan step 3; one call fills the 20 model columns | P and D criteria copied verbatim from `power_analysis.md` / `data_analysis.md`, except the row below |
 | D4 adds: a planned analysis this manuscript describes is judged like a performed one | Deb Q7 (2026-11-09): a planned-only analysis can be `data_correct` yes | Criterion clarification, human-ruled |
-| No few-clusters tag; D13 unchanged | User, 2026-11-24: work without the unconfirmed 40-cluster threshold (Deb.md 3a-3c). `small_sample_correction` still records the fact | If Deb confirms, add a rule to D13 in place before the first run |
+| No few-clusters tag; D13 unchanged | User, 2026-11-24: work without the unconfirmed 40-cluster threshold (Deb.md 3a-3c). `small_sample_correction` still records the fact | If Deb confirms after v2 has run, the rule goes in `v3` (user, 2026-11-24: freeze v2 now) |
 | Each judgment also returns `should` (units, restricted_rand, longitudinality) | User, 2026-11-24: ask the model too, so its answer can be compared with the value code derives from Part A | Not a decision rule; never checked against `done` or the verdict |
 | `n_long` replaced by `longitudinal: {baseline_measured, n_followup}`; code derives `n_long` | User, 2026-11-24. Human coding of baseline + one follow-up is split (most papers 2, some 1), so the model records the facts and the export picks the convention; the strict `not_applicable` check applies only to one follow-up with no baseline, or two or more follow-ups | Export counts baseline (majority human coding; GLIMMPSE's repeated-measures count); follow-up-only count reported beside it |
 | Longitudinality defined once in Part A, including baseline as a covariate or change score = `accounted` | Same; the NHLBI table marks baseline-adjusted models as accounting for longitudinality (e.g. `4IBT3NAD`) | Does not affect `power_correct` / `data_correct` (P17, D14, DC49) |
-| `exclusion.md` adds **E19. Other clear ineligibility**, reason `other: <label>` | User, 2026-11-24: reasons are open lists like every other list (decision 18). Worded "use rarely, if unsure keep" because a false exclusion is unrecoverable | New criterion; each use is logged to `other_labels.csv` |
+| `exclusion.md` adds **E19. Other clear ineligibility**, reason `other: <short reason>` | User, 2026-11-24: reasons are open lists like every other list (decision 18). Worded "use rarely, if unsure keep" because a false exclusion is unrecoverable. Approved by the user 2026-11-24, with one change: the model must say why the paper is excluded (the reason names what makes it ineligible, and `reasoning` explains why no E1-E16 fits) | New criterion; each use is logged to `other_labels.csv` |
 
 v2's standalone `power_analysis.md` and `data_analysis.md` were deleted on
 2026-11-24 (user decision; recoverable from git at `397a09f`), so the P and D
