@@ -16,7 +16,7 @@
       {"kind": "exact", "value": 0.05, "low": null, "high": null, "applies_to": "clinic"},
       {"kind": "range", "value": null, "low": 0.01, "high": 0.03, "applies_to": "physician"}
     ]},
-    "n_long": 2,
+    "longitudinal": {"baseline_measured": "yes", "n_followup": 2},
     "stepped_wedge": "no"
   },
   "power_analysis": {

@@ -1,0 +1,72 @@
+human_term,unit,checked,times_seen,note
+agency,,no,2,no listed unit fits; leave blank to compare as other: <label>
+care home,,no,3,no listed unit fits; leave blank to compare as other: <label>
+center,,no,2,no listed unit fits; leave blank to compare as other: <label>
+child,participant,no,4,proposal
+church,,no,3,no listed unit fits; leave blank to compare as other: <label>
+city,,no,2,no listed unit fits; leave blank to compare as other: <label>
+clinician,physician,no,2,proposal
+cluster,,no,2,no listed unit fits; leave blank to compare as other: <label>
+commune,,no,2,no listed unit fits; leave blank to compare as other: <label>
+community health center,clinic,no,3,proposal
+community oncology clinic,clinic,no,1,proposal
+county,,no,2,no listed unit fits; leave blank to compare as other: <label>
+department,,no,2,no listed unit fits; leave blank to compare as other: <label>
+district,,no,3,no listed unit fits; leave blank to compare as other: <label>
+district (ignoring province),,no,1,no listed unit fits; leave blank to compare as other: <label>
+dormitory,,no,3,no listed unit fits; leave blank to compare as other: <label>
+educational group,,no,1,no listed unit fits; leave blank to compare as other: <label>
+emergency room,,no,3,no listed unit fits; leave blank to compare as other: <label>
+EMS agency,,no,1,no listed unit fits; leave blank to compare as other: <label>
+encounter,,no,1,no listed unit fits; leave blank to compare as other: <label>
+family child care home,,no,3,no listed unit fits; leave blank to compare as other: <label>
+family group,family,no,1,proposal
+federally qualified health center,clinic,no,4,proposal
+food pantry,,no,1,no listed unit fits; leave blank to compare as other: <label>
+group,,no,1,no listed unit fits; leave blank to compare as other: <label>
+health care center,clinic,no,2,proposal
+health clinic,clinic,no,1,proposal
+health coach,,no,1,no listed unit fits; leave blank to compare as other: <label>
+health district,,no,2,no listed unit fits; leave blank to compare as other: <label>
+health system,,no,6,no listed unit fits; leave blank to compare as other: <label>
+ICU,,no,2,no listed unit fits; leave blank to compare as other: <label>
+matched village pair,matched_pair,no,1,proposal
+matched village set,,no,1,no listed unit fits; leave blank to compare as other: <label>
+nephrologist,physician,no,2,proposal
+OR day,,no,3,no listed unit fits; leave blank to compare as other: <label>
+organization,,no,3,no listed unit fits; leave blank to compare as other: <label>
+pantry,food pantry,no,2,proposal
+parish,,no,3,no listed unit fits; leave blank to compare as other: <label>
+patient visit,,no,1,no listed unit fits; leave blank to compare as other: <label>
+PCC,clinic,no,2,proposal
+PCP,physician,no,1,proposal
+pediatric practice,practice,no,1,proposal
+peer coach,,no,1,no listed unit fits; leave blank to compare as other: <label>
+person,participant,no,1,proposal
+PHC,clinic,no,3,proposal
+practitioner,physician,no,1,proposal
+primary care center,clinic,no,1,proposal
+primary care clinic,clinic,no,1,proposal
+primary care practice,practice,no,2,proposal
+primary care provider,physician,no,1,proposal
+primary health care center,clinic,no,1,proposal
+provider,physician,no,4,proposal
+province,,no,2,no listed unit fits; leave blank to compare as other: <label>
+school (or person),,no,1,no listed unit fits; leave blank to compare as other: <label>
+school district,,no,3,no listed unit fits; leave blank to compare as other: <label>
+"school, or kid",,no,1,no listed unit fits; leave blank to compare as other: <label>
+senior center,,no,3,no listed unit fits; leave blank to compare as other: <label>
+social club,,no,3,no listed unit fits; leave blank to compare as other: <label>
+state,,no,2,no listed unit fits; leave blank to compare as other: <label>
+strata,stratum,no,2,proposal
+stroke center,,no,2,no listed unit fits; leave blank to compare as other: <label>
+stroke center site,,no,1,no listed unit fits; leave blank to compare as other: <label>
+team,,no,4,no listed unit fits; leave blank to compare as other: <label>
+terminal,,no,3,no listed unit fits; leave blank to compare as other: <label>
+time period,,no,1,no listed unit fits; leave blank to compare as other: <label>
+triage nurse,,no,2,no listed unit fits; leave blank to compare as other: <label>
+trucker,,no,1,no listed unit fits; leave blank to compare as other: <label>
+university,,no,3,no listed unit fits; leave blank to compare as other: <label>
+wave,,no,2,no listed unit fits; leave blank to compare as other: <label>
+workplace,worksite,no,2,proposal
+YMCA center,,no,2,no listed unit fits; leave blank to compare as other: <label>

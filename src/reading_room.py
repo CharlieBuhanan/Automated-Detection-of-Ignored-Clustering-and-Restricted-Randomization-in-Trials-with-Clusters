@@ -1555,7 +1555,7 @@ it, no ``` fence.
 
 {{
   "decision": "yes" | "no" | "undecidable" | "wrong_text",
-  "exclusion_reason": "E5" or null,
+  "exclusion_reason": "E5" or "other: <short label>" or null,
   "reasoning": "why, in your own words, {reasoning_max} characters or fewer",
   "promptbook_evidence": "the criterion number that decided it, e.g. E5",
   "confidence": a number from 0.0 to 1.0,
@@ -1569,7 +1569,9 @@ Rules for the reply, all of them checked:
   else, including "maybe".
 - "exclusion_reason": when "decision" is "yes", the number of the criterion that
   decided it, one of {reasons}, and it must also appear in
-  "promptbook_evidence". For any other decision it is null.
+  "promptbook_evidence". Under {other_rule} it is "other: <short label>" instead,
+  and "{other_rule}" must appear in "promptbook_evidence". For any other
+  decision it is null.
 - "reasoning" is required and is capped at {reasoning_max} characters.
 - "promptbook_evidence" is required and must name at least one criterion that
   actually exists in the promptbook above. Prose with no criterion number is
@@ -1633,7 +1635,8 @@ def _exclusion_reason_range() -> str:
 def build_exclusion_with_reason_prompt(*, promptbook: str, token: str, text: str) -> str:
     instructions = EXCLUSION_WITH_REASON_INSTRUCTIONS.format(
         token=token, reasoning_max=schemas.REASONING_MAX_CHARS,
-        reasons=_exclusion_reason_range(), wrong_text=EVIDENCE_WRONG_TEXT)
+        reasons=_exclusion_reason_range(), wrong_text=EVIDENCE_WRONG_TEXT,
+        other_rule=schemas.OTHER_EXCLUSION_RULE)
     return PROMPT_TEMPLATE.format(promptbook=promptbook.strip(), token=token,
                                   text=text, instructions=instructions)
 

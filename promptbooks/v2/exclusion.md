@@ -21,7 +21,7 @@ The first one that matches decides and goes in `promptbook_evidence`. No hit →
 | field | value |
 |---|---|
 | `decision` | `yes` = exclude this paper · `no` = keep it · `undecidable` = text missing, truncated, or unreadable · `wrong_text` = the text is not a study report at all |
-| `exclusion_reason` | when `decision` is `yes`: the number of the criterion that decided it, e.g. `E5` (E1-E11 or E13-E16; it must also appear in `promptbook_evidence`). Otherwise `null`. |
+| `exclusion_reason` | when `decision` is `yes`: the number of the criterion that decided it, e.g. `E5` (E1-E11 or E13-E16; it must also appear in `promptbook_evidence`). Under E19, write `other: <short label>` instead and cite `E19`. Otherwise `null`. |
 | `reasoning` | why, in your own words. **200 characters maximum.** |
 | `promptbook_evidence` | the criterion number that decided it, e.g. `E5`; `WRONG_TEXT` if that decision |
 | `confidence` | 0.0-1.0 |
@@ -65,16 +65,20 @@ but it isn't the paper.
 13. **E14. Cohort study.**
 14. **E15. Review article.**
 15. **E16. Comment, letter, or editorial.**
+16. **E19. Other clear ineligibility** — the paper plainly cannot be reviewed as a
+    cluster-randomized trial's treatment effect, for a reason none of E1-E16 names. Write the
+    reason as `other: <short label>` (60 characters maximum) and cite `E19`. Use it rarely: a
+    wrong exclusion is never recovered, so if you are not sure, the answer is `no`.
 
 ## Not a criterion
 
 These are cross-paper judgments, so neither is a reason to exclude.
 
-16. **E12. Protocol paper.** Whether an outcomes paper exists elsewhere is unavailable here.
+17. **E12. Protocol paper.** Whether an outcomes paper exists elsewhere is unavailable here.
     **Never exclude for protocol status alone;** judge this paper on its own text.
-17. **E17. Random duplicate drop.** **Never drop a paper at random, for any reason.** If your only
+18. **E17. Random duplicate drop.** **Never drop a paper at random, for any reason.** If your only
     argument for excluding is that some other paper resembles this one, the answer is `no`.
 
 ## Abstention
 
-18. **E18.** `undecidable` only for missing, truncated, or unreadable text.
+19. **E18.** `undecidable` only for missing, truncated, or unreadable text.

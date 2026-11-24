@@ -61,9 +61,24 @@ Record the design of the primary-outcome comparison.
   - `status`: `reported` · `not_reported` · `unclear`
   - `values`: each `{kind: exact | range, value | low+high, applies_to}`. `applies_to` names the
     level or group (e.g. `clinic`); it is required when there are several. `[]` if not reported.
-- **`n_long`** — how many times the primary outcome is measured on the same person or unit,
-  baseline included. `1` = measured once.
+- **`longitudinal`** — when the primary outcome is measured. Two facts, not a total:
+  - `baseline_measured`: `yes` if the primary outcome itself was measured before the
+    intervention began, on the same people or on a fresh sample from the same clusters · `no` ·
+    `not_reported` · `unclear`. Baseline demographics or other variables do not count.
+  - `n_followup`: how many times the primary outcome is measured after the intervention began,
+    counting every scheduled occasion the paper reports, not only the primary time point.
+    Baseline, 6 and 12 months is `baseline_measured: yes`, `n_followup: 2`. A whole number, at
+    least 1, or `not_reported` / `unclear`.
 - **`stepped_wedge`** — `yes` · `no` · `unclear` · `not_reported`.
+
+**Longitudinality** — how the two `done` records judge repeated measurement of the primary outcome:
+
+- One follow-up and no baseline: `not_applicable`.
+- Two or more follow-ups: `accounted` (the within-person or within-unit correlation over time is
+  modeled) or `ignored`. Never `not_applicable`.
+- Baseline plus one follow-up: `accounted` if baseline enters as a covariate, a change score, or a
+  repeated measure with its correlation modeled; `ignored` if baseline and follow-up are pooled as
+  independent observations; `not_applicable` if only the follow-up is used.
 
 ---
 
@@ -78,7 +93,8 @@ Part A alone, before you look at what the paper did:
 
 - `units`: every level whose correlation it must account for (from `levels`); `[]` if none
 - `restricted_rand`: `true` if the restricted randomization must be accounted for, else `false`
-- `longitudinality`: `true` if the repeated measurements must be accounted for, else `false`
+- `longitudinality`: `true` if the primary outcome is measured more than once, baseline
+  included, so the repeated measurements must be accounted for; else `false`
 
 **`done`** — what the sample-size calculation accounted for. If there is no power or sample-size
 calculation, `reported` is `no` and every other field is `null` (`units_accounted` is `[]`).
@@ -87,7 +103,7 @@ calculation, `reported` is `no` and every other field is `null` (`units_accounte
 - `clustering`: `all_levels` (every `correlated_units` level) · `some_levels` · `ignored` · `unclear`
 - `units_accounted`: the levels it accounted for (from `levels`); `[]` if ignored
 - `restricted_rand`: `accounted` · `ignored` · `not_applicable` (design not restricted) · `unclear`
-- `longitudinality`: `accounted` · `ignored` · `not_applicable` (`n_long` is 1)
+- `longitudinality`: `accounted` · `ignored` · `not_applicable` (see **Longitudinality**, Part A)
 - `method`: `formula` · `simulation` · `not_described`
 - `source_note`: a cited method or tool, e.g. `Donner & Klar`; `null` if none
 - `timing`: `before_trial` · `post_hoc` · `not_stated`
@@ -173,7 +189,7 @@ method, `method` is `not_reported` and every other field is `null` (`levels_mode
 - `levels_modeled`: the levels whose correlation the analysis accounts for; `[]` if none
 - `clustering`: `all_levels` (every `correlated_units` level) · `some_levels` · `ignored` · `unclear`
 - `restricted_rand`: `accounted` · `ignored` · `not_applicable` (design not restricted) · `unclear`
-- `longitudinality`: `accounted` · `ignored` · `not_applicable` (`n_long` is 1)
+- `longitudinality`: `accounted` · `ignored` · `not_applicable` (see **Longitudinality**, Part A)
 - `small_sample_correction`: `yes` · `no` · `unclear` — a bias-corrected sandwich estimator,
   Kenward-Roger, Satterthwaite, or a between-within df adjustment
 
@@ -257,7 +273,7 @@ extra or missing key is rejected.
     "unit_rand": "...", "ind_samp_unit": "...", "correlated_units": ["..."],
     "restricted_randomization": {"status": "...", "schemes": [], "variables": null},
     "icc": {"status": "...", "values": [{"kind": "...", "value": null, "low": null, "high": null, "applies_to": null}]},
-    "n_long": 1, "stepped_wedge": "..."
+    "longitudinal": {"baseline_measured": "...", "n_followup": 1}, "stepped_wedge": "..."
   },
   "power_analysis": {
     "decision": "yes | no | undecidable", "reasoning": "...", "promptbook_evidence": "P..", "confidence": 0.0,
@@ -284,8 +300,8 @@ extra or missing key is rejected.
 a `yes` needs `clustering: all_levels` and `restricted_rand` of `accounted` or `not_applicable`;
 `all_levels` means every `correlated_units` level is listed; `restricted_rand` is
 `not_applicable` when the design's restriction status is `none` or `not_reported`, and never when
-it is `restricted`; `longitudinality` is `not_applicable` when `n_long` is 1, and never when it is
-more; a data `yes` cannot use `individual_level` or `cluster_fixed_effects`.
+it is `restricted`; `longitudinality` is `not_applicable` with one follow-up and no baseline, and
+never with two or more follow-ups; a data `yes` cannot use `individual_level` or `cluster_fixed_effects`.
 
 `undecidable` is an abstention for genuinely unreadable text, **not** for a hard call. A difficult
 paper still gets a `yes` or a `no`.

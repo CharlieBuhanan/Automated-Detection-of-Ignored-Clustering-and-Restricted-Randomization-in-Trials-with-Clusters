@@ -218,9 +218,59 @@ def test_data_yes_with_cluster_fixed_effects_is_rejected(answer):
     reject(answer, "D6/D7")
 
 
-def test_longitudinality_must_match_n_long(answer):
-    answer["design"]["n_long"] = 1
-    reject(answer, "n_long is 1")
+def set_schedule(answer, baseline, followups, power=None, data=None):
+    answer["design"]["longitudinal"] = {"baseline_measured": baseline,
+                                        "n_followup": followups}
+    if power:
+        answer["power_analysis"]["done"]["longitudinality"] = power
+    if data:
+        answer["data_analysis"]["done"]["longitudinality"] = data
+
+
+def test_single_measurement_must_be_not_applicable(answer):
+    set_schedule(answer, "no", 1)
+    reject(answer, "one follow-up and no baseline")
+
+
+def test_two_followups_cannot_be_not_applicable(answer):
+    set_schedule(answer, "no", 2, power="not_applicable")
+    reject(answer, "two or more follow-ups")
+
+
+@pytest.mark.parametrize("value", ["accounted", "ignored", "not_applicable"])
+def test_baseline_plus_one_followup_is_left_to_the_model(answer, value):
+    """Baseline may be a covariate, a repeated outcome, or unused: no forced answer."""
+    set_schedule(answer, "yes", 1, power=value, data=value)
+    schemas.parse_full_analysis(json.dumps(answer))
+
+
+@pytest.mark.parametrize("baseline, followups, n_long, followup_only, repeated", [
+    ("yes", 1, 2, 1, None),
+    ("no", 1, 1, 1, False),
+    ("yes", 3, 4, 3, True),
+    ("no", 2, 2, 2, True),
+    ("not_reported", 1, "not_reported", 1, None),
+    ("unclear", 2, "unclear", 2, True),
+    ("yes", "not_reported", "not_reported", "not_reported", None),
+    ("no", "unclear", "unclear", "unclear", None),
+])
+def test_n_long_is_derived_from_the_two_facts(baseline, followups, n_long,
+                                              followup_only, repeated):
+    facts = schemas.Longitudinal(baseline_measured=baseline, n_followup=followups)
+    assert facts.n_long() == n_long
+    assert facts.n_long_followup_only() == followup_only
+    assert facts.has_repeated_measures() is repeated
+
+
+@pytest.mark.parametrize("followups", [0, -1, "2", 1.0])
+def test_n_followup_is_a_whole_number_of_at_least_one(answer, followups):
+    answer["design"]["longitudinal"]["n_followup"] = followups
+    reject(answer)
+
+
+def test_the_old_n_long_key_is_rejected(answer):
+    answer["design"]["n_long"] = 2
+    reject(answer, "n_long")
 
 
 def test_unrestricted_design_needs_not_applicable(answer):
@@ -296,10 +346,21 @@ def test_exclusion_reason_round_trip():
     assert answer.as_decision().task == "exclusion"
 
 
+def test_an_unlisted_exclusion_reason_is_accepted_under_e19():
+    """Decision 18 covers reasons: the list is a starting point."""
+    answer, _ = schemas.parse_exclusion_with_reason(
+        gate(exclusion_reason="other: animal study", promptbook_evidence="E19"))
+    assert answer.reason_name() == "other: animal study"
+    assert schemas.other_labels(answer) == [("exclusion_reason", "animal study")]
+
+
 @pytest.mark.parametrize("changes", [
     {"exclusion_reason": None},                              # yes needs a reason
     {"exclusion_reason": "E12"},                             # retired rule
     {"exclusion_reason": "E7"},                              # not the cited rule
+    {"exclusion_reason": "other: animal study"},             # other needs E19 cited
+    {"exclusion_reason": "E19", "promptbook_evidence": "E19"},  # E19 needs a label
+    {"exclusion_reason": "animal study"},                    # unlabelled free text
     {"decision": "no"},                                      # keep carries no reason
     {"decision": "wrong_text", "promptbook_evidence": "WRONG_TEXT"},
 ])
@@ -364,7 +425,7 @@ def test_field_dictionary_is_current_and_in_ground_truth_order():
     counts = {}
     for row in rows:
         counts[row["filled_by"]] = counts.get(row["filled_by"], 0) + 1
-    assert counts == {"code": 13, "model": 20, "derived": 8, "blank": 2}
+    assert counts == {"code": 13, "model": 19, "derived": 9, "blank": 2}  # n_long derived
 
 
 # ------------------------------------------------------- promptbook

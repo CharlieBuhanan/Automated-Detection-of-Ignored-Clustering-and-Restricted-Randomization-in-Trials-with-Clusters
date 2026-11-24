@@ -392,6 +392,11 @@ EXCLUSION_REASONS = {
     "E10": "not_group_randomized", "E11": "qualitative_study", "E13": "pilot_study",
     "E14": "cohort_study", "E15": "review_article", "E16": "comment_or_letter",
 }
+# Decision 18 applies to reasons too (user, 2026-11-24): a paper that is plainly
+# ineligible for a reason no criterion names is excluded under E19 with
+# `exclusion_reason: "other: <label>"`. E19 is never itself a reason value, so
+# every E19 exclusion carries a label that gets logged for promotion.
+OTHER_EXCLUSION_RULE = "E19"
 
 NOTE_MAX_CHARS = 200
 VARIABLES_MAX_CHARS = 120
@@ -466,12 +471,19 @@ class ExclusionWithReason(_Strict):
     """
 
     decision: Literal["yes", "no", "undecidable", "wrong_text"]
-    exclusion_reason: Literal[tuple(EXCLUSION_REASONS)] | None  # type: ignore[valid-type]
+    # An E-number from EXCLUSION_REASONS, or `other: <label>` under E19.
+    exclusion_reason: str | None
     reasoning: str = Field(min_length=1, max_length=REASONING_MAX_CHARS)
     promptbook_evidence: str = Field(min_length=1)
     confidence: float = Field(ge=0.0, le=1.0)
     # Wrapper-owned: echoed on the CLI route, absent from the API schema.
     paper_id: str | None = None
+
+    @field_validator("exclusion_reason")
+    @classmethod
+    def _reason(cls, value: str | None) -> str | None:
+        return None if value is None else open_choice(
+            value, tuple(EXCLUSION_REASONS), "exclusion_reason")
 
     @model_validator(mode="after")
     def _reason_matches_decision(self) -> ExclusionWithReason:
@@ -481,15 +493,18 @@ class ExclusionWithReason(_Strict):
                     f"exclusion_reason must be null unless decision is 'yes' "
                     f"(decision={self.decision!r})")
             return self
-        if self.exclusion_reason not in EXCLUSION_REASONS:
+        if self.exclusion_reason is None:
             raise ValueError(
-                f"an exclusion needs exclusion_reason from {list(EXCLUSION_REASONS)}, "
-                f"got {self.exclusion_reason!r}")
+                f"an exclusion needs exclusion_reason from {list(EXCLUSION_REASONS)} "
+                f"or 'other: <label>'")
+        # The rule the reason stands for must be the one the evidence cites.
+        rule = (OTHER_EXCLUSION_RULE if is_other(self.exclusion_reason)
+                else self.exclusion_reason)
         cited = [f"{letter}{number}" for letter, number
                  in RULE_ID.findall(self.promptbook_evidence)]
-        if self.exclusion_reason not in cited:
+        if rule not in cited:
             raise ValueError(
-                f"exclusion_reason {self.exclusion_reason} is not cited in "
+                f"exclusion_reason {self.exclusion_reason!r} needs {rule} cited in "
                 f"promptbook_evidence ({self.promptbook_evidence[:80]!r})")
         return self
 
@@ -501,7 +516,9 @@ class ExclusionWithReason(_Strict):
             "paper_id": self.paper_id})
 
     def reason_name(self) -> str | None:
-        """The readable export value, e.g. 'secondary_analysis'."""
+        """The readable export value, e.g. 'secondary_analysis' or 'other: <label>'."""
+        if is_other(self.exclusion_reason):
+            return self.exclusion_reason
         return EXCLUSION_REASONS.get(self.exclusion_reason or "")
 
 
@@ -597,6 +614,66 @@ class Icc(_Strict):
         return self
 
 
+class Longitudinal(_Strict):
+    """How often the primary outcome is measured, as two facts (user, 2026-11-24).
+
+    The human `n_long` is ambiguous for the commonest CRT schedule, baseline
+    plus one follow-up: of the reviewed papers with a clear schedule, most were
+    coded 2 (baseline counted) and a minority 1. Asking for the facts instead of
+    the count lets code export either convention, so settling the convention
+    with Deb changes only the export, never a paid run.
+
+    `baseline_measured`: the primary outcome itself was measured before the
+    intervention (same people or a fresh sample of the same clusters).
+    `n_followup`: measurements of it after the intervention started.
+    """
+
+    baseline_measured: Literal["yes", "no", "not_reported", "unclear"]
+    n_followup: int | Literal["not_reported", "unclear"]
+
+    @field_validator("n_followup")
+    @classmethod
+    def _followups(cls, value):
+        # A kept trial estimates a post-randomization effect (E6), so >= 1.
+        if isinstance(value, int) and value < 1:
+            raise ValueError(f"n_followup must be at least 1, got {value}")
+        return value
+
+    def _unknown(self) -> str | None:
+        parts = (self.baseline_measured, self.n_followup)
+        if UNCLEAR in parts:
+            return UNCLEAR
+        if NOT_REPORTED in parts:
+            return NOT_REPORTED
+        return None
+
+    def n_long(self) -> int | str:
+        """Every measurement occasion, baseline included (the export rule).
+
+        Matches the majority human coding and GLIMMPSE's count of repeated
+        measures. `not_reported` / `unclear` when either fact is unknown.
+        """
+        return self._unknown() or self.n_followup + (self.baseline_measured == "yes")
+
+    def n_long_followup_only(self) -> int | str:
+        """The minority convention: post-intervention occasions only."""
+        return self.n_followup
+
+    def has_repeated_measures(self) -> bool | None:
+        """True / False only when every reasonable convention agrees.
+
+        Two or more follow-ups is repeated on any reading; one follow-up and no
+        baseline is a single measurement. Baseline plus one follow-up is left
+        open: baseline may enter as a repeated outcome, a covariate, or not at
+        all, and the right `longitudinality` depends on which.
+        """
+        if isinstance(self.n_followup, str):
+            return None
+        if self.n_followup >= 2:
+            return True
+        return False if self.baseline_measured == "no" else None
+
+
 class StudyDesign(_Strict):
     """Facts both judgments read. Recorded once, before either judgment."""
 
@@ -608,7 +685,7 @@ class StudyDesign(_Strict):
     correlated_units: list[str] = Field(min_length=1)
     restricted_randomization: RestrictedRandomization
     icc: Icc
-    n_long: int | Literal["not_reported", "unclear"]
+    longitudinal: Longitudinal
     stepped_wedge: Literal["yes", "no", "unclear", "not_reported"]
 
     @field_validator("n_trt")
@@ -616,13 +693,6 @@ class StudyDesign(_Strict):
     def _arms(cls, value):
         if isinstance(value, int) and value < 2:
             raise ValueError(f"n_trt must be at least 2, got {value}")
-        return value
-
-    @field_validator("n_long")
-    @classmethod
-    def _occasions(cls, value):
-        if isinstance(value, int) and value < 1:
-            raise ValueError(f"n_long must be at least 1, got {value}")
         return value
 
     @field_validator("unit_rand", "ind_samp_unit")
@@ -674,8 +744,11 @@ class StudyDesign(_Strict):
         """Q8 (Deb): levels of clustering above the individual = units - 1."""
         return len(self.levels) - 1
 
+    def n_long(self) -> int | str:
+        return self.longitudinal.n_long()
+
     def has_repeated_measures(self) -> bool | None:
-        return None if isinstance(self.n_long, str) else self.n_long > 1
+        return self.longitudinal.has_repeated_measures()
 
 
 # ------------------------------------------------- what a correct one needs
@@ -833,9 +906,11 @@ def _accounting_problems(task: str, done, design: StudyDesign,
 
     repeated = design.has_repeated_measures()
     if repeated is False and done.longitudinality != "not_applicable":
-        problems.append(f"{task}: n_long is 1, so longitudinality must be 'not_applicable'")
+        problems.append(f"{task}: one follow-up and no baseline, so longitudinality "
+                        f"must be 'not_applicable'")
     if repeated is True and done.longitudinality == "not_applicable":
-        problems.append(f"{task}: n_long > 1, so longitudinality cannot be 'not_applicable'")
+        problems.append(f"{task}: two or more follow-ups, so longitudinality cannot "
+                        f"be 'not_applicable'")
     return problems
 
 

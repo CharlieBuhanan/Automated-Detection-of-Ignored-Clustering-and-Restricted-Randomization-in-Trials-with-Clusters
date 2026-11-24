@@ -1,6 +1,6 @@
 # Plan: model output in ground-truth format
 
-**Status:** Steps 1-4 built 2026-11-24 (field dictionary, schemas, v2 promptbooks, pipeline + storage); steps 5-7 not started.
+**Status:** Steps 1-5 built 2026-11-24 (field dictionary, schemas, v2 promptbooks, pipeline + storage, export + scoring); steps 6-7 not started. v2 is still un-run.
 **Artifact:** https://claude.ai/artifact/QWtopzdiZFmfwPqZMNba4K
 **Schema page (for Deb):** https://claude.ai/artifact/VBmQr3SP4Zjzn8EnerxzYT
 
@@ -25,11 +25,13 @@ Model: Claude Sonnet via UF NaviGator (DC59), medium effort.
 3. Each call answers only its own task. The exclusion call says nothing about power or data; the
    full 43-column row is assembled afterward.
 4. Exclusion stays its own call and now also returns a standard `exclusion_reason`.
-5. All **176 papers the humans kept** get the detailed power/data/design call, even if the model
+5. All **170 papers the humans kept** (120 build / 50 holdout, after the DC37/script 18 drops; was 176) get the detailed power/data/design call, even if the model
    wrongly excluded them. This is an evaluation-only exception, so one gate mistake doesn't hide a
    paper's other columns. It is logged in the run record. Papers that don't get this call have
    `null` in every post-gate column.
 6. Longitudinal measures (`n_long`) are recorded but don't affect power or data correctness (DC49).
+   The model returns two facts, `baseline_measured` and `n_followup`; code derives `n_long`
+   (user, 2026-11-24). See "How n_long is counted" below.
 
 **What the model returns**
 
@@ -46,14 +48,16 @@ Model: Claude Sonnet via UF NaviGator (DC59), medium effort.
 12. Exactly one main data method per paper. `power_done` is **not** a method pick: it records what
     the power calculation accounted for (see Allowed values). No power calculation at all is
     `reported: no`, exported as `Not reported`.
-18. **Every list is a starting point, not a closed set** (Deb, 2026-11-09). Lists come from 88 reviewed
+18. **Every list is a starting point, not a closed set** (Deb, 2026-11-09). This includes
+    `exclusion_reason` (user, 2026-11-24): v2's new criterion E19 excludes a plainly ineligible
+    paper with `other: <label>`. Lists come from 88 reviewed
     papers and will miss methods in larger sets. The model may answer `other` + a short label; code
     logs every new label, and labels that recur get promoted into the list in the next promptbook
     version (pattern rule: several papers, never one).
 
 **How it's scored**
 
-13. Only 88 of the 176 survivors (the NHLBI ones) have detailed human answers. Run all 176, but score
+13. Only 77 of the 170 survivors (57 build / 20 holdout; was 88 of 176 before the drops) have detailed human answers. Run all 176, but score
     only where a human answer exists; a blank human answer is not counted as wrong. If Deb and Keith
     label the rest, score those too, without re-running the model.
 14. Human `data_should` / `power_should` notes are shorthand, not complete lists. A correct extra
@@ -104,13 +108,38 @@ Open follow-ups are tracked in [Deb.md](Deb.md) items 2-3; the schema page is up
 model, which includes holdout papers. That breaks "holdout touched once, at the end". Proposed:
 2-paper smoke test → 50-paper build round → full build split; holdout last.
 
+## How n_long is counted (2026-11-24)
+
+**Finding.** The human `n_long` is not consistent for the commonest CRT schedule, baseline plus one
+follow-up. Of the reviewed papers whose schedule the text makes clear, about 9 were coded 2
+(baseline counted: `D24FD6G2`, `GN4JGZR9`, `8RFFGGMQ`, `4IBT3NAD`, `UHEKLJLC`, `FEHWGZSQ`, `QURVUDB5`,
+`XFPCQLGP`, `2BDG7GVP`) and about 5 were coded 1 (`TEXLFQSL`, `D25VKDJV`, `L2VHUDMD`, `SH5J2R2J`,
+`YJDJH8TY`). Longer schedules mostly count baseline (`4GUDDLNQ`, `UPVYYFVQ`, `BW2B5H9P`,
+`Y7PRFE3Z`: 3 occasions = 3), with exceptions (`4B9BMDV7`, `7M6ST2JQ`: 4 occasions coded 3).
+Repeated cross-sections count too (`2BDG7GVP`, different students at each wave, coded 2). The
+`*_should` columns are just as mixed: `D24FD6G2` is `n_long` 2 but "clustering alone".
+
+**Literature.** Baseline can enter a CRT analysis as a repeated outcome (mixed model over time) or
+as a covariate (ANCOVA / change score); both handle the baseline correlation, and ANCOVA is often
+more efficient (Teerenstra et al. 2012; Hooper et al., BMJ 2018, on cohort vs repeated
+cross-section). GLIMMPSE, the authors' own tool, counts repeated measures as all measurement
+occasions. The NHLBI table treats a baseline-adjusted model as accounting for longitudinality
+(`4IBT3NAD`).
+
+**Decision.** The model records two facts; code derives `n_long` = every occasion, baseline
+included (majority human coding, GLIMMPSE). `comparison.csv` carries the follow-up-only count, and
+scoring reports agreement under both. The strict check forces `longitudinality` only where every
+convention agrees: one follow-up and no baseline → `not_applicable`; two or more follow-ups → not
+`not_applicable`. Baseline plus one follow-up is the model's call. If Deb picks the other
+convention, only the export changes, not a paid run.
+
 ## Where each column comes from
 
 | Source | # | Columns |
 |---|---:|---|
 | Our code (corpus facts) | 13 | `paper_id`, `paper_id_note`, `source_institute`, `source_file`, `source_row`, `citation_raw`, `cite_key`, `matched_by`, `match_score`, `source_note`, `source_doi`, `source_pmid`, `reason_source` |
-| Model | 20 | `excluded`, `exclusion_reason`, `power_correct`, `data_correct`, `n_trt`, `n_levels`, `comment_levels`, `n_outer`, `n_2nd`, `n_3rd`, `n_4th`, `unit_rand`, `ind_samp_unit`, `restricted_rand_raw`, `icc`, `n_long`, `stepped_wedge_raw`, `data_done`, `data_comment`, `power_done` |
-| Worked out from model answers | 8 | `labeled`; `restricted_rand` and `stepped_wedge` (yes/no/unclear); `exclusion_reason_raw`, `power_correct_raw`, `data_correct_raw` (the model's text before standardizing); `data_should`, `power_should` (from `correlated_units`, restriction status, and `n_long`; the model is also asked for its own `should`, exported beside the derived value for comparison, user 2026-11-24) |
+| Model | 19 | `excluded`, `exclusion_reason`, `power_correct`, `data_correct`, `n_trt`, `n_levels`, `comment_levels`, `n_outer`, `n_2nd`, `n_3rd`, `n_4th`, `unit_rand`, `ind_samp_unit`, `restricted_rand_raw`, `icc`, `stepped_wedge_raw`, `data_done`, `data_comment`, `power_done` |
+| Worked out from model answers | 9 | `labeled`; `n_long` (from `baseline_measured` + `n_followup`); `restricted_rand` and `stepped_wedge` (yes/no/unclear); `exclusion_reason_raw`, `power_correct_raw`, `data_correct_raw` (the model's text before standardizing); `data_should`, `power_should` (from `correlated_units`, restriction status, and `n_long`; the model is also asked for its own `should`, exported beside the derived value for comparison, user 2026-11-24) |
 | Left blank | 2 | `review_category`, `review_category_raw` |
 
 Reasoning, cited rule, and confidence are kept alongside, outside the CSV. Output goes in
@@ -121,8 +150,9 @@ Reasoning, cited rule, and confidence are kept alongside, outside the CSV. Outpu
 | Field | Allowed values |
 |---|---|
 | `excluded` | yes, no, undecidable (only when the text is missing or unreadable). Exported as 1 / 0 |
-| `exclusion_reason` | Model returns the v1 criterion ID (DC45); export shows the readable name: E1 preprint, E2 methodology_journal, E3 stepped_wedge_design, E4 secondary_in_title, E5 secondary_analysis, E6 baseline_only, E7 implementation_study, E8 methods_paper, E9 not_randomized, E10 not_group_randomized, E11 qualitative_study, E13 pilot_study, E14 cohort_study, E15 review_article, E16 comment_or_letter. Blank when kept. No protocol_paper (E12 is not a criterion); `duplicate_group_random_drop` exists only in the human file (E17) |
-| `n_trt`, `n_levels`, `n_long` | whole number |
+| `exclusion_reason` | Model returns the v1 criterion ID (DC45), or `other: <label>` under E19; export shows the readable name: E1 preprint, E2 methodology_journal, E3 stepped_wedge_design, E4 secondary_in_title, E5 secondary_analysis, E6 baseline_only, E7 implementation_study, E8 methods_paper, E9 not_randomized, E10 not_group_randomized, E11 qualitative_study, E13 pilot_study, E14 cohort_study, E15 review_article, E16 comment_or_letter. Blank when kept. No protocol_paper (E12 is not a criterion); `duplicate_group_random_drop` exists only in the human file (E17) |
+| `n_trt`, `n_levels` | whole number |
+| `n_long` | derived: `n_followup` + 1 if `baseline_measured` is yes. Model gives `baseline_measured` (yes / no / not_reported / unclear) and `n_followup` (whole number ≥ 1, not_reported, unclear) |
 | `n_outer` … `n_4th` | exact, approximate, range, per parent unit, `not_reported`, `unclear`. Exported as e.g. `10`, `~20/school`, `5-8`, `NR` |
 | `comment_levels` | units listed inner to outer, e.g. `patient within physician within clinic`. Unit names are lowercase singular: clinic, school, classroom, practice, hospital, ward, physician, nursing_home, village, community, household, family, worksite, site, or `other` + the paper's wording |
 | `unit_rand`, `ind_samp_unit` | one unit from `comment_levels` |
@@ -146,7 +176,8 @@ Reasoning, cited rule, and confidence are kept alongside, outside the CSV. Outpu
 - [x] Schemas in `src/schemas.py`, incl. `other: <label>` handling (step 2): `ExclusionWithReason`, `FullAnalysis`; tests in `ReadingRoom/tests/test_o_full_analysis_schema.py`
 - [x] Promptbook: `combined_analysis.md` + exclusion reason, lists framed as starting points (step 3): in place in un-run `v2` (see `v2 doc.md`)
 - [x] Pipeline + new-label log (step 4): version table `rr.response_contract` (v0/v1 old shape, v2+ new); `rr.resolve_route_book` / `build_route_prompt` / `parse_and_check_reply`; full answer stored in `structured_answers` with the two judgment rows; `other: <label>` values to `results/04_classification/other_labels.csv` on `--write`; `api_contract.output_schema_for(..., contract=)`. Tests: `ReadingRoom/tests/test_p_ground_truth_route.py`
-- [ ] 43-column export and per-column scoring (step 5)
+- [x] 43-column export and per-column scoring (step 5): `src/gt_export.py`, `scripts/25_export_ground_truth.py`, `scripts/26_score_columns.py`; tests `ReadingRoom/tests/test_q_export_scoring.py`
+- [ ] Person-check `data/unit_synonyms.csv` (71 human unit terms, 25 with a proposed unit, all `checked=no`); unit columns score only checked rows
 - [ ] Offline tests → 2-paper paid test (user runs) → calibration → frozen cost estimate (step 6)
 - [ ] Docs (step 7)
 

@@ -90,12 +90,14 @@ ROWS = [
          scoring_rule="exact match; abstentions reported separately, not as misses"),
     dict(column="exclusion_reason", filled_by="model", task="exclusion", type="enum",
          vocab="EXCLUSION_REASONS",
-         allowed_values="; ".join(f"{k} {v}" for k, v in s.EXCLUSION_REASONS.items()),
+         allowed_values="; ".join(f"{k} {v}" for k, v in s.EXCLUSION_REASONS.items())
+                        + f"; other: <label> (under {s.OTHER_EXCLUSION_RULE})",
          missing_values="blank when kept", model_field="exclusion_reason",
-         export_rule="E-number -> readable name (DC45)",
+         export_rule="E-number -> readable name (DC45); other: <label> -> as returned",
          scoring_rule="match on readable name when both sides excluded; E4 and E5 both "
                       "match human secondary_analysis; human protocol_paper / "
-                      "duplicate_group_random_drop are not scorable (retired E12/E17)"),
+                      "duplicate_group_random_drop are not scorable (retired E12/E17); "
+                      "an other: <label> matches only the same human wording"),
     dict(column="exclusion_reason_raw", filled_by="derived", task="exclusion",
          type="text", model_field="exclusion_reason",
          export_rule="the E-number exactly as returned", scoring_rule="not scored"),
@@ -156,10 +158,14 @@ ROWS = [
          export_rule="0.05; 0.01-0.05; 'clinic 0.05; physician 0.01-0.03'; NR",
          scoring_rule="numeric set match (same values, same ranges); NR matches NR and "
                       "human 'not mentioned' / 'missing'"),
-    dict(column="n_long", filled_by="model", task="full_analysis", type="integer>=1",
-         missing_values=MISSING, model_field="design.n_long",
-         export_rule="the number (1 = measured once)",
-         scoring_rule="exact match; does not affect power/data correctness (DC49)"),
+    dict(column="n_long", filled_by="derived", task="full_analysis", type="integer>=1",
+         missing_values=MISSING,
+         model_field="design.longitudinal.baseline_measured; design.longitudinal.n_followup",
+         export_rule="n_followup + 1 when baseline_measured is yes (every occasion, "
+                     "baseline included); either fact not_reported -> NR, unclear -> unclear; "
+                     "the follow-up-only count goes to the comparison file",
+         scoring_rule="exact match, reported under both conventions; does not affect "
+                      "power/data correctness (DC49)"),
     dict(column="stepped_wedge_raw", filled_by="model", task="full_analysis", type="enum",
          allowed_values="yes; no; unclear; not_reported", missing_values=MISSING,
          model_field="design.stepped_wedge", export_rule="as returned; not_reported -> NR",
@@ -174,7 +180,7 @@ ROWS = [
                       "(decision 16)"),
     dict(column="data_should", filled_by="derived", task="full_analysis",
          type="structured", model_field="design.correlated_units; "
-         "design.restricted_randomization.status; design.n_long",
+         "design.restricted_randomization.status; design.longitudinal",
          export_rule="'Account for clustering at <correlated_units>[, restricted rand.]"
                      "[, longitudinality]'; the model's own data_analysis.should goes to "
                      "the comparison file beside it (user, 2026-11-24)",
@@ -193,7 +199,7 @@ ROWS = [
                       "power_done (plan checklist)"),
     dict(column="power_should", filled_by="derived", task="full_analysis",
          type="structured", model_field="design.correlated_units; "
-         "design.restricted_randomization.status; design.n_long",
+         "design.restricted_randomization.status; design.longitudinal",
          export_rule="same as data_should; the model's own power_analysis.should "
                      "goes to the comparison file",
          scoring_rule="every human-required factor present; correct extras not "

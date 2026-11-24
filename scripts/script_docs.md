@@ -130,3 +130,25 @@ Read-only. It never calls a model and never writes to `data/review.db`; output g
 - Spell the outcomes out on the page, and spell them out per task: `yes` means *exclude* on exclusion and *analysis done correctly* on power/data, so one wording for both would be clear on neither. The CSV keeps the short codes, which is what cross-references Script 22's `cases.csv`
 - `--html <csv>` re-renders an existing review table with no database and no manifest; the CSV carries the task and promptbook version on every row
 - Degrade rather than refuse when a legacy round has no `run_environment.json`: the table still builds, and the page says the promptbook is unrecorded instead of claiming the rule was not found
+
+## Script 25 — 43-column ground-truth export
+
+Read-only. It never calls a model and never changes `data/review.db`; output goes only to `results/04_classification/ground_truth_export/<version>/`.
+
+- Read the active and dropped HLS papers from the manifest and stop if the frozen counts (477 / 77) change
+- Read the latest accepted `structured_answers` row per paper and route for one promptbook version (optionally only some runs), and re-validate each one under the current schema
+- Write one row per active paper with exactly the columns of `data/ground_truth.csv`, in its order; an unanswered paper keeps its row with `labeled` = 0 and blank model columns
+- Render every model column by `data/field_dictionary.csv`'s export rule; copy provenance from the human row, preferring the row with the detailed extraction when both institutes labelled a paper
+- Skip a paper whose human rows disagree (decision 2) into `skipped_audit.csv`; list the dropped papers in `dropped_audit.csv`
+- Write `comparison.csv` (n_long under both conventions, model vs derived `should`) and `answer_index.csv` (which stored response each row used)
+
+## Script 26 — per-column scoring
+
+Read-only. It scores a Script 25 export against `data/ground_truth.csv` and writes beside it.
+
+- Default to the build split; the holdout needs `--i-am-scoring-the-holdout`
+- Skip a blank human cell (decision 13); count a model abstention apart from misses
+- Mark a cell `not_scored`, with the reason, when the rules cannot compare it yet: prose in the human cell, an unparseable count or ICC, or a unit term with no person-checked row in `data/unit_synonyms.csv`
+- Score `n_levels` against units − 1 from the human `comment_levels` (Q8), never the human number
+- Report `n_long` under the follow-up-only convention as a second row
+- Leave `data_done`, `power_done`, and `data_comment` unscored until the human values are person-coded
