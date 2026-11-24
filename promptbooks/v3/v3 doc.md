@@ -14,7 +14,7 @@ and raw responses retain the corresponding provenance.
 | Git commit | captured in each run environment |
 | Model used to build it | none |
 | Route | Reading Room (`scripts/20_reading_room.py`) |
-| Status | **un-run draft** |
+| Status | **run-frozen 2026-11-24** by the 2-paper smoke test (`exclusion_v3_r1`, `combined_analysis_v3_r1`): 4/4 replies passed the checker; every call read the cached system prompt (3,016 / 7,776 tokens). Do not edit; later rule changes go in `v4` |
 
 ## Delta from v2
 

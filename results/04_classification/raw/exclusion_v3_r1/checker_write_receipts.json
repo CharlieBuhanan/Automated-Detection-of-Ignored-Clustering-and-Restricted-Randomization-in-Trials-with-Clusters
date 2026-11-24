@@ -1,0 +1,10 @@
+{
+  "snapshots": {
+    "61e3b5dc835b029c48eb31f21f99fc12c81a78e79ead3ba88a6dab64d08450f8": {
+      "judgments": 2,
+      "ledger_rows": 2,
+      "pass_name": "primary",
+      "written_at": "2026-11-24T20:55:17+00:00"
+    }
+  }
+}

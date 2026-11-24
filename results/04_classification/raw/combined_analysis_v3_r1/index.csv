@@ -1,0 +1,3 @@
+paper_id,token,task,round,promptbook_version,model,attempt,exit_code,duration_seconds,raw_path,started_at
+WCA66X4I,9dc1335fab8e954d,combined_analysis,1,v3,claude-sonnet-5,1,0,33.03,results\04_classification\raw\combined_analysis_v3_r1\9dc1335fab8e954d.attempt1.jsonl,2026-11-24T20:52:01+00:00
+6XFGQN39,bca42e0b3166027f,combined_analysis,1,v3,claude-sonnet-5,1,0,43.0,results\04_classification\raw\combined_analysis_v3_r1\bca42e0b3166027f.attempt1.jsonl,2026-11-24T20:52:44+00:00

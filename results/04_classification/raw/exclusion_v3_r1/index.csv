@@ -1,0 +1,3 @@
+paper_id,token,task,round,promptbook_version,model,attempt,exit_code,duration_seconds,raw_path,started_at
+WPF7MUCV,0cd08bc1d9a98716,exclusion,1,v3,claude-sonnet-5,1,0,3.72,results\04_classification\raw\exclusion_v3_r1\0cd08bc1d9a98716.attempt1.jsonl,2026-11-24T20:51:15+00:00
+WCA66X4I,c286f092dfddd9af,exclusion,1,v3,claude-sonnet-5,1,0,8.92,results\04_classification\raw\exclusion_v3_r1\c286f092dfddd9af.attempt1.jsonl,2026-11-24T20:51:24+00:00

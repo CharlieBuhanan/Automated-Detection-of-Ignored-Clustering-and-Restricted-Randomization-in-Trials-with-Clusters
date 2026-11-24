@@ -58,9 +58,46 @@ py -3 scripts/22_evaluate.py --task all --split build --promptbook-version v1
 Use `--no-write` to display the same table without creating artifacts. Open
 `summary.csv` or `cases.csv` in Excel/R for plotting and paper-level review.
 
+### Configure the `claude` path first
+
 Needs the CLI on `PATH` (`npm install -g @anthropic-ai/claude-code`), or pass
 `--claude` with a full path. If it is missing the harness refuses before touching
-a single paper.
+a single paper (`'claude' is not on PATH (F11)`).
+
+On this machine the CLI is **not** on `PATH`; it ships inside the VS Code
+extension. Check before every run:
+
+```bash
+where.exe claude                                   # on PATH? (Git Bash: `which claude`)
+ls ~/.vscode/extensions/ | grep anthropic.claude-code   # else: the bundled version
+```
+
+If `where.exe` finds nothing, pass the bundled binary:
+
+```bash
+--claude "C:/Users/<you>/.vscode/extensions/anthropic.claude-code-<version>-win32-x64/resources/native-binary/claude.exe"
+```
+
+To set it once per shell, the syntax differs by shell (`VAR=...` fails in PowerShell):
+
+```powershell
+$CLAUDE = "C:/Users/<you>/.vscode/extensions/anthropic.claude-code-<version>-win32-x64/resources/native-binary/claude.exe"   # PowerShell
+python scripts/20_reading_room.py ... --claude $CLAUDE
+```
+
+```bash
+CLAUDE="C:/Users/<you>/.vscode/extensions/anthropic.claude-code-<version>-win32-x64/resources/native-binary/claude.exe"      # Git Bash
+python scripts/20_reading_room.py ... --claude "$CLAUDE"
+```
+
+- The folder name carries the extension **version**, so the path changes when
+  VS Code updates the extension. Re-check it before each round.
+- The CLI version is recorded in `run_environment.json`, and a CLI that
+  updated mid-round fails the whole round at the checker (see below), so
+  finish a round on one binary.
+- `--system-prompt-file` (v3+) needs CLI 2.1.331 or later.
+- Use the `.exe`, not a `.cmd` shim: cmd.exe cuts a `.cmd` command line at the
+  first newline (live-CLI gotcha 7 below).
 
 The offline suite is free and spawns no model:
 

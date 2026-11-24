@@ -466,3 +466,7 @@ data_analysis.done.small_sample_correction
 design
   Value error, ind_samp_unit 'stratum' is not one of the levels ['patient', 'physician', 'practice'] [type=value_error, input_value={'n_trt': 2, 'levels': [{..., 'stepped_wedge': 'no'}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error",0,37.86,results\04_classification\raw\combined_analysis_v2_r1\1ce4de6ab8b27859.attempt2.jsonl,yes,
+2026-11-24T20:55:17+00:00,exclusion,1,WPF7MUCV,0cd08bc1d9a98716,1,ok,,,0,3.72,results\04_classification\raw\exclusion_v3_r1\0cd08bc1d9a98716.attempt1.jsonl,,
+2026-11-24T20:55:17+00:00,exclusion,1,WCA66X4I,c286f092dfddd9af,1,ok,,,0,8.92,results\04_classification\raw\exclusion_v3_r1\c286f092dfddd9af.attempt1.jsonl,,
+2026-11-24T20:55:28+00:00,combined_analysis,1,WCA66X4I,9dc1335fab8e954d,1,ok,,,0,33.03,results\04_classification\raw\combined_analysis_v3_r1\9dc1335fab8e954d.attempt1.jsonl,,
+2026-11-24T20:55:28+00:00,combined_analysis,1,6XFGQN39,bca42e0b3166027f,1,ok,,,0,43.0,results\04_classification\raw\combined_analysis_v3_r1\bca42e0b3166027f.attempt1.jsonl,,
